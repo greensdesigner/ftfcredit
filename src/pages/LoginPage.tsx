@@ -38,14 +38,14 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setRole(UserRole.CLIENT)}
-                  className={LayoutDashboard + " flex-1 py-2 text-sm font-medium rounded-lg transition-all " + (role === UserRole.CLIENT ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500")}
+                  className={cn("flex-1 py-2 text-sm font-medium rounded-lg transition-all", role === UserRole.CLIENT ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500")}
                 >
                   Client
                 </button>
                 <button
                   type="button"
                   onClick={() => setRole(UserRole.ADMIN)}
-                  className={LayoutDashboard + " flex-1 py-2 text-sm font-medium rounded-lg transition-all " + (role === UserRole.ADMIN ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500")}
+                  className={cn("flex-1 py-2 text-sm font-medium rounded-lg transition-all", role === UserRole.ADMIN ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500")}
                 >
                   Admin
                 </button>

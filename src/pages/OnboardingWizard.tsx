@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Check, ArrowRight, ArrowLeft, Building2, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { SubscriptionPlan } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 const steps = [
   { id: 1, title: 'Select Plan', description: 'Choose your subscription' },

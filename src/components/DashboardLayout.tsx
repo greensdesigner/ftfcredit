@@ -113,7 +113,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500"></span>
             </button>
             <div className="h-8 w-8 rounded-full bg-neutral-900 flex items-center justify-center text-white text-xs font-bold uppercase truncate">
-              {user?.fullName.charAt(0)}
+              {user?.fullName?.charAt(0) || '?'}
             </div>
           </div>
         </header>

@@ -63,7 +63,7 @@ export default function AdminDashboard() {
               ].map(alert => (
                 <div key={alert.name} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white p-4 shadow-sm">
                    <div className="flex items-center gap-4">
-                      <div className="size-10 rounded-full bg-red-50 flex items-center justify-center text-red-600 font-bold uppercase">{alert.name.charAt(0)}</div>
+                      <div className="size-10 rounded-full bg-red-50 flex items-center justify-center text-red-600 font-bold uppercase">{alert.name?.charAt(0) || '?'}</div>
                       <div>
                         <p className="font-bold text-neutral-900">{alert.name}</p>
                         <p className="text-xs text-neutral-500">{alert.reason} • {alert.date}</p>
@@ -106,7 +106,7 @@ export default function AdminDashboard() {
                   <tr key={client.id} className="group hover:bg-neutral-50/50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                         <div className="size-8 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-500 font-display font-bold uppercase">{client.name.charAt(0)}</div>
+                         <div className="size-8 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-500 font-display font-bold uppercase">{client.name?.charAt(0) || '?'}</div>
                          <div className="flex flex-col">
                             <span className="font-bold text-neutral-900">{client.name}</span>
                             <span className="text-xs text-neutral-500">{client.email}</span>
