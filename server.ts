@@ -1,9 +1,14 @@
 import express from "express";
 import path from "path";
+import { fileURLToPath } from 'url';
+import fs from 'fs';
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
 
 dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
@@ -39,11 +44,22 @@ async function startServer() {
   });
 
   // API Routes
-  app.get("/api/health", (req, res) => {
+  app.get("/api/health", async (req, res) => {
+    let dbStatus = "not configured";
+    if (pool) {
+      try {
+        await pool.query("SELECT 1");
+        dbStatus = "connected";
+      } catch (err: any) {
+        dbStatus = `error: ${err.message}`;
+      }
+    }
+    
     res.json({ 
       status: "ok", 
       message: "Server is running",
       env: process.env.NODE_ENV,
+      database: dbStatus,
       time: new Date().toISOString()
     });
   });
@@ -119,20 +135,26 @@ async function startServer() {
     console.log("Using Vite middleware (development)");
   } else {
     // Production static serving
-    // In production, the bundled server.js is inside 'dist' folder
-    // But depending on how Hostinger starts it, we ensure we find the right path
-    const distPath = path.resolve(process.cwd(), 'dist');
+    // We check common paths to find 'dist'
+    let distPath = path.resolve(process.cwd(), 'dist');
+    
+    if (!fs.existsSync(path.join(distPath, 'index.html'))) {
+        // Try relative to this file (useful if bundled in dist/)
+        distPath = __dirname;
+    }
+
     const indexPath = path.join(distPath, 'index.html');
     
     console.log(`Production Mode: Serving static files from ${distPath}`);
+    if (!fs.existsSync(indexPath)) {
+      console.error(`CRITICAL ERROR: index.html not found. Deployment might fail. Checked: ${indexPath}`);
+    }
     
-    // 1. Serve static assets (js, css, images)
+    // 1. Serve static assets
     app.use(express.static(distPath, { index: false }));
     
-    // 2. Fallback for SPA (React Router)
-    // This MUST be the last route. It catches everything that isn't a file or API
+    // 2. Fallback for SPA
     app.get('*', (req, res) => {
-      // Avoid sending index.html for failed API requests
       if (req.path.startsWith('/api/')) {
         return res.status(404).json({ error: "API endpoint not found" });
       }
@@ -140,11 +162,20 @@ async function startServer() {
       res.sendFile(indexPath, (err) => {
         if (err) {
           console.error(`Error sending index.html: ${err.message}`);
-          res.status(500).send("The application is currently building or index.html is missing. Please wait and refresh.");
+          res.status(500).send(`The application is currently building or index.html is missing. (Path: ${indexPath})`);
         }
       });
     });
   }
+
+  // Global Error Handler
+  app.use((err: any, req: any, res: any, next: any) => {
+    console.error("Unhandled Error:", err);
+    res.status(500).json({ 
+      error: "Internal Server Error", 
+      message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong' 
+    });
+  });
 
   app.listen(Number(PORT), "0.0.0.0", () => {
     console.log(`Server is listening on port ${PORT}`);
