@@ -33,9 +33,19 @@ async function startServer() {
     }
   }
 
+  // Health Check for Hostinger/Deployment monitoring
+  app.get("/health", (req, res) => {
+    res.status(200).send("OK");
+  });
+
   // API Routes
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok", message: "Server is running" });
+    res.json({ 
+      status: "ok", 
+      message: "Server is running",
+      env: process.env.NODE_ENV,
+      time: new Date().toISOString()
+    });
   });
 
   // User Signup
@@ -106,17 +116,28 @@ async function startServer() {
       appType: "spa",
     });
     app.use(vite.middlewares);
+    console.log("Using Vite middleware (development)");
   } else {
     // Production static serving
-    const distPath = path.join(process.cwd(), 'dist');
+    const distPath = path.resolve(process.cwd(), 'dist');
+    console.log(`Serving static files from: ${distPath}`);
+    
     app.use(express.static(distPath));
+    
     app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+      const indexPath = path.join(distPath, 'index.html');
+      res.sendFile(indexPath, (err) => {
+        if (err) {
+          console.error(`Error sending index.html: ${err.message}`);
+          res.status(500).send("Index file not found. Make sure 'npm run build' was successful.");
+        }
+      });
     });
   }
 
   app.listen(Number(PORT), "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Server is listening on port ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV}`);
     if (!process.env.DB_HOST) {
       console.warn("WARNING: DB_HOST is not set. Database features will be limited.");
     }
