@@ -1,5 +1,4 @@
 import express from "express";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
@@ -13,7 +12,6 @@ async function startServer() {
   app.use(express.json());
 
   // Database Connection Configuration (Ready for Hostinger)
-  // These should be set in your Secrets panel or .env file
   const dbConfig = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
@@ -26,7 +24,6 @@ async function startServer() {
 
   let pool: any;
 
-  // Function to initialize DB if credentials are provided
   if (process.env.DB_HOST) {
     try {
       pool = mysql.createPool(dbConfig);
@@ -103,6 +100,7 @@ async function startServer() {
 
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
