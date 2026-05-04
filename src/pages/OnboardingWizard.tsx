@@ -18,10 +18,45 @@ export default function OnboardingWizard() {
   const [achAgreed, setAchAgreed] = useState(false);
   const navigate = useNavigate();
 
-  const handleNext = () => {
+  const { user } = useAuth();
+
+  const handleNext = async () => {
     if (currentStep < steps.length) {
-      setCurrentStep(currentStep + 1);
+      const nextStep = currentStep + 1;
+      // Sync progress with DB
+      if (user) {
+        try {
+          await fetch(`/api/users/${user.uid}/onboarding`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              step: nextStep, 
+              plaidConnected: nextStep > 2 || plaidConnected,
+              achAuthorized: nextStep > 3 || achAgreed 
+            }),
+          });
+        } catch (error) {
+          console.error("Failed to sync progress:", error);
+        }
+      }
+      setCurrentStep(nextStep);
     } else {
+      // Final setup on completion: Create Subscription
+      if (user && plan) {
+        try {
+          await fetch('/api/subscriptions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user.uid,
+              planName: plan,
+              amount: plan === SubscriptionPlan.BUSINESS_FUNDING ? 299 : 149
+            }),
+          });
+        } catch (error) {
+          console.error("Failed to create subscription:", error);
+        }
+      }
       navigate('/dashboard');
     }
   };

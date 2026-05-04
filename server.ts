@@ -41,29 +41,61 @@ async function startServer() {
     res.json({ status: "ok", message: "Server is running" });
   });
 
-  // Example: Get Users from Database
-  app.get("/api/users", async (req, res) => {
-    if (!pool) {
-      return res.status(500).json({ error: "Database not configured. Please set DB_HOST in environment variables." });
-    }
+  // User Signup
+  app.post("/api/auth/signup", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { uid, email, fullName, role } = req.body;
     try {
-      const [rows] = await pool.query("SELECT id, fullName, email, role FROM users");
-      res.json(rows);
+      await pool.query(
+        "INSERT INTO users (uid, email, fullName, role) VALUES (?, ?, ?, ?)",
+        [uid, email, fullName, role || 'client']
+      );
+      res.json({ status: "success", message: "User created in DB" });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
 
-  // Example: Create User
-  app.post("/api/users", async (req, res) => {
+  // Get User Profile
+  app.get("/api/users/:uid", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured" });
-    const { fullName, email, role } = req.body;
     try {
-      const [result] = await pool.query(
-        "INSERT INTO users (fullName, email, role) VALUES (?, ?, ?)",
-        [fullName, email, role]
+      const [rows]: any = await pool.query("SELECT * FROM users WHERE uid = ?", [req.params.uid]);
+      if (rows.length === 0) return res.status(404).json({ error: "User not found" });
+      res.json(rows[0]);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update Onboarding Progress
+  app.patch("/api/users/:uid/onboarding", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { step, plaidConnected, achAuthorized } = req.body;
+    try {
+      await pool.query(
+        "UPDATE users SET onboardingStep = ?, plaidConnected = ?, achAuthorized = ? WHERE uid = ?",
+        [step, plaidConnected, achAuthorized, req.params.uid]
       );
-      res.json({ id: (result as any).insertId, status: "created" });
+      res.json({ status: "success" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create Subscription
+  app.post("/api/subscriptions", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { userId, planName, amount } = req.body;
+    try {
+      const nextMonth = new Date();
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      
+      await pool.query(
+        "INSERT INTO subscriptions (userId, planName, amount, status, nextBillingDate) VALUES (?, ?, ?, 'active', ?)",
+        [userId, planName, amount, nextMonth]
+      );
+      res.json({ status: "success" });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

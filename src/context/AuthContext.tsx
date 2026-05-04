@@ -44,8 +44,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signup = async (email: string, fullName: string) => {
     setLoading(true);
+    const uid = 'user_' + Math.random().toString(36).substr(2, 9);
     const mockUser: UserProfile = {
-      uid: 'user_' + Math.random().toString(36).substr(2, 9),
+      uid,
       email,
       fullName,
       role: UserRole.CLIENT,
@@ -54,8 +55,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       achAuthorized: false,
       createdAt: Date.now(),
     };
-    setUser(mockUser);
-    localStorage.setItem('ftf_user', JSON.stringify(mockUser));
+
+    try {
+      await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mockUser),
+      });
+      setUser(mockUser);
+      localStorage.setItem('ftf_user', JSON.stringify(mockUser));
+    } catch (error) {
+      console.error("Signup failed:", error);
+    }
     setLoading(false);
   };
 
