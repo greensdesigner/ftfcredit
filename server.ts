@@ -119,17 +119,28 @@ async function startServer() {
     console.log("Using Vite middleware (development)");
   } else {
     // Production static serving
+    // In production, the bundled server.js is inside 'dist' folder
+    // But depending on how Hostinger starts it, we ensure we find the right path
     const distPath = path.resolve(process.cwd(), 'dist');
-    console.log(`Serving static files from: ${distPath}`);
+    const indexPath = path.join(distPath, 'index.html');
     
-    app.use(express.static(distPath));
+    console.log(`Production Mode: Serving static files from ${distPath}`);
     
+    // 1. Serve static assets (js, css, images)
+    app.use(express.static(distPath, { index: false }));
+    
+    // 2. Fallback for SPA (React Router)
+    // This MUST be the last route. It catches everything that isn't a file or API
     app.get('*', (req, res) => {
-      const indexPath = path.join(distPath, 'index.html');
+      // Avoid sending index.html for failed API requests
+      if (req.path.startsWith('/api/')) {
+        return res.status(404).json({ error: "API endpoint not found" });
+      }
+
       res.sendFile(indexPath, (err) => {
         if (err) {
           console.error(`Error sending index.html: ${err.message}`);
-          res.status(500).send("Index file not found. Make sure 'npm run build' was successful.");
+          res.status(500).send("The application is currently building or index.html is missing. Please wait and refresh.");
         }
       });
     });
