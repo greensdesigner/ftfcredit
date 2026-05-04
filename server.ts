@@ -135,19 +135,24 @@ async function startServer() {
     console.log("Using Vite middleware (development)");
   } else {
     // Production static serving
-    // We check common paths to find 'dist'
-    let distPath = path.resolve(process.cwd(), 'dist');
+    // When running from dist/server.js, __dirname is the 'dist' folder itself.
+    // We try to find the best path for dist files.
+    let distPath = __dirname;
     
+    // Check if this is running from dist/ already (bundled case)
     if (!fs.existsSync(path.join(distPath, 'index.html'))) {
-        // Try relative to this file (useful if bundled in dist/)
-        distPath = __dirname;
+        distPath = path.resolve(process.cwd(), 'dist');
     }
 
     const indexPath = path.join(distPath, 'index.html');
     
-    console.log(`Production Mode: Serving static files from ${distPath}`);
+    console.log(`[Production] Mode Active`);
+    console.log(`[Production] Working Directory: ${process.cwd()}`);
+    console.log(`[Production] Script Directory: ${__dirname}`);
+    console.log(`[Production] Serving assets from: ${distPath}`);
+    
     if (!fs.existsSync(indexPath)) {
-      console.error(`CRITICAL ERROR: index.html not found. Deployment might fail. Checked: ${indexPath}`);
+      console.error(`[CRITICAL] index.html NOT FOUND at: ${indexPath}`);
     }
     
     // 1. Serve static assets
@@ -155,14 +160,17 @@ async function startServer() {
     
     // 2. Fallback for SPA
     app.get('*', (req, res) => {
+      // Don't serve HTML for API requests that fall through
       if (req.path.startsWith('/api/')) {
         return res.status(404).json({ error: "API endpoint not found" });
       }
 
       res.sendFile(indexPath, (err) => {
         if (err) {
-          console.error(`Error sending index.html: ${err.message}`);
-          res.status(500).send(`The application is currently building or index.html is missing. (Path: ${indexPath})`);
+          console.error(`[Error] Failed to send index.html: ${err.message}`);
+          if (!res.headersSent) {
+            res.status(500).send(`Server Error: Web files not found. Please ensure 'npm run build' was successful. (Path: ${indexPath})`);
+          }
         }
       });
     });
