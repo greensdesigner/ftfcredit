@@ -135,30 +135,26 @@ async function startServer() {
     console.log("Using Vite middleware (development)");
   } else {
     // Production static serving
-    // When running from dist/server.js, __dirname is the 'dist' folder itself.
-    // We try to find the best path for dist files.
-    let distPath = __dirname;
-    
-    // Check if this is running from dist/ already (bundled case)
-    if (!fs.existsSync(path.join(distPath, 'index.html'))) {
-        distPath = path.resolve(process.cwd(), 'dist');
-    }
-
+    // When running from dist-server/server.js, dist is a sibling folder
+    const distPath = path.resolve(__dirname, '../dist');
     const indexPath = path.join(distPath, 'index.html');
     
     console.log(`[Production] Mode Active`);
-    console.log(`[Production] Working Directory: ${process.cwd()}`);
-    console.log(`[Production] Script Directory: ${__dirname}`);
     console.log(`[Production] Serving assets from: ${distPath}`);
     
     if (!fs.existsSync(indexPath)) {
       console.error(`[CRITICAL] index.html NOT FOUND at: ${indexPath}`);
+      // Fallback to process.cwd() just in case
+      const fallbackPath = path.resolve(process.cwd(), 'dist');
+      if (fs.existsSync(path.join(fallbackPath, 'index.html'))) {
+          console.log(`[Production] Found index.html at fallback path: ${fallbackPath}`);
+      }
     }
     
     // 1. Serve static assets
-    app.use(express.static(distPath, { index: false }));
+    app.use(express.static(distPath));
     
-    // 2. Fallback for SPA
+    // 2. Fallback for SPA (Catch-all)
     app.get('*', (req, res) => {
       // Don't serve HTML for API requests that fall through
       if (req.path.startsWith('/api/')) {
@@ -169,7 +165,13 @@ async function startServer() {
         if (err) {
           console.error(`[Error] Failed to send index.html: ${err.message}`);
           if (!res.headersSent) {
-            res.status(500).send(`Server Error: Web files not found. Please ensure 'npm run build' was successful. (Path: ${indexPath})`);
+            // Try fallback path if main path failed
+            const fallbackIndex = path.resolve(process.cwd(), 'dist/index.html');
+            res.sendFile(fallbackIndex, (err2) => {
+                if (err2) {
+                    res.status(500).send("Server Error: Web files not found. Please ensure 'npm run build' completed successfully.");
+                }
+            });
           }
         }
       });

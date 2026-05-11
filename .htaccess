@@ -1,0 +1,13 @@
+# .htaccess for Hostinger - Ensure SPA routing works on reloads
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  
+  # Delegate to Node.js if possible, but often on shared hosts 
+  # we just need to ensure everything goes to index.html if it's not a file
+  
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>
