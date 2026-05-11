@@ -65,6 +65,9 @@ async function startServer() {
       // Auto-initialize tables if they don't exist
       const initializeDB = async () => {
         try {
+          console.log("Initializing database tables...");
+          
+          // Users table
           await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
               uid VARCHAR(128) PRIMARY KEY,
@@ -78,6 +81,8 @@ async function startServer() {
               createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
           `);
+
+          // Subscriptions table
           await pool.query(`
             CREATE TABLE IF NOT EXISTS subscriptions (
               id INT AUTO_INCREMENT PRIMARY KEY,
@@ -90,9 +95,37 @@ async function startServer() {
               FOREIGN KEY (userId) REFERENCES users(uid) ON DELETE CASCADE
             )
           `);
-          console.log("Database tables verified/created");
-        } catch (dbErr) {
-          console.error("Error initializing tables:", dbErr);
+
+          // Payments table
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS payments (
+              id VARCHAR(128) PRIMARY KEY,
+              userId VARCHAR(128) NOT NULL,
+              amount DECIMAL(10, 2) NOT NULL,
+              status ENUM('success', 'failed', 'pending') DEFAULT 'pending',
+              paymentType VARCHAR(20) DEFAULT 'ACH',
+              paymentDate TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (userId) REFERENCES users(uid) ON DELETE CASCADE
+            )
+          `);
+
+          // Service Progress table
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS service_progress (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              userId VARCHAR(128) NOT NULL,
+              taskName VARCHAR(255) NOT NULL,
+              status ENUM('completed', 'in-progress', 'pending') DEFAULT 'pending',
+              estimatedCompletion DATE,
+              updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+              FOREIGN KEY (userId) REFERENCES users(uid) ON DELETE CASCADE
+            )
+          `);
+
+          console.log("✅ All database tables verified/created successfully.");
+        } catch (dbErr: any) {
+          console.error("❌ Error initializing tables:", dbErr.message);
+          console.warn("If you get access denied here, check if your user has CREATE permissions.");
         }
       };
       testConnection();
@@ -135,13 +168,20 @@ async function startServer() {
     if (!pool) return res.status(500).json({ error: "Database not configured. Check DB environment variables." });
     const { uid, email, fullName, role, phone } = req.body;
     try {
+      // Check if user exists first to provide better error
+      const [existing]: any = await pool.query("SELECT uid FROM users WHERE email = ?", [email]);
+      if (existing && existing.length > 0) {
+        return res.status(400).json({ error: "A user with this email already exists." });
+      }
+
       await pool.query(
         "INSERT INTO users (uid, email, fullName, role, phone) VALUES (?, ?, ?, ?, ?)",
         [uid, email, fullName, role || 'client', phone]
       );
+      console.log(`✅ User created successfully: ${email} (${uid})`);
       res.json({ status: "success", message: "User created in DB" });
     } catch (error: any) {
-      console.error("Signup DB Error:", error);
+      console.error(`❌ Signup DB Error for ${email}:`, error.message);
       res.status(500).json({ error: "Database Error: " + error.message });
     }
   });
