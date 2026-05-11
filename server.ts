@@ -18,14 +18,18 @@ async function startServer() {
 
   // Database Connection Configuration (Ready for Hostinger)
   const dbConfig = {
-    host: process.env.DB_HOST,
+    host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || "3306"),
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0
+    maxIdle: 10, // max idle connections, the default value is the same as `connectionLimit`
+    idleTimeout: 60000, // idle connections timeout, in milliseconds, the default value 60000
+    queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0
   };
 
   let pool: any;
@@ -43,7 +47,9 @@ async function startServer() {
         console.warn("Please set these in your application settings.");
       }
 
-      console.log(`Attempting to connect to ${process.env.DB_NAME} at ${process.env.DB_HOST}:${dbConfig.port} with user ${process.env.DB_USER}...`);
+      console.log(`Attempting to connect to database: ${process.env.DB_NAME}`);
+      console.log(`Host: ${dbConfig.host}:${dbConfig.port}`);
+      console.log(`User: ${process.env.DB_USER}`);
       
       pool = mysql.createPool(dbConfig);
       
