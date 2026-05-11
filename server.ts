@@ -25,11 +25,13 @@ async function startServer() {
     database: process.env.DB_NAME,
     waitForConnections: true,
     connectionLimit: 10,
-    maxIdle: 10, // max idle connections, the default value is the same as `connectionLimit`
-    idleTimeout: 60000, // idle connections timeout, in milliseconds, the default value 60000
+    maxIdle: 10,
+    idleTimeout: 60000,
     queueLimit: 0,
     enableKeepAlive: true,
-    keepAliveInitialDelay: 0
+    keepAliveInitialDelay: 0,
+    // Add charset for better support
+    charset: 'utf8mb4'
   };
 
   let pool: any;
@@ -47,9 +49,9 @@ async function startServer() {
         console.warn("Please set these in your application settings.");
       }
 
-      console.log(`Attempting to connect to database: ${process.env.DB_NAME}`);
-      console.log(`Host: ${dbConfig.host}:${dbConfig.port}`);
-      console.log(`User: ${process.env.DB_USER}`);
+      console.log(`Connecting to database: ${process.env.DB_NAME}`);
+      console.log(`Endpoint: ${dbConfig.host}:${dbConfig.port}`);
+      console.log(`User ID: ${process.env.DB_USER}`);
       
       pool = mysql.createPool(dbConfig);
       
@@ -64,6 +66,14 @@ async function startServer() {
           console.error("❌ Database connection test failed!");
           console.error(`Error Code: ${err.code}`);
           console.error(`Error Message: ${err.message}`);
+          
+          if (err.code === 'ER_ACCESS_DENIED_ERROR') {
+            console.error("💡 TIP: Wrong password or user doesn't have permissions for this database.");
+            console.error("💡 ACTION: Check if user 'u322548859_ftfconsult' is assigned to database 'u322548859_ftfcredit' with 'All Privileges' in Hostinger MySQL Databases section.");
+          } else if (err.code === 'ENOTFOUND' || err.code === 'ECONNREFUSED') {
+            console.error("💡 TIP: Host is wrong. Hostinger typically uses 'localhost'.");
+          }
+          
           console.warn("Please verify your DB_HOST, DB_USER, DB_PASSWORD and DB_NAME in your environment settings.");
         }
       };
