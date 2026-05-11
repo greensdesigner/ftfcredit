@@ -19,6 +19,7 @@ async function startServer() {
   // Database Connection Configuration (Ready for Hostinger)
   const dbConfig = {
     host: process.env.DB_HOST,
+    port: parseInt(process.env.DB_PORT || "3306"),
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
@@ -31,7 +32,19 @@ async function startServer() {
 
   if (process.env.DB_HOST) {
     try {
-      console.log(`Connecting to database at ${process.env.DB_HOST} with user ${process.env.DB_USER}...`);
+      // Check for missing critical variables
+      const missingVars = [];
+      if (!process.env.DB_USER) missingVars.push("DB_USER");
+      if (!process.env.DB_PASSWORD) missingVars.push("DB_PASSWORD");
+      if (!process.env.DB_NAME) missingVars.push("DB_NAME");
+
+      if (missingVars.length > 0) {
+        console.error(`❌ CRITICAL: Missing environment variables: ${missingVars.join(", ")}`);
+        console.warn("Please set these in your application settings.");
+      }
+
+      console.log(`Attempting to connect to ${process.env.DB_NAME} at ${process.env.DB_HOST}:${dbConfig.port} with user ${process.env.DB_USER}...`);
+      
       pool = mysql.createPool(dbConfig);
       
       // Test the connection immediately
