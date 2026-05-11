@@ -8,15 +8,15 @@ export default function ClientDashboard() {
 
   const stats = [
     { label: 'Current Plan', value: 'Credit Repair', sub: '$149/mo', icon: CreditCard, color: 'bg-blue-500' },
-    { label: 'Credit Score', value: '642', sub: '+18 pts last mo', icon: TrendingUp, color: 'bg-emerald-500' },
-    { label: 'Payment Status', value: 'Successful', sub: 'Next: May 24', icon: CheckCircle2, color: 'bg-emerald-500' },
+    { label: 'Credit Score', value: '---', sub: 'Analyzing Profile', icon: TrendingUp, color: 'bg-amber-500' },
+    { label: 'Payment Status', value: 'Pending', sub: 'Awaiting Setup', icon: CheckCircle2, color: 'bg-neutral-500' },
   ];
 
   const progressSteps = [
-    { label: 'Identity Verification', status: 'completed', date: 'May 1, 2026' },
-    { label: 'Credit Analysis', status: 'completed', date: 'May 3, 2026' },
-    { label: 'Dispute Letter Batch #1', status: 'in-progress', date: 'Est. May 10' },
-    { label: 'Lender Response', status: 'pending', date: '-' },
+    { label: 'Identity Verification', status: 'in-progress', date: 'Today' },
+    { label: 'Credit Analysis', status: 'pending', date: 'Pending' },
+    { label: 'Dispute Letter Batch #1', status: 'pending', date: 'Pending' },
+    { label: 'Lender Response', status: 'pending', date: 'Pending' },
   ];
 
   return (
