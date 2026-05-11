@@ -31,8 +31,23 @@ async function startServer() {
 
   if (process.env.DB_HOST) {
     try {
+      console.log(`Connecting to database at ${process.env.DB_HOST} with user ${process.env.DB_USER}...`);
       pool = mysql.createPool(dbConfig);
-      console.log("Connected to MySQL database pool");
+      
+      // Test the connection immediately
+      const testConnection = async () => {
+        try {
+          const connection = await pool.getConnection();
+          console.log("✅ Successfully connected to MySQL database pool");
+          connection.release();
+          await initializeDB();
+        } catch (err: any) {
+          console.error("❌ Database connection test failed!");
+          console.error(`Error Code: ${err.code}`);
+          console.error(`Error Message: ${err.message}`);
+          console.warn("Please verify your DB_HOST, DB_USER, DB_PASSWORD and DB_NAME in your environment settings.");
+        }
+      };
       
       // Auto-initialize tables if they don't exist
       const initializeDB = async () => {
@@ -67,7 +82,7 @@ async function startServer() {
           console.error("Error initializing tables:", dbErr);
         }
       };
-      initializeDB();
+      testConnection();
       
     } catch (error) {
       console.error("Database connection failed:", error);
