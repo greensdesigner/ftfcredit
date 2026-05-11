@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "NODE_ENV=development tsx server.ts",
-    "build": "vite build && esbuild server.ts --bundle --platform=node --outfile=dist-server/server.js --format=esm --external:vite --external:express --external:mysql2 --external:dotenv",
+    "build:client": "vite build",
+    "build:server": "esbuild server.ts --bundle --platform=node --outfile=dist-server/server.js --format=esm --external:vite --external:express --external:mysql2 --external:mysql2/promise --external:dotenv --external:fs --external:path --external:url",
+    "build": "npm run build:client && npm run build:server",
     "start": "NODE_ENV=production node dist-server/server.js",
     "preview": "vite preview",
     "clean": "rm -rf dist",
