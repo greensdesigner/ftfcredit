@@ -27,7 +27,7 @@ export default function OnboardingWizard() {
       // Sync progress with DB
       if (user) {
         try {
-          await fetch(`/api/users/${user.uid}/onboarding`, {
+          const response = await fetch(`/api/users/${user.uid}/onboarding`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -36,8 +36,10 @@ export default function OnboardingWizard() {
               achAuthorized: nextStep > 3 || achAgreed 
             }),
           });
+          if (!response.ok) throw new Error('Failed to update progress on server');
         } catch (error) {
           console.error("Failed to sync progress:", error);
+          alert("Warning: Could not save progress to database. Please check your connection.");
         }
       }
       setCurrentStep(nextStep);
@@ -45,7 +47,7 @@ export default function OnboardingWizard() {
       // Final setup on completion: Create Subscription
       if (user && plan) {
         try {
-          await fetch('/api/subscriptions', {
+          const response = await fetch('/api/subscriptions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -54,8 +56,11 @@ export default function OnboardingWizard() {
               amount: plan === SubscriptionPlan.BUSINESS_FUNDING ? 299 : 149
             }),
           });
+          if (!response.ok) throw new Error('Failed to create subscription on server');
         } catch (error) {
           console.error("Failed to create subscription:", error);
+          alert("Could not initialize subscription. Please contact support.");
+          return; // Stop if subscription fails
         }
       }
       navigate('/dashboard');

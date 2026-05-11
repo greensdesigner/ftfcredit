@@ -14,8 +14,12 @@ export default function SignupPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await signup(email, fullName);
-    navigate('/onboarding');
+    try {
+      await signup(email, fullName, phone);
+      navigate('/onboarding');
+    } catch (err) {
+      // Error is handled in AuthContext (alert)
+    }
   };
 
   return (

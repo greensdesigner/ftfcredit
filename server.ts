@@ -32,10 +32,48 @@ async function startServer() {
   if (process.env.DB_HOST) {
     try {
       pool = mysql.createPool(dbConfig);
-      console.log("Connected to Hostinger database pool");
+      console.log("Connected to MySQL database pool");
+      
+      // Auto-initialize tables if they don't exist
+      const initializeDB = async () => {
+        try {
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS users (
+              uid VARCHAR(128) PRIMARY KEY,
+              email VARCHAR(255) NOT NULL UNIQUE,
+              fullName VARCHAR(255) NOT NULL,
+              role ENUM('client', 'admin') DEFAULT 'client',
+              phone VARCHAR(20),
+              onboardingStep INT DEFAULT 1,
+              plaidConnected BOOLEAN DEFAULT FALSE,
+              achAuthorized BOOLEAN DEFAULT FALSE,
+              createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+          `);
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS subscriptions (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              userId VARCHAR(128) NOT NULL,
+              planName ENUM('Credit Repair', 'Business Funding') NOT NULL,
+              status ENUM('active', 'pending', 'failed', 'paused', 'canceled') DEFAULT 'pending',
+              amount DECIMAL(10, 2) NOT NULL,
+              nextBillingDate DATE,
+              createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (userId) REFERENCES users(uid) ON DELETE CASCADE
+            )
+          `);
+          console.log("Database tables verified/created");
+        } catch (dbErr) {
+          console.error("Error initializing tables:", dbErr);
+        }
+      };
+      initializeDB();
+      
     } catch (error) {
       console.error("Database connection failed:", error);
     }
+  } else {
+    console.warn("CRITICAL: DB_HOST environment variable is missing. Database will not work.");
   }
 
   // Health Check for Hostinger/Deployment monitoring
@@ -66,16 +104,17 @@ async function startServer() {
 
   // User Signup
   app.post("/api/auth/signup", async (req, res) => {
-    if (!pool) return res.status(500).json({ error: "Database not configured" });
-    const { uid, email, fullName, role } = req.body;
+    if (!pool) return res.status(500).json({ error: "Database not configured. Check DB environment variables." });
+    const { uid, email, fullName, role, phone } = req.body;
     try {
       await pool.query(
-        "INSERT INTO users (uid, email, fullName, role) VALUES (?, ?, ?, ?)",
-        [uid, email, fullName, role || 'client']
+        "INSERT INTO users (uid, email, fullName, role, phone) VALUES (?, ?, ?, ?, ?)",
+        [uid, email, fullName, role || 'client', phone]
       );
       res.json({ status: "success", message: "User created in DB" });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      console.error("Signup DB Error:", error);
+      res.status(500).json({ error: "Database Error: " + error.message });
     }
   });
 
