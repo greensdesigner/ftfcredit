@@ -1,13 +1,23 @@
-# .htaccess for Hostinger - Ensure SPA routing works on reloads
+# .htaccess for Hostinger Node.js/SPA
 <IfModule mod_rewrite.c>
-  RewriteEngine On
-  RewriteBase /
-  
-  # Delegate to Node.js if possible, but often on shared hosts 
-  # we just need to ensure everything goes to index.html if it's not a file
-  
-  RewriteRule ^index\.html$ - [L]
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule . /index.html [L]
+    RewriteEngine On
+    RewriteBase /
+    
+    # 1. If it's a real file or folder, skip to it
+    RewriteCond %{REQUEST_FILENAME} -f [OR]
+    RewriteCond %{REQUEST_FILENAME} -d
+    RewriteRule ^ - [L]
+
+    # 2. Skip API requests (let Node.js handle them)
+    RewriteRule ^api/ - [L]
+
+    # 3. For everything else, if index.html exists, serve it
+    # This handles the reload issue even if Node isn't properly proxying SPA routes
+    RewriteCond %{DOCUMENT_ROOT}/dist/index.html -f
+    RewriteRule ^.*$ /dist/index.html [L]
+    
+    # Fallback to root index.html if dist/index.html isn't the structure
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule . /index.html [L]
 </IfModule>

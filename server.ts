@@ -125,38 +125,59 @@ async function startServer() {
   });
 
   // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
-    const { createServer: createViteServer } = await import("vite");
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: "spa",
-    });
-    app.use(vite.middlewares);
-    console.log("Using Vite middleware (development)");
+  // Auto-detect production mode if dist folder exists or NODE_ENV is set to production
+  const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(path.resolve(__dirname, "../dist"));
+
+  if (!isProduction) {
+    try {
+      const { createServer: createViteServer } = await import("vite");
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: "spa",
+      });
+      app.use(vite.middlewares);
+      console.log("Using Vite middleware (development)");
+    } catch (e) {
+      console.warn("Vite not found, falling back to production mode");
+      setupProductionMode();
+    }
   } else {
-    // Production static serving
-    // When running from dist-server/server.js, dist is a sibling folder
-    const distPath = path.resolve(__dirname, '../dist');
-    const indexPath = path.join(distPath, 'index.html');
+    setupProductionMode();
+  }
+
+  function setupProductionMode() {
+    // Find the correct path for static files (dist)
+    let distPath = path.resolve(__dirname, '../dist');
     
+    // Fallback search for dist folder
+    if (!fs.existsSync(path.join(distPath, 'index.html'))) {
+      const candidates = [
+        path.resolve(process.cwd(), 'dist'),
+        path.resolve(__dirname, 'dist'),
+        path.resolve(__dirname, '..')
+      ];
+      for (const c of candidates) {
+        if (fs.existsSync(path.join(c, 'index.html'))) {
+          distPath = c;
+          break;
+        }
+      }
+    }
+
+    const indexPath = path.join(distPath, 'index.html');
     console.log(`[Production] Mode Active`);
     console.log(`[Production] Serving assets from: ${distPath}`);
     
     if (!fs.existsSync(indexPath)) {
-      console.error(`[CRITICAL] index.html NOT FOUND at: ${indexPath}`);
-      // Fallback to process.cwd() just in case
-      const fallbackPath = path.resolve(process.cwd(), 'dist');
-      if (fs.existsSync(path.join(fallbackPath, 'index.html'))) {
-          console.log(`[Production] Found index.html at fallback path: ${fallbackPath}`);
-      }
+      console.error(`[CRITICAL ERROR] index.html not found! Path: ${indexPath}`);
     }
     
-    // 1. Serve static assets
+    // Serve static files
     app.use(express.static(distPath));
     
-    // 2. Fallback for SPA (Catch-all)
+    // SPA catch-all route
     app.get('*', (req, res) => {
-      // Don't serve HTML for API requests that fall through
+      // API requests should return 404 if not matched
       if (req.path.startsWith('/api/')) {
         return res.status(404).json({ error: "API endpoint not found" });
       }
@@ -165,13 +186,7 @@ async function startServer() {
         if (err) {
           console.error(`[Error] Failed to send index.html: ${err.message}`);
           if (!res.headersSent) {
-            // Try fallback path if main path failed
-            const fallbackIndex = path.resolve(process.cwd(), 'dist/index.html');
-            res.sendFile(fallbackIndex, (err2) => {
-                if (err2) {
-                    res.status(500).send("Server Error: Web files not found. Please ensure 'npm run build' completed successfully.");
-                }
-            });
+            res.status(500).send("Web application web files missing. Please ensure 'npm run build' was successful.");
           }
         }
       });

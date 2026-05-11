@@ -1,0 +1,12 @@
+# .htaccess for Apache/Hostinger
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  
+  # If the requested resource is a file or a directory, serve it directly
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  
+  # Otherwise, redirect everything to index.html (SPA routing)
+  RewriteRule . /index.html [L]
+</IfModule>
