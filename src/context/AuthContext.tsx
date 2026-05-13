@@ -18,9 +18,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Mock persistence for demo purposes
   useEffect(() => {
-    const savedUser = localStorage.getItem('ftf_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
+    try {
+      const savedUser = localStorage.getItem('ftf_user');
+      if (savedUser) {
+        setUser(JSON.parse(savedUser));
+      }
+    } catch (e) {
+      console.error("Failed to restore session:", e);
+      localStorage.removeItem('ftf_user');
     }
     setLoading(false);
   }, []);

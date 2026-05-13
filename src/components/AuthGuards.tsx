@@ -35,7 +35,8 @@ export function PublicRoute() {
   );
 
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    const target = user.role === UserRole.ADMIN ? '/admin-portal' : '/dashboard';
+    return <Navigate to={target} replace />;
   }
 
   return <Outlet />;
