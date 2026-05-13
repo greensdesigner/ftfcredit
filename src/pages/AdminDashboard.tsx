@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
-import { Users, CreditCard, AlertCircle, Search, Filter, MoreHorizontal, ArrowUpRight, ArrowDownRight, CheckCircle2, RotateCcw, Loader2 } from 'lucide-react';
+import { Users, CreditCard, AlertCircle, Search, Filter, MoreHorizontal, ArrowUpRight, ArrowDownRight, CheckCircle2, RotateCcw, Loader2, X, Mail, Phone, Calendar, User } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface Client {
@@ -23,6 +23,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'settings'>('overview');
 
@@ -236,9 +237,17 @@ export default function AdminDashboard() {
                           </div>
                         </td>
                         <td className="px-6 py-4 text-right">
-                           <button className="text-neutral-400 hover:text-neutral-900 p-2 rounded-lg hover:bg-neutral-100 transition-colors">
-                              <MoreHorizontal size={20} />
-                           </button>
+                           <div className="flex justify-end gap-2">
+                             <button 
+                               onClick={() => setSelectedClient(client)}
+                               className="text-xs font-bold text-neutral-900 bg-neutral-100 hover:bg-neutral-200 px-3 py-1.5 rounded-lg transition-colors"
+                             >
+                               View Details
+                             </button>
+                             <button className="text-neutral-400 hover:text-neutral-900 p-1.5 rounded-lg hover:bg-neutral-100 transition-colors">
+                                <MoreHorizontal size={18} />
+                             </button>
+                           </div>
                         </td>
                       </tr>
                     ))}
@@ -274,6 +283,106 @@ export default function AdminDashboard() {
                    <div className="absolute right-1 top-1 size-4 bg-white rounded-full"></div>
                  </div>
                </div>
+            </div>
+          </div>
+        )}
+
+        {/* Client Detail Modal */}
+        {selectedClient && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="w-full max-w-2xl bg-white rounded-[32px] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+              <div className="relative h-32 bg-neutral-900 p-8">
+                <button 
+                  onClick={() => setSelectedClient(null)}
+                  className="absolute right-6 top-6 text-white/50 hover:text-white transition-colors"
+                >
+                  <X size={24} />
+                </button>
+                <div className="absolute -bottom-12 left-8">
+                  <div className="size-24 rounded-3xl bg-white p-1 shadow-xl">
+                    <div className="w-full h-full rounded-2xl bg-neutral-100 flex items-center justify-center border border-neutral-100 overflow-hidden">
+                      {selectedClient.avatarUrl ? (
+                        <img src={selectedClient.avatarUrl} className="w-full h-full object-cover" />
+                      ) : (
+                        <User size={40} className="text-neutral-300" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-16 p-8 space-y-8">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-neutral-900 font-display">{selectedClient.fullName}</h2>
+                    <p className="text-neutral-500 font-medium">User ID: {selectedClient.uid}</p>
+                  </div>
+                  <span className={cn(
+                    "inline-flex items-center rounded-full px-4 py-1 text-xs font-bold uppercase tracking-wider",
+                    selectedClient.sub_status === 'active' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                    "bg-red-50 text-red-600 border border-red-100"
+                  )}>
+                    {selectedClient.sub_status || 'Inactive'}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 text-neutral-600">
+                      <div className="size-8 rounded-lg bg-neutral-50 flex items-center justify-center text-neutral-400">
+                        <Mail size={16} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">Email Address</p>
+                        <p className="font-medium">{selectedClient.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-neutral-600">
+                      <div className="size-8 rounded-lg bg-neutral-50 flex items-center justify-center text-neutral-400">
+                        <Phone size={16} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">Phone Number</p>
+                        <p className="font-medium">{selectedClient.phone || 'Not provided'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3 text-neutral-600">
+                      <div className="size-8 rounded-lg bg-neutral-50 flex items-center justify-center text-neutral-400">
+                        <CreditCard size={16} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">Active Plan</p>
+                        <p className="font-medium font-display">{selectedClient.plan_name || 'No Plan Selected'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 text-neutral-600">
+                      <div className="size-8 rounded-lg bg-neutral-50 flex items-center justify-center text-neutral-400">
+                        <Calendar size={16} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">Next Billing</p>
+                        <p className="font-medium">{selectedClient.next_billing_date ? new Date(selectedClient.next_billing_date).toLocaleDateString() : 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-neutral-100 flex items-center justify-between">
+                   <div>
+                      <p className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider mb-1">Current Progress</p>
+                      <p className="text-sm font-bold text-neutral-900">{getStepLabel(selectedClient.onboardingStep)}</p>
+                   </div>
+                   <button 
+                    onClick={() => setSelectedClient(null)}
+                    className="rounded-xl border border-neutral-200 px-6 py-2.5 text-sm font-bold text-neutral-900 hover:bg-neutral-50 transition-colors"
+                   >
+                     Close
+                   </button>
+                </div>
+              </div>
             </div>
           </div>
         )}

@@ -24,7 +24,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const menuItems = (user?.role === UserRole.ADMIN || isAdminAuthorized)
     ? [
         { icon: LayoutDashboard, label: 'Overview', path: '/admin-portal?tab=overview' },
-        { icon: Users, label: 'Clients', path: '/admin-portal?tab=clients' },
+        { icon: Users, label: 'Client List', path: '/admin-portal?tab=clients' },
         { icon: Settings, label: 'Settings', path: '/admin-portal?tab=settings' },
       ]
     : [
