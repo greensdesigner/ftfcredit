@@ -31,7 +31,6 @@ export default function App() {
           </Route>
 
           {/* Admin Routes */}
-          <Route path="/admin" element={<Navigate to="/admin-portal" replace />} />
           <Route path="/admin-portal" element={<AdminGate />} />
           
           <Route element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]} />}>

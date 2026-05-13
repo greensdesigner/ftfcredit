@@ -20,7 +20,7 @@ export default function LoginPage() {
       await login(email, password);
       // The login function in context updates the user state, we navigate based on what came back
       const savedUser = JSON.parse(localStorage.getItem('ftf_user') || '{}');
-      navigate(savedUser.role === UserRole.ADMIN ? '/admin-portal' : '/dashboard');
+      navigate('/dashboard');
     } catch (err) {
       // Error is handled in context (alerted)
     }

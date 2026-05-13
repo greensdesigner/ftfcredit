@@ -24,7 +24,7 @@ export function PublicRoute() {
   if (loading) return null;
 
   if (user) {
-    return <Navigate to={user.role === UserRole.ADMIN ? '/admin' : '/dashboard'} replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;
