@@ -12,20 +12,25 @@ export default function AdminGate() {
   const { user } = useAuth();
   const [passcode, setPasscode] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const [error, setError] = useState(false);
+  const [errorType, setErrorType] = useState<'none' | 'invalid_code' | 'unauthorized'>('none');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorType('none');
     
-    // Simulate a small delay for "Security Verification" feel
     setTimeout(() => {
       if (passcode === SECRET_CODE) {
-        setIsAuthorized(true);
-        setError(false);
+        if (user?.role === UserRole.ADMIN) {
+          setIsAuthorized(true);
+          setErrorType('none');
+        } else {
+          setErrorType('unauthorized');
+          setPasscode('');
+        }
       } else {
-        setError(true);
+        setErrorType('invalid_code');
         setPasscode('');
       }
       setLoading(false);
@@ -80,22 +85,29 @@ export default function AdminGate() {
                 value={passcode}
                 onChange={(e) => {
                   setPasscode(e.target.value);
-                  setError(false);
+                  setErrorType('none');
                 }}
                 className="w-full bg-neutral-800/50 border border-neutral-700/50 rounded-2xl py-5 pl-14 pr-4 text-white text-center font-mono text-xl tracking-[0.5em] placeholder:tracking-normal placeholder:text-neutral-700 placeholder:text-sm focus:outline-none focus:border-indigo-500/50 focus:bg-neutral-800 transition-all"
               />
             </div>
 
             <AnimatePresence>
-              {error && (
+              {errorType !== 'none' && (
                 <motion.div 
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="flex items-center gap-2 text-red-400 text-[10px] font-black justify-center tracking-widest uppercase"
+                  className="flex flex-col items-center gap-2 text-red-400 text-[10px] font-black justify-center tracking-widest uppercase text-center"
                 >
-                  <AlertCircle size={14} />
-                  Access Denied. Signature Mismatch.
+                  <div className="flex items-center gap-2">
+                    <AlertCircle size={14} />
+                    {errorType === 'invalid_code' ? 'Access Denied. Signature Mismatch.' : 'Unauthorized Identity Detected.'}
+                  </div>
+                  {errorType === 'unauthorized' && (
+                    <span className="text-neutral-500 tracking-normal normal-case font-medium mt-1">
+                      You are not logged in as an Admin. Code cannot bypass identity check.
+                    </span>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
