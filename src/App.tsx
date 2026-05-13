@@ -16,13 +16,14 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public Routes */}
+          {/* Public Authentication Routes */}
           <Route element={<PublicRoute />}>
+            <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
           </Route>
 
-          {/* Protected Client Routes */}
+          {/* Protected Client Dashboard Routes */}
           <Route element={<ProtectedRoute allowedRoles={[UserRole.CLIENT]} />}>
             <Route path="/dashboard" element={<ClientDashboard />} />
             <Route path="/dashboard/billing" element={<BillingPage />} />
@@ -30,17 +31,17 @@ export default function App() {
             <Route path="/onboarding" element={<OnboardingWizard />} />
           </Route>
 
-          {/* Admin Routes */}
+          {/* Admin Entry Gate */}
           <Route path="/admin-portal" element={<AdminGate />} />
           
+          {/* Protected Admin Sub-routes */}
           <Route element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]} />}>
             <Route path="/admin-portal/clients" element={<DashboardLayout><div>Clients List</div></DashboardLayout>} />
             <Route path="/admin-portal/payments" element={<DashboardLayout><div>Payments History</div></DashboardLayout>} />
             <Route path="/admin-portal/settings" element={<DashboardLayout><div>Settings</div></DashboardLayout>} />
           </Route>
 
-          {/* Fallback */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          {/* Fallback for everything else */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
