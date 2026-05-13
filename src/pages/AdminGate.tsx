@@ -11,7 +11,9 @@ const SECRET_CODE = "FTF-8899"; // Your Secret Access Code
 export default function AdminGate() {
   const { user } = useAuth();
   const [passcode, setPasscode] = useState('');
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(() => {
+    return sessionStorage.getItem('admin_authorized') === 'true';
+  });
   const [errorType, setErrorType] = useState<'none' | 'invalid_code' | 'unauthorized'>('none');
   const [loading, setLoading] = useState(false);
 
@@ -23,6 +25,7 @@ export default function AdminGate() {
     setTimeout(() => {
       if (passcode === SECRET_CODE) {
         setIsAuthorized(true);
+        sessionStorage.setItem('admin_authorized', 'true');
         setErrorType('none');
       } else {
         setErrorType('invalid_code');

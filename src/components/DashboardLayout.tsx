@@ -12,6 +12,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const handleLogout = async () => {
     await logout();
+    sessionStorage.removeItem('admin_authorized');
     navigate('/login');
   };
 
