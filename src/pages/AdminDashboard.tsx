@@ -31,23 +31,14 @@ export default function AdminDashboard() {
     try {
       const response = await fetch('/api/admin/clients');
       const data = await response.json();
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data)) {
         setClients(data);
       } else {
-        // Mock data to keep the dashboard usable if no DB is connected
-        setClients([
-          { uid: '1', fullName: 'Sarah Johnson', email: 'sarah.j@example.com', phone: '555-0101', avatarUrl: '', role: 'client', onboardingStep: 1, plan_name: 'Credit Repair', sub_status: 'active', amount: 199, next_billing_date: '2024-06-01' },
-          { uid: '2', fullName: 'Michael Chen', email: 'm.chen@example.com', phone: '555-0102', avatarUrl: '', role: 'client', onboardingStep: 3, plan_name: 'Business Funding', sub_status: 'active', amount: 499, next_billing_date: '2024-06-15' },
-          { uid: '3', fullName: 'Jessica Williams', email: 'jess.w@example.com', phone: '555-0103', avatarUrl: '', role: 'client', onboardingStep: 5, plan_name: 'Credit Repair', sub_status: 'active', amount: 199, next_billing_date: '2024-05-20' },
-          { uid: '4', fullName: 'David Miller', email: 'd.miller@example.com', phone: '555-0104', avatarUrl: '', role: 'client', onboardingStep: 2, plan_name: 'Credit Repair', sub_status: 'failed', amount: 199, next_billing_date: '2024-04-10' },
-        ]);
+        setClients([]);
       }
     } catch (error) {
       console.error("Failed to fetch clients:", error);
-      // Fallback on error
-      setClients([
-        { uid: '1', fullName: 'Sarah Johnson', email: 'sarah.j@example.com', phone: '555-0101', avatarUrl: '', role: 'client', onboardingStep: 1, plan_name: 'Credit Repair', sub_status: 'active', amount: 199, next_billing_date: '2024-06-01' },
-      ]);
+      setClients([]);
     } finally {
       setLoading(false);
     }

@@ -111,9 +111,6 @@ async function startServer() {
             } catch (innerE) {}
           }
 
-          // Bootstrap admin role for owner
-          await pool.query("UPDATE users SET role = 'admin' WHERE email = 'GreenlabTechnology.Ceo@gmail.com'");
-
           // Helper to add password if it doesn't exist (migrations)
           try {
             await pool.query("ALTER TABLE users ADD COLUMN password VARCHAR(255)");
@@ -214,8 +211,7 @@ async function startServer() {
       }
 
       const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
-      const isAdminEmail = email.toLowerCase() === 'greenlabtechnology.ceo@gmail.com';
-      const assignedRole = isAdminEmail ? 'admin' : (role || 'client');
+      const assignedRole = role || 'client';
 
       await pool.query(
         "INSERT INTO users (uid, email, fullName, password, role, phone) VALUES (?, ?, ?, ?, ?, ?)",
@@ -310,9 +306,9 @@ async function startServer() {
     try {
       const [clients]: any = await pool.query(`
         SELECT u.uid, u.email, u.fullName, u.phone, u.avatarUrl, u.role, u.onboardingStep,
-               s.plan_name, s.status as sub_status, s.amount, s.next_billing_date
+               s.planName as plan_name, s.status as sub_status, s.amount, s.nextBillingDate as next_billing_date
         FROM users u
-        LEFT JOIN subscriptions s ON u.uid = s.user_uid
+        LEFT JOIN subscriptions s ON u.uid = s.userId
         WHERE u.role = 'client'
         ORDER BY u.uid DESC
       `);
