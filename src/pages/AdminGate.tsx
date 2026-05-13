@@ -22,13 +22,8 @@ export default function AdminGate() {
     
     setTimeout(() => {
       if (passcode === SECRET_CODE) {
-        if (user?.role === UserRole.ADMIN) {
-          setIsAuthorized(true);
-          setErrorType('none');
-        } else {
-          setErrorType('unauthorized');
-          setPasscode('');
-        }
+        setIsAuthorized(true);
+        setErrorType('none');
       } else {
         setErrorType('invalid_code');
         setPasscode('');
@@ -37,8 +32,8 @@ export default function AdminGate() {
     }, 800);
   };
 
-  // If already authorized and user is an admin, show dashboard
-  if (isAuthorized && user?.role === UserRole.ADMIN) {
+  // If authorized via code, show dashboard
+  if (isAuthorized) {
     return <AdminDashboard />;
   }
 
@@ -60,19 +55,6 @@ export default function AdminGate() {
             <h1 className="text-3xl font-black text-white tracking-tighter">Command Center</h1>
             <p className="text-xs text-neutral-500 font-bold tracking-widest leading-relaxed">Enter specialized access code to bypass standard encryption.</p>
           </div>
-
-          {/* User Status Check */}
-          {(!user || user.role !== UserRole.ADMIN) && (
-            <div className="w-full p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-4 text-left">
-              <div className="size-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-500">
-                <UserX size={20} />
-              </div>
-              <div className="flex-1">
-                <p className="text-[10px] font-black text-amber-500 uppercase tracking-wider">Identity Check Failed</p>
-                <Link to="/login" className="text-xs font-bold text-white underline underline-offset-4 decoration-amber-500/50 hover:decoration-amber-500 transition-all">Login as Admin Required</Link>
-              </div>
-            </div>
-          )}
 
           <form onSubmit={handleSubmit} className="w-full space-y-4">
             <div className="relative">
@@ -101,13 +83,8 @@ export default function AdminGate() {
                 >
                   <div className="flex items-center gap-2">
                     <AlertCircle size={14} />
-                    {errorType === 'invalid_code' ? 'Access Denied. Signature Mismatch.' : 'Unauthorized Identity Detected.'}
+                    Access Denied. Signature Mismatch.
                   </div>
-                  {errorType === 'unauthorized' && (
-                    <span className="text-neutral-500 tracking-normal normal-case font-medium mt-1">
-                      You are not logged in as an Admin. Code cannot bypass identity check.
-                    </span>
-                  )}
                 </motion.div>
               )}
             </AnimatePresence>
