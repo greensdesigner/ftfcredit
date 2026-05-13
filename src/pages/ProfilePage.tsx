@@ -1,17 +1,19 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { User, Mail, Phone, ShieldCheck, Camera, Save, X, Loader2 } from 'lucide-react';
+import { User, Mail, Phone, ShieldCheck, Camera, Save, X, Loader2, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [profile, setProfile] = useState({
     fullName: 'John Doe',
     email: 'john@example.com',
     phone: '+1 (555) 123-4567',
-    avatar: 'JD',
+    avatar: 'JD', // Initial placeholder
+    avatarUrl: '', // To store selected image URL
     address: '123 Wall Street, NY',
     timezone: 'Eastern Time (ET)',
   });
@@ -24,6 +26,23 @@ export default function ProfilePage() {
       setIsEditing(false);
       alert("Profile updated successfully!");
     }, 1200);
+  };
+
+  const handleImageClick = () => {
+    if (isEditing) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProfile({ ...profile, avatarUrl: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   return (
@@ -65,14 +84,31 @@ export default function ProfilePage() {
           {/* Header Banner */}
           <div className="h-32 bg-neutral-900 relative">
             <div className={`absolute -bottom-12 left-8 p-1 rounded-[24px] bg-white shadow-xl`}>
-              <div className="size-24 rounded-[20px] bg-neutral-100 text-neutral-900 flex items-center justify-center font-display text-3xl font-bold border-4 border-white relative overflow-hidden group">
-                {profile.avatar}
-                {isEditing && (
-                  <button className="absolute inset-0 bg-black/40 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Camera size={24} />
-                  </button>
+              <button 
+                onClick={handleImageClick}
+                disabled={!isEditing}
+                className={`group relative size-24 rounded-[20px] bg-neutral-100 flex items-center justify-center border-4 border-white overflow-hidden transition-all ${isEditing ? "cursor-pointer hover:border-neutral-900" : "cursor-default"}`}
+              >
+                {profile.avatarUrl ? (
+                  <img src={profile.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="font-display text-3xl font-bold text-neutral-900">{profile.avatar}</span>
                 )}
-              </div>
+                
+                {isEditing && (
+                  <div className="absolute inset-0 bg-black/40 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera size={20} />
+                    <span className="text-[10px] font-bold mt-1 uppercase tracking-tighter">Change</span>
+                  </div>
+                )}
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleImageChange} 
+                  accept="image/*" 
+                  className="hidden" 
+                />
+              </button>
             </div>
           </div>
 
