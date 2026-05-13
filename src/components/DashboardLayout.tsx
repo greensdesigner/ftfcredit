@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, Bell } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -9,6 +9,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { user, logout } = useAuth();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleLogout = async () => {
     await logout();
@@ -16,12 +17,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     navigate('/login');
   };
 
-  const menuItems = user?.role === UserRole.ADMIN 
+  const currentPath = location.pathname + location.search;
+
+  const isAdminAuthorized = sessionStorage.getItem('admin_authorized') === 'true';
+
+  const menuItems = (user?.role === UserRole.ADMIN || isAdminAuthorized)
     ? [
-        { icon: LayoutDashboard, label: 'Overview', path: '/admin-portal' },
-        { icon: Users, label: 'Clients', path: '/admin-portal/clients' },
-        { icon: CreditCard, label: 'Payments', path: '/admin-portal/payments' },
-        { icon: Settings, label: 'Settings', path: '/admin-portal/settings' },
+        { icon: LayoutDashboard, label: 'Overview', path: '/admin-portal?tab=overview' },
+        { icon: Users, label: 'Clients', path: '/admin-portal?tab=clients' },
+        { icon: Settings, label: 'Settings', path: '/admin-portal?tab=settings' },
       ]
     : [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -41,16 +45,24 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </Link>
           </div>
           <nav className="flex-1 space-y-1 p-4">
-            {menuItems.map((item) => (
-              <Link
-                key={item.label}
-                to={item.path}
-                className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
-              >
-                <item.icon size={20} />
-                {item.label}
-              </Link>
-            ))}
+            {menuItems.map((item) => {
+              const isActive = currentPath === item.path || (item.path === '/admin-portal?tab=overview' && currentPath === '/admin-portal');
+              return (
+                <Link
+                  key={item.label}
+                  to={item.path}
+                  className={cn(
+                    "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
+                    isActive 
+                      ? "bg-neutral-900 text-white shadow-lg" 
+                      : "text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+                  )}
+                >
+                  <item.icon size={20} />
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
           <div className="border-t border-neutral-100 p-4">
             <button
@@ -76,17 +88,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </button>
               </div>
               <nav className="flex-1 space-y-1 p-4">
-                {menuItems.map((item) => (
-                  <Link
-                    key={item.label}
-                    to={item.path}
-                    onClick={() => setSidebarOpen(false)}
-                    className="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-neutral-600 hover:bg-neutral-50"
-                  >
-                    <item.icon size={20} />
-                    {item.label}
-                  </Link>
-                ))}
+                {menuItems.map((item) => {
+                  const isActive = currentPath === item.path || (item.path === '/admin-portal?tab=overview' && currentPath === '/admin-portal');
+                  return (
+                    <Link
+                      key={item.label}
+                      to={item.path}
+                      onClick={() => setSidebarOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-colors",
+                        isActive 
+                          ? "bg-neutral-900 text-white shadow-lg" 
+                          : "text-neutral-600 hover:bg-neutral-50"
+                      )}
+                    >
+                      <item.icon size={20} />
+                      {item.label}
+                    </Link>
+                  );
+                })}
               </nav>
               <div className="border-t border-neutral-100 p-4">
                 <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50">

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { Users, CreditCard, AlertCircle, Search, Filter, MoreHorizontal, ArrowUpRight, ArrowDownRight, CheckCircle2, RotateCcw, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -22,6 +23,15 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'settings'>('overview');
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'clients' || tab === 'settings' || tab === 'overview') {
+      setActiveTab(tab as any);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchClients();
@@ -102,138 +112,171 @@ export default function AdminDashboard() {
           </button>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => (
-            <div key={stat.label} className="rounded-3xl border border-neutral-100 bg-white p-6 shadow-sm">
-              <p className="text-sm font-semibold text-neutral-400 uppercase tracking-wider">{stat.label}</p>
-              <div className="mt-3 flex items-baseline justify-between transition-all">
-                <p className="text-2xl font-bold text-neutral-900 font-display">{stat.value}</p>
-                <div className={cn(
-                  "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold",
-                  stat.up ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
-                )}>
-                  {stat.up ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-                  {stat.trend}
+        {/* Search Params controlled sections */}
+        {activeTab === 'overview' && (
+          <div className="space-y-8 animate-in fade-in duration-500">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+              {stats.map((stat) => (
+                <div key={stat.label} className="rounded-3xl border border-neutral-100 bg-white p-6 shadow-sm">
+                  <p className="text-sm font-semibold text-neutral-400 uppercase tracking-wider">{stat.label}</p>
+                  <div className="mt-3 flex items-baseline justify-between transition-all">
+                    <p className="text-2xl font-bold text-neutral-900 font-display">{stat.value}</p>
+                    <div className={cn(
+                      "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold",
+                      stat.up ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
+                    )}>
+                      {stat.up ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
+                      {stat.trend}
+                    </div>
+                  </div>
                 </div>
+              ))}
+            </div>
+
+            {/* Alerts Panel */}
+            <div className="rounded-3xl bg-amber-50 border border-amber-100 p-6">
+               <div className="flex items-center gap-3 text-amber-900 mb-4">
+                  <AlertCircle size={24} />
+                  <h3 className="font-bold text-lg">Daily Operations</h3>
+               </div>
+               <p className="text-sm text-amber-800 mb-4">There are {clients.filter(c => c.onboardingStep === 1).length} new clients waiting for initial analysis. Batch processing is recommended.</p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'clients' && (
+          <div className="animate-in fade-in duration-500">
+            {/* Client Table */}
+            <div className="rounded-3xl border border-neutral-100 bg-white shadow-sm overflow-hidden min-h-[400px]">
+              <div className="border-b border-neutral-100 p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                 <h3 className="font-display text-xl font-bold text-neutral-900">Client Management</h3>
+                 <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
+                      <input 
+                        type="text" 
+                        placeholder="Search name or email..." 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="rounded-xl border border-neutral-200 bg-neutral-50 pl-9 pr-4 py-2 text-xs outline-none focus:border-neutral-900 w-64" 
+                      />
+                    </div>
+                    <button className="rounded-xl border border-neutral-200 p-2 text-neutral-500 hover:bg-neutral-50"><Filter size={16} /></button>
+                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Alerts Panel */}
-        <div className="rounded-3xl bg-amber-50 border border-amber-100 p-6">
-           <div className="flex items-center gap-3 text-amber-900 mb-4">
-              <AlertCircle size={24} />
-              <h3 className="font-bold text-lg">Daily Operations</h3>
-           </div>
-           <p className="text-sm text-amber-800 mb-4">There are {clients.filter(c => c.onboardingStep === 1).length} new clients waiting for initial analysis. Batch processing is recommended.</p>
-        </div>
-
-        {/* Client Table */}
-        <div className="rounded-3xl border border-neutral-100 bg-white shadow-sm overflow-hidden min-h-[400px]">
-          <div className="border-b border-neutral-100 p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-             <h3 className="font-display text-xl font-bold text-neutral-900">Client Management</h3>
-             <div className="flex items-center gap-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
-                  <input 
-                    type="text" 
-                    placeholder="Search name or email..." 
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="rounded-xl border border-neutral-200 bg-neutral-50 pl-9 pr-4 py-2 text-xs outline-none focus:border-neutral-900 w-64" 
-                  />
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="bg-neutral-50/50 text-xs font-bold uppercase tracking-wider text-neutral-400">
+                      <th className="px-6 py-4">Client Info</th>
+                      <th className="px-6 py-4">Active Plan</th>
+                      <th className="px-6 py-4">Subscription</th>
+                      <th className="px-6 py-4">Service Status</th>
+                      <th className="px-6 py-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100 text-sm">
+                    {loading ? (
+                      <tr>
+                        <td colSpan={5} className="px-6 py-20 text-center">
+                          <div className="flex flex-col items-center gap-2">
+                            <Loader2 className="animate-spin text-neutral-900" size={32} />
+                            <p className="text-neutral-500 font-bold">Fetching latest data...</p>
+                          </div>
+                        </td>
+                      </tr>
+                    ) : filteredClients.map((client) => (
+                      <tr key={client.uid} className="group hover:bg-neutral-50/50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                             <div className="size-10 rounded-xl bg-neutral-100 flex items-center justify-center border border-neutral-200 overflow-hidden shadow-sm">
+                                {client.avatarUrl ? (
+                                  <img src={client.avatarUrl} className="w-full h-full object-cover" />
+                                ) : (
+                                  <span className="text-neutral-900 font-display font-bold uppercase text-xs">
+                                    {client.fullName.split(' ').map(n => n[0]).join('')}
+                                  </span>
+                                )}
+                             </div>
+                             <div className="flex flex-col">
+                                <span className="font-bold text-neutral-900">{client.fullName}</span>
+                                <span className="text-xs text-neutral-500">{client.email}</span>
+                             </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <p className="font-bold text-neutral-900">{client.plan_name || 'No Active Plan'}</p>
+                          {client.amount && <p className="text-xs text-neutral-500">${client.amount}/mo</p>}
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={cn(
+                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tight",
+                            client.sub_status === 'active' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                            "bg-red-50 text-red-600 border border-red-100"
+                          )}>
+                            {client.sub_status || 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <select 
+                              value={client.onboardingStep}
+                              onChange={(e) => updateClientProgress(client.uid, parseInt(e.target.value))}
+                              disabled={updatingId === client.uid}
+                              className="bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1 text-xs font-bold text-neutral-900 focus:border-neutral-900 outline-none disabled:opacity-50"
+                            >
+                              <option value={1}>1. Analysis</option>
+                              <option value={2}>2. Disputing</option>
+                              <option value={3}>3. Processing</option>
+                              <option value={4}>4. Final Check</option>
+                              <option value={5}>5. Completed</option>
+                            </select>
+                            {updatingId === client.uid && <Loader2 size={12} className="animate-spin text-neutral-400" />}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-right">
+                           <button className="text-neutral-400 hover:text-neutral-900 p-2 rounded-lg hover:bg-neutral-100 transition-colors">
+                              <MoreHorizontal size={20} />
+                           </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {!loading && filteredClients.length === 0 && (
+                <div className="p-12 text-center text-neutral-500">
+                   No clients found matching your search.
                 </div>
-                <button className="rounded-xl border border-neutral-200 p-2 text-neutral-500 hover:bg-neutral-50"><Filter size={16} /></button>
-             </div>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-neutral-50/50 text-xs font-bold uppercase tracking-wider text-neutral-400">
-                  <th className="px-6 py-4">Client Info</th>
-                  <th className="px-6 py-4">Active Plan</th>
-                  <th className="px-6 py-4">Subscription</th>
-                  <th className="px-6 py-4">Service Status</th>
-                  <th className="px-6 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100 text-sm">
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-20 text-center">
-                      <div className="flex flex-col items-center gap-2">
-                        <Loader2 className="animate-spin text-neutral-900" size={32} />
-                        <p className="text-neutral-500 font-bold">Fetching latest data...</p>
-                      </div>
-                    </td>
-                  </tr>
-                ) : filteredClients.map((client) => (
-                  <tr key={client.uid} className="group hover:bg-neutral-50/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                         <div className="size-10 rounded-xl bg-neutral-100 flex items-center justify-center border border-neutral-200 overflow-hidden shadow-sm">
-                            {client.avatarUrl ? (
-                              <img src={client.avatarUrl} className="w-full h-full object-cover" />
-                            ) : (
-                              <span className="text-neutral-900 font-display font-bold uppercase text-xs">
-                                {client.fullName.split(' ').map(n => n[0]).join('')}
-                              </span>
-                            )}
-                         </div>
-                         <div className="flex flex-col">
-                            <span className="font-bold text-neutral-900">{client.fullName}</span>
-                            <span className="text-xs text-neutral-500">{client.email}</span>
-                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="font-bold text-neutral-900">{client.plan_name || 'No Active Plan'}</p>
-                      {client.amount && <p className="text-xs text-neutral-500">${client.amount}/mo</p>}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className={cn(
-                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tight",
-                        client.sub_status === 'active' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
-                        "bg-red-50 text-red-600 border border-red-100"
-                      )}>
-                        {client.sub_status || 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <select 
-                          value={client.onboardingStep}
-                          onChange={(e) => updateClientProgress(client.uid, parseInt(e.target.value))}
-                          disabled={updatingId === client.uid}
-                          className="bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1 text-xs font-bold text-neutral-900 focus:border-neutral-900 outline-none disabled:opacity-50"
-                        >
-                          <option value={1}>1. Analysis</option>
-                          <option value={2}>2. Disputing</option>
-                          <option value={3}>3. Processing</option>
-                          <option value={4}>4. Final Check</option>
-                          <option value={5}>5. Completed</option>
-                        </select>
-                        {updatingId === client.uid && <Loader2 size={12} className="animate-spin text-neutral-400" />}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-right">
-                       <button className="text-neutral-400 hover:text-neutral-900 p-2 rounded-lg hover:bg-neutral-100 transition-colors">
-                          <MoreHorizontal size={20} />
-                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {!loading && filteredClients.length === 0 && (
-            <div className="p-12 text-center text-neutral-500">
-               No clients found matching your search.
+              )}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="bg-white rounded-3xl border border-neutral-100 p-8 shadow-sm animate-in fade-in duration-500">
+            <h3 className="text-xl font-bold mb-4 font-display">Administrative Settings</h3>
+            <div className="space-y-6">
+               <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
+                 <div>
+                   <p className="font-bold">System Maintenance Mode</p>
+                   <p className="text-xs text-neutral-500">Prevent client access during updates.</p>
+                 </div>
+                 <div className="h-6 w-11 bg-neutral-200 rounded-full cursor-not-allowed"></div>
+               </div>
+               <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
+                 <div>
+                   <p className="font-bold">Automated Email Alerts</p>
+                   <p className="text-xs text-neutral-500">Notify clients on progress updates automatically.</p>
+                 </div>
+                 <div className="h-6 w-11 bg-neutral-900 rounded-full cursor-not-allowed relative">
+                   <div className="absolute right-1 top-1 size-4 bg-white rounded-full"></div>
+                 </div>
+               </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );
