@@ -123,14 +123,25 @@ async function startServer() {
             CREATE TABLE IF NOT EXISTS subscriptions (
               id INT AUTO_INCREMENT PRIMARY KEY,
               userId VARCHAR(128) NOT NULL,
-              planName ENUM('Credit Repair', 'Business Funding') NOT NULL,
+              planName VARCHAR(255) NOT NULL,
               status ENUM('active', 'pending', 'failed', 'paused', 'canceled') DEFAULT 'pending',
               amount DECIMAL(10, 2) NOT NULL,
               nextBillingDate DATE,
               createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              UNIQUE KEY unique_user (userId),
               FOREIGN KEY (userId) REFERENCES users(uid) ON DELETE CASCADE
             )
           `);
+
+          // Migrating to VARCHAR if it was ENUM
+          try {
+            await pool.query("ALTER TABLE subscriptions MODIFY COLUMN planName VARCHAR(255) NOT NULL");
+          } catch (e) {}
+
+          // Add unique key if it doesn't exist
+          try {
+             await pool.query("ALTER TABLE subscriptions ADD UNIQUE KEY unique_user (userId)");
+          } catch (e) {}
 
           // Payments table
           await pool.query(`
@@ -230,7 +241,13 @@ async function startServer() {
     if (!pool) return res.status(500).json({ error: "Database not configured" });
     const { email, password } = req.body;
     try {
-      const [rows]: any = await pool.query("SELECT * FROM users WHERE email = ?", [email]);
+      const [rows]: any = await pool.query(`
+        SELECT u.*, s.planName as plan_name, s.status as sub_status, s.amount as sub_amount
+        FROM users u
+        LEFT JOIN subscriptions s ON u.uid = s.userId
+        WHERE u.email = ?
+      `, [email]);
+
       if (rows.length === 0) {
         return res.status(401).json({ error: "Invalid email or password" });
       }
@@ -261,7 +278,13 @@ async function startServer() {
   app.get("/api/users/:uid", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured" });
     try {
-      const [rows]: any = await pool.query("SELECT * FROM users WHERE uid = ?", [req.params.uid]);
+      const [rows]: any = await pool.query(`
+        SELECT u.*, s.planName as plan_name, s.status as sub_status, s.amount as sub_amount
+        FROM users u
+        LEFT JOIN subscriptions s ON u.uid = s.userId
+        WHERE u.uid = ?
+      `, [req.params.uid]);
+
       if (rows.length === 0) return res.status(404).json({ error: "User not found" });
       res.json(rows[0]);
     } catch (error: any) {
@@ -334,20 +357,25 @@ async function startServer() {
     }
   });
 
-  // Create Subscription
+  // Create or Update Subscription
   app.post("/api/subscriptions", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured" });
-    const { userId, planName, amount } = req.body;
+    const { userId, planName, amount, status } = req.body;
     try {
       const nextMonth = new Date();
       nextMonth.setMonth(nextMonth.getMonth() + 1);
       
+      const subStatus = status || 'active';
+
       await pool.query(
-        "INSERT INTO subscriptions (userId, planName, amount, status, nextBillingDate) VALUES (?, ?, ?, 'active', ?)",
-        [userId, planName, amount, nextMonth]
+        `INSERT INTO subscriptions (userId, planName, amount, status, nextBillingDate) 
+         VALUES (?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE planName = VALUES(planName), amount = VALUES(amount), status = VALUES(status), nextBillingDate = VALUES(nextBillingDate)`,
+        [userId, planName, amount, subStatus, nextMonth]
       );
       res.json({ status: "success" });
     } catch (error: any) {
+      console.error("Subscription Error:", error.message);
       res.status(500).json({ error: error.message });
     }
   });

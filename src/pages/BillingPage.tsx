@@ -1,14 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { CreditCard, Download, ExternalLink, Calendar, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
+import { useAuth } from '../context/AuthContext';
 
 export default function BillingPage() {
-  const [currentPlan, setCurrentPlan] = useState('Credit Repair Subscription');
-  const [amount, setAmount] = useState(149);
+  const { user, updateProfile } = useAuth();
+  const [currentPlan, setCurrentPlan] = useState(user?.plan_name || 'Credit Repair Subscription');
+  const [amount, setAmount] = useState(user?.sub_amount || 149);
   const [paymentMethod, setPaymentMethod] = useState('Chase •••• 1234 (ACH)');
-  const [status, setStatus] = useState<'active' | 'cancelled' | 'pending'>('active');
+  const [status, setStatus] = useState<'active' | 'cancelled' | 'pending'>(user?.sub_status as any || 'active');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
 
@@ -18,26 +20,77 @@ export default function BillingPage() {
     { id: 'FTF-0008', date: 'Feb 24, 2026', amount: '$149.00', status: 'paid' },
   ]);
 
-  const handleCancelSubscription = () => {
-    if (window.confirm("Are you sure you want to cancel? Your credit repair progress will be paused.")) {
-      setIsProcessing(true);
-      setTimeout(() => {
-        setStatus('cancelled');
-        setIsProcessing(false);
-        alert("Subscription cancelled successfully.");
-      }, 1500);
+  useEffect(() => {
+    if (user) {
+      if (user.plan_name) setCurrentPlan(user.plan_name);
+      if (user.sub_amount) setAmount(user.sub_amount);
+      if (user.sub_status) setStatus(user.sub_status as any);
+    }
+  }, [user]);
+
+  const updateSubscriptionInDB = async (newPlan: string, newAmount: number, newStatus: string) => {
+    if (!user) return;
+    try {
+      const response = await fetch('/api/subscriptions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.uid,
+          planName: newPlan,
+          amount: newAmount,
+          status: newStatus
+        })
+      });
+
+      if (!response.ok) throw new Error("Failed to update subscription");
+      
+      // Update local state and context
+      await updateProfile({
+        plan_name: newPlan,
+        sub_amount: newAmount,
+        sub_status: newStatus as any
+      });
+      
+      return true;
+    } catch (error) {
+      console.error(error);
+      alert("Billing update failed. Please try again.");
+      return false;
     }
   };
 
-  const handlePlanChange = (newPlan: string, newAmount: number) => {
+  const handleCancelSubscription = async () => {
+    if (window.confirm("Are you sure you want to cancel? Your credit repair progress will be paused.")) {
+      setIsProcessing(true);
+      const success = await updateSubscriptionInDB(currentPlan, amount, 'canceled');
+      if (success) {
+        setStatus('canceled' as any);
+        alert("Subscription cancelled successfully.");
+      }
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePlanChange = async (newPlan: string, newAmount: number) => {
     setIsProcessing(true);
     setShowPlanModal(false);
-    setTimeout(() => {
+    const success = await updateSubscriptionInDB(newPlan, newAmount, 'active');
+    if (success) {
       setCurrentPlan(newPlan);
       setAmount(newAmount);
-      setIsProcessing(false);
+      setStatus('active');
       alert(`Plan successfully upgraded to ${newPlan}`);
-    }, 1500);
+    }
+    setIsProcessing(false);
+  };
+
+  const handleReactivate = async () => {
+    setIsProcessing(true);
+    const success = await updateSubscriptionInDB(currentPlan, amount, 'active');
+    if (success) {
+      setStatus('active');
+    }
+    setIsProcessing(false);
   };
 
   const downloadReceipt = (invoiceId: string) => {
@@ -122,7 +175,7 @@ export default function BillingPage() {
                      </button>
                    ) : (
                      <button 
-                      onClick={() => setStatus('active')}
+                      onClick={handleReactivate}
                       className="rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-2.5 text-sm font-bold text-emerald-600 transition-all hover:bg-emerald-100"
                      >
                       Reactive Account

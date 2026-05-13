@@ -21,7 +21,7 @@ export default function ClientDashboard() {
   ];
 
   const stats = [
-    { label: 'Plan Status', value: user?.plaidConnected ? 'Premium' : 'Standard', sub: user?.achAuthorized ? 'Auto-pay Enabled' : 'Payment Required', icon: CreditCard, color: 'bg-indigo-600' },
+    { label: 'Plan Status', value: user?.plan_name || 'Standard', sub: user?.sub_status === 'active' ? 'Account Active' : 'Payment Required', icon: CreditCard, color: 'bg-indigo-600' },
     { label: 'Service Stage', value: user?.onboardingStep ? `Stage ${user.onboardingStep}` : 'Stage 1', sub: 'Active Processing', icon: TrendingUp, color: 'bg-emerald-600' },
     { label: 'Identity', value: 'Verified', sub: 'A-Rank Secure', icon: CheckCircle2, color: 'bg-blue-600' },
   ];

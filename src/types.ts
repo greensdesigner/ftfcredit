@@ -14,6 +14,10 @@ export interface UserProfile {
   plaidConnected: boolean;
   achAuthorized: boolean;
   createdAt: number;
+  // Join fields
+  plan_name?: string;
+  sub_status?: 'active' | 'pending' | 'failed' | 'paused' | 'canceled';
+  sub_amount?: number;
 }
 
 export enum SubscriptionPlan {
