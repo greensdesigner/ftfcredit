@@ -78,12 +78,11 @@ export default function AdminGate() {
                 type="password"
                 placeholder="Enter Code"
                 value={passcode}
-                disabled={!user || user.role !== UserRole.ADMIN}
                 onChange={(e) => {
                   setPasscode(e.target.value);
                   setError(false);
                 }}
-                className="w-full bg-neutral-800/50 border border-neutral-700/50 rounded-2xl py-5 pl-14 pr-4 text-white text-center font-mono text-xl tracking-[0.5em] placeholder:tracking-normal placeholder:text-neutral-700 placeholder:text-sm focus:outline-none focus:border-indigo-500/50 focus:bg-neutral-800 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                className="w-full bg-neutral-800/50 border border-neutral-700/50 rounded-2xl py-5 pl-14 pr-4 text-white text-center font-mono text-xl tracking-[0.5em] placeholder:tracking-normal placeholder:text-neutral-700 placeholder:text-sm focus:outline-none focus:border-indigo-500/50 focus:bg-neutral-800 transition-all"
               />
             </div>
 
@@ -102,7 +101,7 @@ export default function AdminGate() {
             </AnimatePresence>
 
             <button 
-              disabled={loading || !passcode || !user || user.role !== UserRole.ADMIN}
+              disabled={loading || !passcode}
               className="w-full bg-white hover:bg-neutral-100 disabled:opacity-30 text-neutral-950 font-black py-5 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl shadow-white/5 group text-sm uppercase tracking-widest"
             >
               {loading ? (
