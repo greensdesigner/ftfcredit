@@ -9,6 +9,7 @@ export interface UserProfile {
   fullName: string;
   role: UserRole;
   phone?: string;
+  avatarUrl?: string;
   onboardingStep: number;
   plaidConnected: boolean;
   achAuthorized: boolean;

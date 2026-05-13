@@ -7,6 +7,7 @@ interface AuthContextType {
   login: (email: string, role: UserRole) => Promise<void>;
   logout: () => Promise<void>;
   signup: (email: string, fullName: string, phone: string) => Promise<void>;
+  updateProfile: (data: Partial<UserProfile>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -78,6 +79,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw error; // Re-throw to prevent navigation in the page
     }
     setLoading(false);
+  };
+
+  const updateProfile = async (data: Partial<UserProfile>) => {
+    if (!user) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/users/${user.uid}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...user,
+          ...data
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Update failed on server');
+      }
+
+      const updatedUser = { ...user, ...data };
+      setUser(updatedUser);
+      localStorage.setItem('ftf_user', JSON.stringify(updatedUser));
+    } catch (error: any) {
+      console.error("Update profile failed:", error);
+      alert(`Update failed: ${error.message}`);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const logout = async () => {

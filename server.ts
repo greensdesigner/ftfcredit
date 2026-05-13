@@ -91,12 +91,20 @@ async function startServer() {
               fullName VARCHAR(255) NOT NULL,
               role ENUM('client', 'admin') DEFAULT 'client',
               phone VARCHAR(20),
+              avatarUrl TEXT,
               onboardingStep INT DEFAULT 1,
               plaidConnected BOOLEAN DEFAULT FALSE,
               achAuthorized BOOLEAN DEFAULT FALSE,
               createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
           `);
+
+          // Helper to add avatarUrl if it doesn't exist (migrations)
+          try {
+            await pool.query("ALTER TABLE users ADD COLUMN avatarUrl TEXT");
+          } catch (e) {
+            // Probably already exists
+          }
 
           // Subscriptions table
           await pool.query(`
@@ -210,6 +218,22 @@ async function startServer() {
       if (rows.length === 0) return res.status(404).json({ error: "User not found" });
       res.json(rows[0]);
     } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Update User Profile
+  app.patch("/api/users/:uid", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { fullName, phone, avatarUrl, email } = req.body;
+    try {
+      await pool.query(
+        "UPDATE users SET fullName = ?, phone = ?, avatarUrl = ?, email = ? WHERE uid = ?",
+        [fullName, phone, avatarUrl, email, req.params.uid]
+      );
+      res.json({ status: "success", message: "Profile updated" });
+    } catch (error: any) {
+      console.error("Update Profile Error:", error.message);
       res.status(500).json({ error: error.message });
     }
   });

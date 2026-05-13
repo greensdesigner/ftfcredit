@@ -1,31 +1,53 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { User, Mail, Phone, ShieldCheck, Camera, Save, X, Loader2, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useAuth } from '../context/AuthContext';
 
 export default function ProfilePage() {
+  const { user, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [profile, setProfile] = useState({
-    fullName: 'John Doe',
-    email: 'john@example.com',
-    phone: '+1 (555) 123-4567',
-    avatar: 'JD', // Initial placeholder
-    avatarUrl: '', // To store selected image URL
-    address: '123 Wall Street, NY',
-    timezone: 'Eastern Time (ET)',
+    fullName: '',
+    email: '',
+    phone: '',
+    avatar: '',
+    avatarUrl: '',
   });
 
-  const handleSave = () => {
+  // Sync with user context
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        fullName: user.fullName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        avatar: user.fullName ? user.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'U',
+        avatarUrl: user.avatarUrl || '',
+      });
+    }
+  }, [user]);
+
+  const handleSave = async () => {
+    if (!user) return;
     setIsSaving(true);
-    // Simulate API call
-    setTimeout(() => {
-      setIsSaving(false);
+    try {
+      await updateProfile({
+        fullName: profile.fullName,
+        email: profile.email,
+        phone: profile.phone,
+        avatarUrl: profile.avatarUrl
+      });
       setIsEditing(false);
-      alert("Profile updated successfully!");
-    }, 1200);
+      alert("Profile updated successfully in database!");
+    } catch (err) {
+      // Error handled in AuthContext
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleImageClick = () => {
@@ -34,7 +56,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
