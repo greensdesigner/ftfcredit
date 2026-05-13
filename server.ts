@@ -15,7 +15,8 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT || 3000;
 
-  app.use(express.json());
+  app.use(express.json({ limit: "50mb" }));
+  app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   // Database Connection Configuration (Ready for Hostinger)
   const dbConfig = {
@@ -93,7 +94,7 @@ async function startServer() {
               password VARCHAR(255),
               role ENUM('client', 'admin') DEFAULT 'client',
               phone VARCHAR(20),
-              avatarUrl TEXT,
+              avatarUrl LONGTEXT,
               onboardingStep INT DEFAULT 1,
               plaidConnected BOOLEAN DEFAULT FALSE,
               achAuthorized BOOLEAN DEFAULT FALSE,
@@ -103,9 +104,11 @@ async function startServer() {
 
           // Helper to add avatarUrl if it doesn't exist (migrations)
           try {
-            await pool.query("ALTER TABLE users ADD COLUMN avatarUrl TEXT");
+            await pool.query("ALTER TABLE users MODIFY COLUMN avatarUrl LONGTEXT");
           } catch (e) {
-            // Probably already exists
+            try {
+              await pool.query("ALTER TABLE users ADD COLUMN avatarUrl LONGTEXT");
+            } catch (innerE) {}
           }
 
           // Helper to add password if it doesn't exist (migrations)
