@@ -4,9 +4,9 @@ import { UserRole, type UserProfile } from '../types';
 interface AuthContextType {
   user: UserProfile | null;
   loading: boolean;
-  login: (email: string, role: UserRole) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  signup: (email: string, fullName: string, phone: string) => Promise<void>;
+  signup: (email: string, password: string, fullName: string, phone: string) => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
 }
 
@@ -25,44 +25,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   }, []);
 
-  const login = async (email: string, role: UserRole) => {
+  const login = async (email: string, password: string) => {
     setLoading(true);
-    // Mock login logic
-    const mockUser: UserProfile = {
-      uid: 'user_' + Math.random().toString(36).substr(2, 9),
-      email,
-      fullName: email.split('@')[0],
-      role,
-      onboardingStep: role === UserRole.ADMIN ? 4 : 1,
-      plaidConnected: false,
-      achAuthorized: false,
-      createdAt: Date.now(),
-    };
-    setUser(mockUser);
-    localStorage.setItem('ftf_user', JSON.stringify(mockUser));
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Login failed');
+      }
+
+      const data = await response.json();
+      const loggedUser: UserProfile = data.user;
+      
+      setUser(loggedUser);
+      localStorage.setItem('ftf_user', JSON.stringify(loggedUser));
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      alert(`Login failed: ${error.message}`);
+      setLoading(false);
+      throw error;
+    }
     setLoading(false);
   };
 
-  const signup = async (email: string, fullName: string, phone: string) => {
+  const signup = async (email: string, password: string, fullName: string, phone: string) => {
     setLoading(true);
     const uid = 'user_' + Math.random().toString(36).substr(2, 9);
-    const mockUser: UserProfile = {
+    const userData = {
       uid,
       email,
+      password,
       fullName,
       phone,
       role: UserRole.CLIENT,
-      onboardingStep: 1,
-      plaidConnected: false,
-      achAuthorized: false,
-      createdAt: Date.now(),
     };
 
     try {
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(mockUser),
+        body: JSON.stringify(userData),
       });
 
       if (!response.ok) {
@@ -70,13 +77,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(errorData.error || 'Signup failed on server');
       }
 
-      setUser(mockUser);
-      localStorage.setItem('ftf_user', JSON.stringify(mockUser));
+      // After successful signup, we can construct the profile for the state
+      const profile: UserProfile = {
+        uid,
+        email,
+        fullName,
+        phone,
+        role: UserRole.CLIENT,
+        onboardingStep: 1,
+        plaidConnected: false,
+        achAuthorized: false,
+        createdAt: Date.now(),
+      };
+
+      setUser(profile);
+      localStorage.setItem('ftf_user', JSON.stringify(profile));
     } catch (error: any) {
       console.error("Signup failed:", error);
       alert(`Signup failed: ${error.message}`);
       setLoading(false);
-      throw error; // Re-throw to prevent navigation in the page
+      throw error;
     }
     setLoading(false);
   };

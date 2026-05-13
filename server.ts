@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
+import bcrypt from "bcryptjs";
 
 dotenv.config();
 
@@ -89,6 +90,7 @@ async function startServer() {
               uid VARCHAR(128) PRIMARY KEY,
               email VARCHAR(255) NOT NULL UNIQUE,
               fullName VARCHAR(255) NOT NULL,
+              password VARCHAR(255),
               role ENUM('client', 'admin') DEFAULT 'client',
               phone VARCHAR(20),
               avatarUrl TEXT,
@@ -102,6 +104,13 @@ async function startServer() {
           // Helper to add avatarUrl if it doesn't exist (migrations)
           try {
             await pool.query("ALTER TABLE users ADD COLUMN avatarUrl TEXT");
+          } catch (e) {
+            // Probably already exists
+          }
+
+          // Helper to add password if it doesn't exist (migrations)
+          try {
+            await pool.query("ALTER TABLE users ADD COLUMN password VARCHAR(255)");
           } catch (e) {
             // Probably already exists
           }
@@ -190,7 +199,7 @@ async function startServer() {
   // User Signup
   app.post("/api/auth/signup", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured. Check DB environment variables." });
-    const { uid, email, fullName, role, phone } = req.body;
+    const { uid, email, fullName, password, role, phone } = req.body;
     try {
       // Check if user exists first to provide better error
       const [existing]: any = await pool.query("SELECT uid FROM users WHERE email = ?", [email]);
@@ -198,15 +207,49 @@ async function startServer() {
         return res.status(400).json({ error: "A user with this email already exists." });
       }
 
+      const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
+
       await pool.query(
-        "INSERT INTO users (uid, email, fullName, role, phone) VALUES (?, ?, ?, ?, ?)",
-        [uid, email, fullName, role || 'client', phone]
+        "INSERT INTO users (uid, email, fullName, password, role, phone) VALUES (?, ?, ?, ?, ?, ?)",
+        [uid, email, fullName, hashedPassword, role || 'client', phone]
       );
       console.log(`✅ User created successfully: ${email} (${uid})`);
       res.json({ status: "success", message: "User created in DB" });
     } catch (error: any) {
       console.error(`❌ Signup DB Error for ${email}:`, error.message);
       res.status(500).json({ error: "Database Error: " + error.message });
+    }
+  });
+
+  // User Login
+  app.post("/api/auth/login", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { email, password } = req.body;
+    try {
+      const [rows]: any = await pool.query("SELECT * FROM users WHERE email = ?", [email]);
+      if (rows.length === 0) {
+        return res.status(401).json({ error: "Invalid email or password" });
+      }
+
+      const user = rows[0];
+
+      // If user has a password, verify it
+      if (user.password) {
+        const isValid = await bcrypt.compare(password, user.password);
+        if (!isValid) {
+          return res.status(401).json({ error: "Invalid email or password" });
+        }
+      } else {
+        // This handles users created before password hashing was implemented
+        // In a real app, you'd require them to reset password, but here we'll just fail for safety
+        return res.status(401).json({ error: "Account requires password setup" });
+      }
+
+      console.log(`✅ Login successful: ${email}`);
+      res.json({ status: "success", user });
+    } catch (error: any) {
+      console.error("Login Error:", error.message);
+      res.status(500).json({ error: error.message });
     }
   });
 

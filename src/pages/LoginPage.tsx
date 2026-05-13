@@ -16,8 +16,14 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await login(email, role);
-    navigate(role === UserRole.ADMIN ? '/admin' : '/dashboard');
+    try {
+      await login(email, password);
+      // The login function in context updates the user state, we navigate based on what came back
+      const savedUser = JSON.parse(localStorage.getItem('ftf_user') || '{}');
+      navigate(savedUser.role === UserRole.ADMIN ? '/admin' : '/dashboard');
+    } catch (err) {
+      // Error is handled in context (alerted)
+    }
   };
 
   return (
@@ -35,22 +41,6 @@ export default function LoginPage() {
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
-             <div className="flex justify-center gap-2 p-1 bg-neutral-50 rounded-xl">
-                <button
-                  type="button"
-                  onClick={() => setRole(UserRole.CLIENT)}
-                  className={cn("flex-1 py-2 text-sm font-medium rounded-lg transition-all", role === UserRole.CLIENT ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500")}
-                >
-                  Client
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRole(UserRole.ADMIN)}
-                  className={cn("flex-1 py-2 text-sm font-medium rounded-lg transition-all", role === UserRole.ADMIN ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500")}
-                >
-                  Admin
-                </button>
-             </div>
 
             <div>
               <label className="block text-sm font-medium text-neutral-700 mb-1.5">Email address</label>

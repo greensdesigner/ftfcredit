@@ -30,7 +30,7 @@ export default function SignupPage() {
     }
 
     try {
-      await signup(email, fullName, phone);
+      await signup(email, password, fullName, phone);
       navigate('/onboarding');
     } catch (err) {
       // Error is handled in AuthContext (alert)
