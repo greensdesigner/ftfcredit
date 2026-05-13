@@ -31,6 +31,7 @@ export default function App() {
           </Route>
 
           {/* Admin Routes */}
+          <Route path="/admin" element={<Navigate to="/admin-portal" replace />} />
           <Route path="/admin-portal" element={<AdminGate />} />
           
           <Route element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]} />}>
@@ -41,6 +42,7 @@ export default function App() {
 
           {/* Fallback */}
           <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
