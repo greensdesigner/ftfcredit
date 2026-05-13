@@ -35,8 +35,12 @@ export function PublicRoute() {
   );
 
   if (user) {
-    const target = user.role === UserRole.ADMIN ? '/admin-portal' : '/dashboard';
-    return <Navigate to={target} replace />;
+    // Only auto-redirect clients to their dashboard.
+    // Admins are left on public routes (like Login) to satisfy the request that the root 
+    // link always leads to the client sign-in experience, and doesn't "leak" into admin portal.
+    if (user.role === UserRole.CLIENT) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return <Outlet />;
