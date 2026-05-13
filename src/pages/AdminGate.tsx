@@ -1,11 +1,15 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ShieldCheck, Lock, ArrowRight, AlertCircle, Loader2 } from 'lucide-react';
+import { ShieldCheck, Lock, ArrowRight, AlertCircle, Loader2, UserX } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { UserRole } from '../types';
+import { Link } from 'react-router-dom';
 import AdminDashboard from './AdminDashboard';
 
 const SECRET_CODE = "FTF-8899"; // Your Secret Access Code
 
 export default function AdminGate() {
+  const { user } = useAuth();
   const [passcode, setPasscode] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [error, setError] = useState(false);
@@ -28,41 +32,58 @@ export default function AdminGate() {
     }, 800);
   };
 
-  if (isAuthorized) {
+  // If already authorized and user is an admin, show dashboard
+  if (isAuthorized && user?.role === UserRole.ADMIN) {
     return <AdminDashboard />;
   }
 
   return (
-    <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-neutral-950 flex items-center justify-center p-4 font-sans uppercase tracking-tight">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full bg-neutral-900 border border-neutral-800 rounded-[32px] p-8 shadow-2xl"
+        className="max-w-md w-full bg-neutral-900 border border-neutral-800 rounded-[32px] p-10 shadow-2xl relative overflow-hidden"
       >
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 animate-gradient-x"></div>
+        
         <div className="flex flex-col items-center text-center space-y-6">
-          <div className="size-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
-            <ShieldCheck size={32} />
+          <div className="size-20 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-inner">
+            <ShieldCheck size={40} strokeWidth={1.5} />
           </div>
           
           <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-white tracking-tight">Admin Authentication</h1>
-            <p className="text-sm text-neutral-500">Please enter your specialized access code to proceed to the command center.</p>
+            <h1 className="text-3xl font-black text-white tracking-tighter">Command Center</h1>
+            <p className="text-xs text-neutral-500 font-bold tracking-widest leading-relaxed">Enter specialized access code to bypass standard encryption.</p>
           </div>
+
+          {/* User Status Check */}
+          {(!user || user.role !== UserRole.ADMIN) && (
+            <div className="w-full p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center gap-4 text-left">
+              <div className="size-10 rounded-xl bg-amber-500/20 flex items-center justify-center text-amber-500">
+                <UserX size={20} />
+              </div>
+              <div className="flex-1">
+                <p className="text-[10px] font-black text-amber-500 uppercase tracking-wider">Identity Check Failed</p>
+                <Link to="/login" className="text-xs font-bold text-white underline underline-offset-4 decoration-amber-500/50 hover:decoration-amber-500 transition-all">Login as Admin Required</Link>
+              </div>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="w-full space-y-4">
             <div className="relative">
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-600">
-                <Lock size={18} />
+              <div className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-600">
+                <Lock size={20} />
               </div>
               <input 
                 type="password"
-                placeholder="Enter Access Code"
+                placeholder="Enter Code"
                 value={passcode}
+                disabled={!user || user.role !== UserRole.ADMIN}
                 onChange={(e) => {
                   setPasscode(e.target.value);
                   setError(false);
                 }}
-                className="w-full bg-neutral-800 border border-neutral-700 rounded-2xl py-4 pl-12 pr-4 text-white text-center font-mono tracking-widest placeholder:tracking-normal placeholder:text-neutral-600 focus:outline-none focus:border-indigo-500 transition-all"
+                className="w-full bg-neutral-800/50 border border-neutral-700/50 rounded-2xl py-5 pl-14 pr-4 text-white text-center font-mono text-xl tracking-[0.5em] placeholder:tracking-normal placeholder:text-neutral-700 placeholder:text-sm focus:outline-none focus:border-indigo-500/50 focus:bg-neutral-800 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
               />
             </div>
 
@@ -72,32 +93,33 @@ export default function AdminGate() {
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="flex items-center gap-2 text-red-400 text-xs font-bold justify-center"
+                  className="flex items-center gap-2 text-red-400 text-[10px] font-black justify-center tracking-widest uppercase"
                 >
                   <AlertCircle size={14} />
-                  Invalid Authentication Code. Authorized Access Only.
+                  Access Denied. Signature Mismatch.
                 </motion.div>
               )}
             </AnimatePresence>
 
             <button 
-              disabled={loading || !passcode}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-lg shadow-indigo-500/10 group"
+              disabled={loading || !passcode || !user || user.role !== UserRole.ADMIN}
+              className="w-full bg-white hover:bg-neutral-100 disabled:opacity-30 text-neutral-950 font-black py-5 rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl shadow-white/5 group text-sm uppercase tracking-widest"
             >
               {loading ? (
-                <Loader2 size={20} className="animate-spin" />
+                <Loader2 size={24} className="animate-spin" />
               ) : (
                 <>
-                  Verify Access
-                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+                  Engage Authentication
+                  <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
                 </>
               )}
             </button>
           </form>
         </div>
 
-        <div className="mt-8 pt-8 border-t border-neutral-800 text-center">
-          <p className="text-[10px] text-neutral-600 uppercase tracking-[0.2em] font-medium">Secure Portal • Environment: Production</p>
+        <div className="mt-10 pt-10 border-t border-neutral-800/50 text-center flex flex-col gap-2">
+          <p className="text-[9px] text-neutral-600 uppercase tracking-[0.3em] font-black italic">Restricted Asset • ID: 155-XP-FTF</p>
+          <p className="text-[8px] text-neutral-700 font-bold leading-relaxed px-4">Unauthorized access to this portal is a violation of the FTF Security Protocol. All connection attempts are logged.</p>
         </div>
       </motion.div>
     </div>

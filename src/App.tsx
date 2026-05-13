@@ -30,9 +30,10 @@ export default function App() {
             <Route path="/onboarding" element={<OnboardingWizard />} />
           </Route>
 
-          {/* Protected Admin Routes */}
+          {/* Admin Routes */}
+          <Route path="/admin-portal" element={<AdminGate />} />
+          
           <Route element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]} />}>
-            <Route path="/admin-portal" element={<AdminGate />} />
             <Route path="/admin-portal/clients" element={<DashboardLayout><div>Clients List</div></DashboardLayout>} />
             <Route path="/admin-portal/payments" element={<DashboardLayout><div>Payments History</div></DashboardLayout>} />
             <Route path="/admin-portal/settings" element={<DashboardLayout><div>Settings</div></DashboardLayout>} />
