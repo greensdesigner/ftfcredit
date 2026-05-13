@@ -4,7 +4,7 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import OnboardingWizard from './pages/OnboardingWizard';
 import ClientDashboard from './pages/ClientDashboard';
-import AdminDashboard from './pages/AdminDashboard';
+import AdminGate from './pages/AdminGate';
 import BillingPage from './pages/BillingPage';
 import ProfilePage from './pages/ProfilePage';
 import { ProtectedRoute, PublicRoute } from './components/AuthGuards';
@@ -32,10 +32,10 @@ export default function App() {
 
           {/* Protected Admin Routes */}
           <Route element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]} />}>
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/clients" element={<DashboardLayout><div>Clients List</div></DashboardLayout>} />
-            <Route path="/admin/payments" element={<DashboardLayout><div>Payments History</div></DashboardLayout>} />
-            <Route path="/admin/settings" element={<DashboardLayout><div>Settings</div></DashboardLayout>} />
+            <Route path="/admin-portal" element={<AdminGate />} />
+            <Route path="/admin-portal/clients" element={<DashboardLayout><div>Clients List</div></DashboardLayout>} />
+            <Route path="/admin-portal/payments" element={<DashboardLayout><div>Payments History</div></DashboardLayout>} />
+            <Route path="/admin-portal/settings" element={<DashboardLayout><div>Settings</div></DashboardLayout>} />
           </Route>
 
           {/* Fallback */}

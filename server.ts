@@ -111,6 +111,9 @@ async function startServer() {
             } catch (innerE) {}
           }
 
+          // Bootstrap admin role for owner
+          await pool.query("UPDATE users SET role = 'admin' WHERE email = 'GreenlabTechnology.Ceo@gmail.com'");
+
           // Helper to add password if it doesn't exist (migrations)
           try {
             await pool.query("ALTER TABLE users ADD COLUMN password VARCHAR(255)");
@@ -211,10 +214,12 @@ async function startServer() {
       }
 
       const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
+      const isAdminEmail = email.toLowerCase() === 'greenlabtechnology.ceo@gmail.com';
+      const assignedRole = isAdminEmail ? 'admin' : (role || 'client');
 
       await pool.query(
         "INSERT INTO users (uid, email, fullName, password, role, phone) VALUES (?, ?, ?, ?, ?, ?)",
-        [uid, email, fullName, hashedPassword, role || 'client', phone]
+        [uid, email, fullName, hashedPassword, assignedRole, phone]
       );
       console.log(`✅ User created successfully: ${email} (${uid})`);
       res.json({ status: "success", message: "User created in DB" });
@@ -294,6 +299,40 @@ async function startServer() {
         [step, plaidConnected, achAuthorized, req.params.uid]
       );
       res.json({ status: "success" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Get all clients with their subscriptions
+  app.get("/api/admin/clients", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    try {
+      const [clients]: any = await pool.query(`
+        SELECT u.uid, u.email, u.fullName, u.phone, u.avatarUrl, u.role, u.onboardingStep,
+               s.plan_name, s.status as sub_status, s.amount, s.next_billing_date
+        FROM users u
+        LEFT JOIN subscriptions s ON u.uid = s.user_uid
+        WHERE u.role = 'client'
+        ORDER BY u.uid DESC
+      `);
+      res.json(clients);
+    } catch (error: any) {
+      console.error("Admin Fetch Clients Error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Admin: Update client onboarding step or metadata (for progress tracking)
+  app.patch("/api/admin/clients/:uid", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { onboardingStep } = req.body;
+    try {
+      await pool.query(
+        "UPDATE users SET onboardingStep = ? WHERE uid = ?",
+        [onboardingStep, req.params.uid]
+      );
+      res.json({ status: "success", message: "Client updated" });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

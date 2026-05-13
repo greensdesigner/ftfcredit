@@ -17,10 +17,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const menuItems = user?.role === UserRole.ADMIN 
     ? [
-        { icon: LayoutDashboard, label: 'Overview', path: '/admin' },
-        { icon: Users, label: 'Clients', path: '/admin/clients' },
-        { icon: CreditCard, label: 'Payments', path: '/admin/payments' },
-        { icon: Settings, label: 'Settings', path: '/admin/settings' },
+        { icon: LayoutDashboard, label: 'Overview', path: '/admin-portal' },
+        { icon: Users, label: 'Clients', path: '/admin-portal/clients' },
+        { icon: CreditCard, label: 'Payments', path: '/admin-portal/payments' },
+        { icon: Settings, label: 'Settings', path: '/admin-portal/settings' },
       ]
     : [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },

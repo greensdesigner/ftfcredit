@@ -1,33 +1,99 @@
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { Users, CreditCard, AlertCircle, Search, Filter, MoreHorizontal, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Users, CreditCard, AlertCircle, Search, Filter, MoreHorizontal, ArrowUpRight, ArrowDownRight, CheckCircle2, RotateCcw, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
+interface Client {
+  uid: string;
+  email: string;
+  fullName: string;
+  phone: string;
+  avatarUrl: string;
+  role: string;
+  onboardingStep: number;
+  plan_name: string | null;
+  sub_status: string | null;
+  amount: number | null;
+  next_billing_date: string | null;
+}
+
 export default function AdminDashboard() {
+  const [clients, setClients] = useState<Client[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchClients();
+  }, []);
+
+  const fetchClients = async () => {
+    try {
+      const response = await fetch('/api/admin/clients');
+      const data = await response.json();
+      setClients(data);
+    } catch (error) {
+      console.error("Failed to fetch clients:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateClientProgress = async (uid: string, newStep: number) => {
+    setUpdatingId(uid);
+    try {
+      const response = await fetch(`/api/admin/clients/${uid}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ onboardingStep: newStep }),
+      });
+      if (response.ok) {
+        setClients(clients.map(c => c.uid === uid ? { ...c, onboardingStep: newStep } : c));
+      }
+    } catch (error) {
+      console.error("Update failed:", error);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const filteredClients = clients.filter(c => 
+    c.fullName.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    c.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const stats = [
-    { label: 'Total MRR', value: '$12,450', trend: '+12%', up: true },
-    { label: 'Active Clients', value: '42', trend: '+3', up: true },
-    { label: 'Failed Payments', value: '3', trend: 'Critical', up: false },
-    { label: 'Pending ACH', value: '8', trend: 'Waitlist', up: true },
+    { label: 'Total MRR', value: `$${clients.reduce((acc, c) => acc + (c.amount || 0), 0)}`, trend: 'Real-time', up: true },
+    { label: 'Active Clients', value: clients.filter(c => c.sub_status === 'active').length.toString(), trend: '+3', up: true },
+    { label: 'Total Registrations', value: clients.length.toString(), trend: 'Overall', up: true },
+    { label: 'Processing', value: clients.filter(c => c.onboardingStep > 1 && c.onboardingStep < 5).length.toString(), trend: 'Active Work', up: true },
   ];
 
-  const recentClients = [
-    { id: '1', name: 'James Wilson', email: 'james.w@example.com', plan: 'Credit Repair', status: 'active', joined: '2h ago' },
-    { id: '2', name: 'Sarah Connor', email: 'sarah.c@example.com', plan: 'Business Funding', status: 'pending', joined: '5h ago' },
-    { id: '3', name: 'Mike Ross', email: 'mike.r@example.com', plan: 'Credit Repair', status: 'failed', joined: '1d ago' },
-    { id: '4', name: 'Harvey Specter', email: 'harvey@pearson.com', plan: 'Business Funding', status: 'active', joined: '2d ago' },
-  ];
+  const getStepLabel = (step: number) => {
+    switch (step) {
+      case 1: return 'Analysis Phase';
+      case 2: return 'Dispute Letters';
+      case 3: return 'Sent to Bureaus';
+      case 4: return 'Verifying Results';
+      case 5: return 'Completed';
+      default: return 'Onboarding';
+    }
+  };
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 max-w-7xl">
+      <div className="space-y-8 max-w-7xl animate-in fade-in duration-500 text-left">
         <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div className="flex flex-col gap-1">
             <h1 className="font-display text-4xl font-bold tracking-tight text-neutral-900">Admin Console</h1>
             <p className="text-neutral-500">Monitor system performance and manage client lifecycles.</p>
           </div>
-          <button className="flex items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-bold text-white shadow-xl transition-all hover:bg-neutral-800">
-             Export Reports
-             <ArrowUpRight size={18} />
+          <button 
+            onClick={fetchClients}
+            className="flex items-center gap-2 rounded-xl bg-neutral-900 px-6 py-3 text-sm font-bold text-white shadow-xl transition-all hover:bg-neutral-800"
+          >
+             Refresh Data
+             <RotateCcw size={18} className={loading ? "animate-spin" : ""} />
           </button>
         </div>
 
@@ -36,7 +102,7 @@ export default function AdminDashboard() {
           {stats.map((stat) => (
             <div key={stat.label} className="rounded-3xl border border-neutral-100 bg-white p-6 shadow-sm">
               <p className="text-sm font-semibold text-neutral-400 uppercase tracking-wider">{stat.label}</p>
-              <div className="mt-3 flex items-baseline justify-between">
+              <div className="mt-3 flex items-baseline justify-between transition-all">
                 <p className="text-2xl font-bold text-neutral-900 font-display">{stat.value}</p>
                 <div className={cn(
                   "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-bold",
@@ -51,82 +117,104 @@ export default function AdminDashboard() {
         </div>
 
         {/* Alerts Panel */}
-        <div className="rounded-3xl bg-red-50 border border-red-100 p-6">
-           <div className="flex items-center gap-3 text-red-900 mb-4">
+        <div className="rounded-3xl bg-amber-50 border border-amber-100 p-6">
+           <div className="flex items-center gap-3 text-amber-900 mb-4">
               <AlertCircle size={24} />
-              <h3 className="font-bold text-lg">Failed Payment Alerts</h3>
+              <h3 className="font-bold text-lg">Daily Operations</h3>
            </div>
-           <div className="space-y-3">
-              {[
-                { name: 'Mike Ross', amount: '$149', reason: 'Insufficient Funds', date: 'May 3' },
-                { name: 'Rachel Zane', amount: '$149', reason: 'Incorrect Routing', date: 'May 2' },
-              ].map(alert => (
-                <div key={alert.name} className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white p-4 shadow-sm">
-                   <div className="flex items-center gap-4">
-                      <div className="size-10 rounded-full bg-red-50 flex items-center justify-center text-red-600 font-bold uppercase">{alert.name?.charAt(0) || '?'}</div>
-                      <div>
-                        <p className="font-bold text-neutral-900">{alert.name}</p>
-                        <p className="text-xs text-neutral-500">{alert.reason} • {alert.date}</p>
-                      </div>
-                   </div>
-                   <div className="flex items-center gap-4">
-                      <span className="text-sm font-bold text-neutral-900">{alert.amount}</span>
-                      <button className="rounded-lg bg-neutral-900 px-4 py-2 text-xs font-bold text-white">Retry / Pause</button>
-                   </div>
-                </div>
-              ))}
-           </div>
+           <p className="text-sm text-amber-800 mb-4">There are {clients.filter(c => c.onboardingStep === 1).length} new clients waiting for initial analysis. Batch processing is recommended.</p>
         </div>
 
         {/* Client Table */}
-        <div className="rounded-3xl border border-neutral-100 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-3xl border border-neutral-100 bg-white shadow-sm overflow-hidden min-h-[400px]">
           <div className="border-b border-neutral-100 p-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-             <h3 className="font-display text-xl font-bold text-neutral-900">Recent Clients</h3>
+             <h3 className="font-display text-xl font-bold text-neutral-900">Client Management</h3>
              <div className="flex items-center gap-2">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" size={16} />
-                  <input type="text" placeholder="Search clients..." className="rounded-xl border border-neutral-200 bg-neutral-50 pl-9 pr-4 py-2 text-xs outline-none focus:border-neutral-900" />
+                  <input 
+                    type="text" 
+                    placeholder="Search name or email..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="rounded-xl border border-neutral-200 bg-neutral-50 pl-9 pr-4 py-2 text-xs outline-none focus:border-neutral-900 w-64" 
+                  />
                 </div>
                 <button className="rounded-xl border border-neutral-200 p-2 text-neutral-500 hover:bg-neutral-50"><Filter size={16} /></button>
              </div>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-left">
+            <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-neutral-50/50 text-xs font-bold uppercase tracking-wider text-neutral-400">
-                  <th className="px-6 py-4">Client</th>
-                  <th className="px-6 py-4">Plan</th>
-                  <th className="px-6 py-4">Status</th>
-                  <th className="px-6 py-4">Joined</th>
+                  <th className="px-6 py-4">Client Info</th>
+                  <th className="px-6 py-4">Active Plan</th>
+                  <th className="px-6 py-4">Subscription</th>
+                  <th className="px-6 py-4">Service Status</th>
                   <th className="px-6 py-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-100 text-sm">
-                {recentClients.map((client) => (
-                  <tr key={client.id} className="group hover:bg-neutral-50/50">
+                {loading ? (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-20 text-center">
+                      <div className="flex flex-col items-center gap-2">
+                        <Loader2 className="animate-spin text-neutral-900" size={32} />
+                        <p className="text-neutral-500 font-bold">Fetching latest data...</p>
+                      </div>
+                    </td>
+                  </tr>
+                ) : filteredClients.map((client) => (
+                  <tr key={client.uid} className="group hover:bg-neutral-50/50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                         <div className="size-8 rounded-lg bg-neutral-100 flex items-center justify-center text-neutral-500 font-display font-bold uppercase">{client.name?.charAt(0) || '?'}</div>
+                         <div className="size-10 rounded-xl bg-neutral-100 flex items-center justify-center border border-neutral-200 overflow-hidden shadow-sm">
+                            {client.avatarUrl ? (
+                              <img src={client.avatarUrl} className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-neutral-900 font-display font-bold uppercase text-xs">
+                                {client.fullName.split(' ').map(n => n[0]).join('')}
+                              </span>
+                            )}
+                         </div>
                          <div className="flex flex-col">
-                            <span className="font-bold text-neutral-900">{client.name}</span>
+                            <span className="font-bold text-neutral-900">{client.fullName}</span>
                             <span className="text-xs text-neutral-500">{client.email}</span>
                          </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 font-medium text-neutral-600">{client.plan}</td>
+                    <td className="px-6 py-4">
+                      <p className="font-bold text-neutral-900">{client.plan_name || 'No Active Plan'}</p>
+                      {client.amount && <p className="text-xs text-neutral-500">${client.amount}/mo</p>}
+                    </td>
                     <td className="px-6 py-4">
                       <span className={cn(
-                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-tight",
-                        client.status === 'active' ? "bg-emerald-50 text-emerald-600" :
-                        client.status === 'pending' ? "bg-amber-50 text-amber-600" :
-                        "bg-red-50 text-red-600"
+                        "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-tight",
+                        client.sub_status === 'active' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" :
+                        "bg-red-50 text-red-600 border border-red-100"
                       )}>
-                        {client.status}
+                        {client.sub_status || 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-neutral-500">{client.joined}</td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <select 
+                          value={client.onboardingStep}
+                          onChange={(e) => updateClientProgress(client.uid, parseInt(e.target.value))}
+                          disabled={updatingId === client.uid}
+                          className="bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1 text-xs font-bold text-neutral-900 focus:border-neutral-900 outline-none disabled:opacity-50"
+                        >
+                          <option value={1}>1. Analysis</option>
+                          <option value={2}>2. Disputing</option>
+                          <option value={3}>3. Processing</option>
+                          <option value={4}>4. Final Check</option>
+                          <option value={5}>5. Completed</option>
+                        </select>
+                        {updatingId === client.uid && <Loader2 size={12} className="animate-spin text-neutral-400" />}
+                      </div>
+                    </td>
                     <td className="px-6 py-4 text-right">
-                       <button className="text-neutral-400 hover:text-neutral-900">
+                       <button className="text-neutral-400 hover:text-neutral-900 p-2 rounded-lg hover:bg-neutral-100 transition-colors">
                           <MoreHorizontal size={20} />
                        </button>
                     </td>
@@ -135,9 +223,11 @@ export default function AdminDashboard() {
               </tbody>
             </table>
           </div>
-          <div className="border-t border-neutral-100 p-4 text-center">
-             <button className="text-xs font-bold text-neutral-500 hover:text-neutral-900">View All Clients</button>
-          </div>
+          {!loading && filteredClients.length === 0 && (
+            <div className="p-12 text-center text-neutral-500">
+               No clients found matching your search.
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

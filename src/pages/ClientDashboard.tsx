@@ -6,40 +6,47 @@ import { cn } from '../lib/utils';
 export default function ClientDashboard() {
   const { user } = useAuth();
 
-  const stats = [
-    { label: 'Current Plan', value: 'Credit Repair', sub: '$149/mo', icon: CreditCard, color: 'bg-blue-500' },
-    { label: 'Credit Score', value: '---', sub: 'Analyzing Profile', icon: TrendingUp, color: 'bg-amber-500' },
-    { label: 'Payment Status', value: 'Pending', sub: 'Awaiting Setup', icon: CheckCircle2, color: 'bg-neutral-500' },
-  ];
+  const getStepStatus = (stepIdx: number) => {
+    const currentStep = user?.onboardingStep || 1;
+    if (currentStep > stepIdx + 1) return 'completed';
+    if (currentStep === stepIdx + 1) return 'in-progress';
+    return 'pending';
+  };
 
   const progressSteps = [
-    { label: 'Identity Verification', status: 'in-progress', date: 'Today' },
-    { label: 'Credit Analysis', status: 'pending', date: 'Pending' },
-    { label: 'Dispute Letter Batch #1', status: 'pending', date: 'Pending' },
-    { label: 'Lender Response', status: 'pending', date: 'Pending' },
+    { label: 'Analysis Phase', description: 'Our experts are analyzing your credit report.', icon: TrendingUp },
+    { label: 'Dispute Letters', description: 'Crafting legal dispute letters for local and national bureaus.', icon: History },
+    { label: 'Sent to Bureaus', description: 'Letters have been dispatched and we are awaiting confirmation.', icon: Clock },
+    { label: 'Verifying Results', description: 'Reviewing responses from creditors and credit bureaus.', icon: AlertTriangle },
+  ];
+
+  const stats = [
+    { label: 'Plan Status', value: user?.plaidConnected ? 'Premium' : 'Standard', sub: user?.achAuthorized ? 'Auto-pay Enabled' : 'Payment Required', icon: CreditCard, color: 'bg-indigo-600' },
+    { label: 'Service Stage', value: user?.onboardingStep ? `Stage ${user.onboardingStep}` : 'Stage 1', sub: 'Active Processing', icon: TrendingUp, color: 'bg-emerald-600' },
+    { label: 'Identity', value: 'Verified', sub: 'A-Rank Secure', icon: CheckCircle2, color: 'bg-blue-600' },
   ];
 
   return (
     <DashboardLayout>
-      <div className="space-y-8 max-w-7xl">
+      <div className="space-y-8 max-w-7xl animate-in fade-in slide-in-from-bottom-2 duration-500 text-left">
         <div className="flex flex-col gap-2">
-          <h1 className="font-display text-4xl font-bold tracking-tight text-neutral-900 line-clamp-1">Client Dashboard</h1>
+          <h1 className="font-display text-4xl font-bold tracking-tight text-neutral-900 line-clamp-1">Welcome back, {user?.fullName?.split(' ')[0]}</h1>
           <p className="text-neutral-500">Track your progress and manage your financial growth.</p>
         </div>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {stats.map((stat) => (
-            <div key={stat.label} className="group relative overflow-hidden rounded-3xl border border-neutral-100 bg-white p-8 shadow-sm transition-all hover:shadow-md">
-              <div className={cn("absolute top-0 right-0 h-1 w-full", stat.color)}></div>
+            <div key={stat.label} className="group relative overflow-hidden rounded-[32px] border border-neutral-100 bg-white p-8 shadow-sm transition-all hover:shadow-md hover:-translate-y-1">
+              <div className={cn("absolute top-0 right-0 h-1.5 w-full", stat.color)}></div>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-semibold text-neutral-400 uppercase tracking-wider">{stat.label}</p>
+                  <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest">{stat.label}</p>
                   <p className="mt-3 text-3xl font-bold text-neutral-900 font-display">{stat.value}</p>
-                  <p className="mt-1 text-sm font-medium text-neutral-500">{stat.sub}</p>
+                  <p className="mt-1 text-xs font-medium text-neutral-500 italic">{stat.sub}</p>
                 </div>
-                <div className={cn("size-12 rounded-2xl flex items-center justify-center text-white", stat.color)}>
-                  <stat.icon size={24} />
+                <div className={cn("size-14 rounded-2xl flex items-center justify-center text-white shadow-lg", stat.color)}>
+                  <stat.icon size={28} />
                 </div>
               </div>
             </div>
@@ -48,67 +55,83 @@ export default function ClientDashboard() {
 
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Progress Tracking */}
-          <div className="lg:col-span-2 rounded-3xl border border-neutral-100 bg-white p-8 shadow-sm">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="font-display text-xl font-bold text-neutral-900">Service Progress</h3>
-              <span className="rounded-full bg-neutral-50 px-3 py-1 text-xs font-bold text-neutral-600 uppercase">Batch #1</span>
+          <div className="lg:col-span-2 rounded-[32px] border border-neutral-100 bg-white p-10 shadow-sm relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-5">
+              <TrendingUp size={120} />
             </div>
-            <div className="space-y-8 relative before:absolute before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-neutral-100">
-              {progressSteps.map((step, idx) => (
-                <div key={step.label} className="relative flex items-start gap-6 pl-10">
-                  <div className={cn(
-                    "absolute left-0 top-1.5 size-7 rounded-full border-4 border-white shadow-sm flex items-center justify-center",
-                    step.status === 'completed' ? "bg-emerald-500" : 
-                    step.status === 'in-progress' ? "bg-amber-500" : "bg-neutral-200"
-                  )}>
-                    {step.status === 'completed' ? <CheckCircle2 size={14} className="text-white" /> : 
-                     step.status === 'in-progress' ? <Clock size={14} className="text-white" /> : null}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <h4 className={cn("font-semibold", step.status === 'pending' ? "text-neutral-400" : "text-neutral-900")}>{step.label}</h4>
-                      <span className="text-xs font-medium text-neutral-400">{step.date}</span>
+            <div className="flex items-center justify-between mb-10">
+              <h3 className="font-display text-2xl font-bold text-neutral-900">Mission Roadmap</h3>
+              <span className="rounded-full bg-emerald-50 px-4 py-1.5 text-[10px] font-bold text-emerald-600 border border-emerald-100 uppercase tracking-tighter">Live Updates</span>
+            </div>
+            <div className="space-y-10 relative before:absolute before:left-[15px] before:top-2 before:bottom-2 before:w-1 before:bg-neutral-50">
+              {progressSteps.map((step, idx) => {
+                const status = getStepStatus(idx);
+                return (
+                  <div key={step.label} className="relative flex items-start gap-8 pl-12 group">
+                    <div className={cn(
+                      "absolute left-0 top-1 size-8 rounded-full border-4 border-white shadow-sm flex items-center justify-center transition-all duration-500 z-10",
+                      status === 'completed' ? "bg-emerald-500 scale-110" : 
+                      status === 'in-progress' ? "bg-amber-500 scale-125 ring-4 ring-amber-50" : "bg-neutral-100"
+                    )}>
+                      {status === 'completed' ? <CheckCircle2 size={16} className="text-white" /> : 
+                       status === 'in-progress' ? <Clock size={16} className="text-white animate-pulse" /> : <div className="size-2 bg-neutral-300 rounded-full" />}
                     </div>
-                    <p className="text-sm text-neutral-500 mt-0.5">
-                      {step.status === 'completed' ? 'Tasks finalized and verified.' : 
-                       step.status === 'in-progress' ? 'Our agents are currently processing this step.' : 
-                       'Waiting for previous steps to complete.'}
-                    </p>
+                    <div className="flex-1">
+                      <div className="flex flex-col">
+                        <h4 className={cn("text-lg font-bold transition-colors", status === 'pending' ? "text-neutral-400" : "text-neutral-900")}>
+                          {step.label}
+                        </h4>
+                        <p className="text-sm text-neutral-500 mt-1 max-w-md leading-relaxed">
+                          {status === 'completed' ? 'This stage is completed. All goals met.' : 
+                           status === 'in-progress' ? step.description : 
+                           'Unlock this stage by completing previous milestones.'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
           {/* Side Info */}
           <div className="space-y-6">
-            <div className="rounded-3xl border border-neutral-100 bg-white p-6 shadow-sm">
-              <h3 className="font-display text-lg font-bold text-neutral-900 mb-4">Automation Status</h3>
+            <div className="rounded-[32px] border border-neutral-100 bg-white p-8 shadow-sm">
+              <h3 className="font-display text-lg font-bold text-neutral-900 mb-6">Service Health</h3>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-emerald-50 border border-emerald-100 px-4">
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-emerald-50/50 border border-emerald-100">
                   <div className="flex items-center gap-3">
-                    <div className="size-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                    <span className="text-sm font-semibold text-emerald-900">Auto-pay ON</span>
+                    <div className="size-2 rounded-full bg-emerald-500"></div>
+                    <span className="text-xs font-bold text-emerald-900 uppercase">Payment Sync</span>
                   </div>
-                  <span className="text-xs font-bold text-emerald-600">ACTIVE</span>
+                  <span className="text-[10px] font-black text-emerald-600">ACTIVE</span>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-2xl bg-neutral-50 border border-neutral-100 px-4">
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-neutral-50/50 border border-neutral-100">
                    <div className="flex items-center gap-3">
-                    <span className="text-sm font-semibold text-neutral-900">Next SMS Alert</span>
+                    <div className="size-2 rounded-full bg-neutral-300"></div>
+                    <span className="text-xs font-bold text-neutral-900 uppercase">Credit Refresh</span>
                   </div>
-                  <span className="text-xs font-bold text-neutral-500 italic">SCHEDULED</span>
+                  <span className="text-[10px] font-black text-neutral-400 italic">30D CYCLE</span>
                 </div>
               </div>
+              <button className="w-full mt-6 py-3 rounded-2xl bg-neutral-900 text-white text-xs font-bold hover:bg-neutral-800 transition-all">
+                Request Mid-Cycle Update
+              </button>
             </div>
 
-            <div className="rounded-3xl border-2 border-dashed border-neutral-200 bg-neutral-50 p-6 flex flex-col items-center text-center">
-                <AlertTriangle className="text-neutral-400 mb-2" />
-                <p className="text-xs font-medium text-neutral-500">Need immediate help? Contact your account manager directly via the secure portal.</p>
-                <button className="mt-4 text-xs font-bold text-neutral-900 underline underline-offset-4">Open Support Ticket</button>
+            <div className="rounded-[32px] border-2 border-dashed border-neutral-100 bg-neutral-50/30 p-8 flex flex-col items-center text-center">
+                <div className="size-12 rounded-full bg-white flex items-center justify-center shadow-sm mb-4">
+                  <AlertTriangle className="text-amber-500" size={20} />
+                </div>
+                <p className="text-[11px] font-medium text-neutral-500 leading-relaxed uppercase tracking-wider">Need Professional Assistance?</p>
+                <p className="text-xs text-neutral-400 mt-2">Connect with your assigned legal expert for a private strategy session.</p>
+                <button className="mt-6 text-sm font-bold text-neutral-900 underline underline-offset-8 decoration-2 decoration-neutral-200 hover:decoration-neutral-900 transition-all">
+                  Open Direct Channel
+                </button>
             </div>
           </div>
         </div>
       </div>
     </DashboardLayout>
   );
-}
+ }
