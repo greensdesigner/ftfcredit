@@ -1,3 +1,4 @@
+import React, { useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { useAuth } from '../context/AuthContext';
 import { CreditCard, History, TrendingUp, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
