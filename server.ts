@@ -357,6 +357,20 @@ async function startServer() {
     }
   });
 
+  // Get User Payments
+  app.get("/api/users/:uid/payments", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    try {
+      const [rows]: any = await pool.query(
+        "SELECT * FROM payments WHERE userId = ? ORDER BY paymentDate DESC",
+        [req.params.uid]
+      );
+      res.json(rows);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Create or Update Subscription
   app.post("/api/subscriptions", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured" });

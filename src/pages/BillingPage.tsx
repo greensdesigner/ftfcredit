@@ -14,19 +14,32 @@ export default function BillingPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
 
-  const [invoices, setInvoices] = useState([
-    { id: 'FTF-0012', date: 'Apr 24, 2026', amount: '$149.00', status: 'paid' },
-    { id: 'FTF-0010', date: 'Mar 24, 2026', amount: '$149.00', status: 'paid' },
-    { id: 'FTF-0008', date: 'Feb 24, 2026', amount: '$149.00', status: 'paid' },
-  ]);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [loadingInvoices, setLoadingInvoices] = useState(true);
 
   useEffect(() => {
     if (user) {
       if (user.plan_name) setCurrentPlan(user.plan_name);
       if (user.sub_amount) setAmount(user.sub_amount);
       if (user.sub_status) setStatus(user.sub_status as any);
+      fetchInvoices();
     }
   }, [user]);
+
+  const fetchInvoices = async () => {
+    if (!user) return;
+    try {
+      const response = await fetch(`/api/users/${user.uid}/payments`);
+      if (response.ok) {
+        const data = await response.json();
+        setInvoices(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch invoices:", error);
+    } finally {
+      setLoadingInvoices(false);
+    }
+  };
 
   const updateSubscriptionInDB = async (newPlan: string, newAmount: number, newStatus: string) => {
     if (!user) return;
@@ -224,15 +237,32 @@ export default function BillingPage() {
                     <th className="px-8 py-4 text-right">Receipt</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-neutral-100 text-sm italic">
-                  {invoices.map(inv => (
+                <tbody className="divide-y divide-neutral-100 text-sm">
+                  {loadingInvoices ? (
+                    <tr>
+                      <td colSpan={5} className="px-8 py-10 text-center">
+                        <Loader2 className="animate-spin text-neutral-400 mx-auto" size={24} />
+                      </td>
+                    </tr>
+                  ) : invoices.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-8 py-10 text-center text-neutral-400 italic">
+                        No payment history found.
+                      </td>
+                    </tr>
+                  ) : invoices.map(inv => (
                     <tr key={inv.id} className="group hover:bg-neutral-50/50 transition-colors">
-                      <td className="px-8 py-4 font-bold text-neutral-900">{inv.id}</td>
-                      <td className="px-8 py-4 text-neutral-500">{inv.date}</td>
-                      <td className="px-8 py-4 font-medium text-neutral-900">{inv.amount}</td>
+                      <td className="px-8 py-4 font-bold text-neutral-900">#{inv.id.substring(0, 8).toUpperCase()}</td>
+                      <td className="px-8 py-4 text-neutral-500">{new Date(inv.paymentDate).toLocaleDateString()}</td>
+                      <td className="px-8 py-4 font-medium text-neutral-900">${inv.amount}</td>
                       <td className="px-8 py-4 text-left">
-                         <div className="flex items-center gap-1.5 text-emerald-600 font-bold">
-                            <CheckCircle2 size={14} />
+                         <div className={cn(
+                           "flex items-center gap-1.5 font-bold",
+                           inv.status === 'success' ? "text-emerald-600" : 
+                           inv.status === 'failed' ? "text-red-600" : "text-amber-600"
+                         )}>
+                            {inv.status === 'success' ? <CheckCircle2 size={14} /> : 
+                             inv.status === 'failed' ? <XCircle size={14} /> : <AlertCircle size={14} />}
                             <span className="uppercase text-[10px] tracking-tight">{inv.status}</span>
                          </div>
                       </td>
