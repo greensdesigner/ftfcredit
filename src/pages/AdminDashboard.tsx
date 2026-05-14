@@ -43,6 +43,7 @@ export default function AdminDashboard() {
   }, []);
 
   const fetchClients = async () => {
+    setLoading(true);
     try {
       const response = await fetch('/api/admin/clients');
       const data = await response.json();
