@@ -72,6 +72,21 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleManagePayment = async () => {
+    setIsPaying(true);
+    try {
+      const response = await fetch('/api/admin/create-portal-session', { method: 'POST' });
+      const { url, error } = await response.json();
+      if (error) throw new Error(error);
+      if (url) window.location.href = url;
+    } catch (error: any) {
+      console.error("Portal error:", error);
+      alert("Failed to open billing portal: " + error.message);
+    } finally {
+      setIsPaying(false);
+    }
+  };
+
   useEffect(() => {
     const sessionId = searchParams.get('session_id');
     const verifyPayment = async (sid: string) => {
@@ -428,6 +443,13 @@ export default function AdminDashboard() {
                            <ShieldCheck size={24} />
                         </div>
                      </div>
+                     <button 
+                        onClick={handleManagePayment}
+                        disabled={isPaying}
+                        className="w-full rounded-2xl border border-neutral-200 py-4 font-bold text-neutral-900 hover:bg-neutral-50 transition-all flex items-center justify-center gap-2 disabled:opacity-50 mb-3"
+                     >
+                        {isPaying ? <Loader2 className="animate-spin" size={18} /> : 'Manage / Add Payment Method'}
+                     </button>
                      <button 
                       onClick={handleSystemPay}
                       disabled={isPaying || systemSettings?.subscriptionStatus === 'active'}

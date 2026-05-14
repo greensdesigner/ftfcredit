@@ -123,6 +123,7 @@ async function startServer() {
               subscriptionStatus ENUM('active', 'expired') DEFAULT 'active',
               expiryDate TIMESTAMP,
               monthlyFee DECIMAL(10, 2) DEFAULT 100.00,
+              stripeCustomerId VARCHAR(255),
               UNIQUE (id)
             )
           `);
@@ -429,13 +430,58 @@ async function startServer() {
     }
   });
 
+  // Create Stripe Customer Portal Session
+  app.post("/api/admin/create-portal-session", async (req, res) => {
+    const stripeInst = getStripe();
+    if (!stripeInst) return res.status(500).json({ error: "Stripe not configured" });
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+
+    try {
+      const [rows]: any = await pool.query("SELECT stripeCustomerId FROM system_settings WHERE id = 1");
+      let customerId = rows[0]?.stripeCustomerId;
+
+      if (!customerId) {
+        const customer = await stripeInst.customers.create({
+          email: 'admin@platform.com', // Generic admin email
+          description: 'System Administrative Account',
+        });
+        customerId = customer.id;
+        await pool.query("UPDATE system_settings SET stripeCustomerId = ? WHERE id = 1", [customerId]);
+      }
+
+      const session = await stripeInst.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: `${process.env.APP_URL || 'http://localhost:3000'}/admin-portal?tab=billing`,
+      });
+
+      res.json({ url: session.url });
+    } catch (error: any) {
+      console.error("Portal Session Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Create Stripe Checkout Session for System Payment
   app.post("/api/admin/create-system-checkout", async (req, res) => {
     const stripeInst = getStripe();
     if (!stripeInst) return res.status(500).json({ error: "Stripe not configured. Please add STRIPE_SECRET_KEY to secrets." });
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
 
     try {
+      const [rows]: any = await pool.query("SELECT stripeCustomerId FROM system_settings WHERE id = 1");
+      let customerId = rows[0]?.stripeCustomerId;
+
+      if (!customerId) {
+        const customer = await stripeInst.customers.create({
+          email: 'admin@platform.com',
+          description: 'System Administrative Account',
+        });
+        customerId = customer.id;
+        await pool.query("UPDATE system_settings SET stripeCustomerId = ? WHERE id = 1", [customerId]);
+      }
+
       const session = await stripeInst.checkout.sessions.create({
+        customer: customerId,
         payment_method_types: ['card'],
         line_items: [
           {
