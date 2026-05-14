@@ -37,24 +37,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [systemName, setSystemName] = useState('FTF Consulting');
 
   React.useEffect(() => {
-    if (user?.role === 'admin' && user?.agencyName) {
-      setSystemName(user.agencyName);
-    } else if (user?.tenantId) {
-      // Fetch the admin's agency name for this client
-      fetch(`/api/users/${user.tenantId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.agencyName) setSystemName(data.agencyName);
-        })
-        .catch(console.error);
-    } else {
-      fetch('/api/admin/system-settings')
-        .then(res => res.json())
-        .then(data => {
-          if (data.systemName) setSystemName(data.systemName);
-        })
-        .catch(console.error);
-    }
+    const loadBranding = async () => {
+      // 1. Always check system settings for the platform branding (GM, etc.)
+      try {
+        const res = await fetch('/api/admin/system-settings');
+        const data = await res.json();
+        // If an explicit system name is set, use it. 
+        if (data.systemName && data.systemName !== 'FTF Consulting') {
+          setSystemName(data.systemName);
+          return;
+        }
+      } catch (e) {
+        console.error("Failed to fetch system settings branding:", e);
+      }
+
+      // 2. Fallback to Agency Name for white-labeling if no global platform name is set
+      if (user?.role === 'admin' && user?.agencyName) {
+        setSystemName(user.agencyName);
+      } else if (user?.tenantId && user.role === 'client') {
+        // Fetch the admin's agency name for this client
+        fetch(`/api/users/${user.tenantId}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.agencyName) setSystemName(data.agencyName);
+          })
+          .catch(console.error);
+      }
+    };
+
+    loadBranding();
   }, [user]);
 
   return (

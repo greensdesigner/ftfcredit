@@ -35,7 +35,7 @@ export default function AdminDashboard() {
   const [isPaying, setIsPaying] = useState(false);
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'settings' | 'billing'>('overview');
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
   const tenantId = user?.tenantId;
 
   useEffect(() => {
@@ -408,13 +408,21 @@ export default function AdminDashboard() {
             <h3 className="text-xl font-bold mb-4 font-display">Administrative Settings</h3>
             <div className="space-y-6">
                 <div className="p-6 bg-neutral-50 rounded-2xl border border-neutral-100">
-                  <label className="block text-sm font-bold text-neutral-700 mb-2">Application Name (Branding)</label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-bold text-neutral-700">Application Name (Branding)</label>
+                    {updatingId === 'systemName' && <span className="text-[10px] text-emerald-500 font-bold animate-pulse">SAVING...</span>}
+                  </div>
                   <input 
                     type="text" 
-                    defaultValue={systemSettings?.systemName || 'FTF Consulting'}
-                    onBlur={(e) => handleUpdateSettings({ systemName: e.target.value })}
+                    value={systemSettings?.systemName || ''}
+                    onChange={(e) => setSystemSettings({ ...systemSettings, systemName: e.target.value })}
+                    onBlur={async (e) => {
+                      setUpdatingId('systemName');
+                      await handleUpdateSettings({ systemName: e.target.value });
+                      setUpdatingId(null);
+                    }}
                     className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-neutral-900 transition-all font-medium"
-                    placeholder="Enter platform name..."
+                    placeholder="FTF Consulting"
                   />
                   <p className="text-[10px] text-neutral-400 mt-2 font-bold uppercase tracking-wider">Updates browser tab and dashboards instantly</p>
                 </div>
@@ -426,7 +434,8 @@ export default function AdminDashboard() {
                       <label className="text-sm font-bold text-neutral-600 ml-1">Admin Full Name</label>
                       <input 
                         type="text" 
-                        defaultValue={user?.fullName}
+                        defaultValue={user?.fullName || ''}
+                        key={user?.fullName}
                         id="fullName"
                         autoComplete="name"
                         className="w-full bg-white border border-neutral-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-neutral-900 transition-all"
@@ -436,7 +445,8 @@ export default function AdminDashboard() {
                       <label className="text-sm font-bold text-neutral-600 ml-1">Company / Agency Name</label>
                       <input 
                         type="text" 
-                        defaultValue={user?.agencyName}
+                        defaultValue={user?.agencyName || ''}
+                        key={user?.agencyName}
                         id="agencyName"
                         autoComplete="organization"
                         className="w-full bg-white border border-neutral-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-neutral-900 transition-all font-bold"
@@ -446,7 +456,8 @@ export default function AdminDashboard() {
                       <label className="text-sm font-bold text-neutral-600 ml-1">Email Address</label>
                       <input 
                         type="email" 
-                        defaultValue={user?.email}
+                        defaultValue={user?.email || ''}
+                        key={user?.email}
                         id="email"
                         autoComplete="email"
                         className="w-full bg-white border border-neutral-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-neutral-900 transition-all"
@@ -456,7 +467,8 @@ export default function AdminDashboard() {
                       <label className="text-sm font-bold text-neutral-600 ml-1">Phone Number</label>
                       <input 
                         type="text" 
-                        defaultValue={user?.phone}
+                        defaultValue={user?.phone || ''}
+                        key={user?.phone}
                         id="phone"
                         autoComplete="tel"
                         className="w-full bg-white border border-neutral-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-neutral-900 transition-all"
@@ -466,7 +478,8 @@ export default function AdminDashboard() {
                       <label className="text-sm font-bold text-neutral-600 ml-1">Office Address</label>
                       <input 
                         type="text" 
-                        defaultValue={user?.streetAddress}
+                        defaultValue={user?.streetAddress || ''}
+                        key={user?.streetAddress}
                         id="streetAddress"
                         autoComplete="street-address"
                         className="w-full bg-white border border-neutral-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-neutral-900 transition-all"
@@ -491,6 +504,7 @@ export default function AdminDashboard() {
                             body: JSON.stringify(updates),
                           });
                           if (res.ok) {
+                            await refreshProfile();
                             alert("Agency settings saved successfully!");
                             window.location.reload(); // Refresh to apply branding
                           }
