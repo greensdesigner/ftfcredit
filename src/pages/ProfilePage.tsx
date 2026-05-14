@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { User, Mail, Phone, ShieldCheck, Camera, Save, X, Loader2, Upload } from 'lucide-react';
+import { User, Mail, Phone, ShieldCheck, Camera, Save, X, Loader2, Upload, MapPin } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from '../context/AuthContext';
 
@@ -16,6 +16,10 @@ export default function ProfilePage() {
     phone: '',
     avatar: '',
     avatarUrl: '',
+    streetAddress: '',
+    city: '',
+    state: '',
+    zipCode: '',
   });
 
   // Sync with user context
@@ -27,6 +31,10 @@ export default function ProfilePage() {
         phone: user.phone || '',
         avatar: user.fullName ? user.fullName.split(' ').map(n => n[0]).join('').toUpperCase() : 'U',
         avatarUrl: user.avatarUrl || '',
+        streetAddress: user.streetAddress || '',
+        city: user.city || '',
+        state: user.state || '',
+        zipCode: user.zipCode || '',
       });
     }
   }, [user]);
@@ -39,7 +47,11 @@ export default function ProfilePage() {
         fullName: profile.fullName,
         email: profile.email,
         phone: profile.phone,
-        avatarUrl: profile.avatarUrl
+        avatarUrl: profile.avatarUrl,
+        streetAddress: profile.streetAddress,
+        city: profile.city,
+        state: profile.state,
+        zipCode: profile.zipCode
       });
       setIsEditing(false);
       alert("Profile updated successfully in database!");
@@ -187,14 +199,84 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Account Status / Security Info */}
+              {/* Verification Status */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider ml-1">Verification Status</label>
-                <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 rounded-2xl border border-emerald-100">
+                <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 rounded-2xl border border-emerald-100 h-[50px]">
                   <ShieldCheck size={20} className="text-emerald-600" />
                   <span className="text-sm font-bold text-emerald-700">A-Rank Verified Borrower</span>
                 </div>
               </div>
+            </div>
+
+            {/* Address Section */}
+            <div className="pt-8 border-t border-neutral-50">
+               <h3 className="text-lg font-bold font-display text-neutral-900 mb-6 flex items-center gap-2">
+                  <MapPin size={20} />
+                  Residence Address
+               </h3>
+               
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Street Address */}
+                  <div className="md:col-span-2 space-y-1.5">
+                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider ml-1">Street Address</label>
+                    <input
+                      type="text"
+                      disabled={!isEditing}
+                      placeholder="Enter your street address"
+                      value={profile.streetAddress}
+                      onChange={(e) => setProfile({ ...profile, streetAddress: e.target.value })}
+                      className={`w-full rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
+                        isEditing ? "bg-white border-2 border-neutral-900 shadow-sm focus:ring-0" : "bg-neutral-50 border-2 border-transparent text-neutral-500"
+                      }`}
+                    />
+                  </div>
+
+                  {/* City */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider ml-1">City</label>
+                    <input
+                      type="text"
+                      disabled={!isEditing}
+                      placeholder="e.g. New York"
+                      value={profile.city}
+                      onChange={(e) => setProfile({ ...profile, city: e.target.value })}
+                      className={`w-full rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
+                        isEditing ? "bg-white border-2 border-neutral-900 shadow-sm focus:ring-0" : "bg-neutral-50 border-2 border-transparent text-neutral-500"
+                      }`}
+                    />
+                  </div>
+
+                  {/* State & Zip */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider ml-1">State</label>
+                      <input
+                        type="text"
+                        disabled={!isEditing}
+                        placeholder="NY"
+                        value={profile.state}
+                        onChange={(e) => setProfile({ ...profile, state: e.target.value })}
+                        className={`w-full rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
+                          isEditing ? "bg-white border-2 border-neutral-900 shadow-sm focus:ring-0" : "bg-neutral-50 border-2 border-transparent text-neutral-500"
+                        }`}
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-neutral-400 uppercase tracking-wider ml-1">Zip Code</label>
+                      <input
+                        type="text"
+                        disabled={!isEditing}
+                        placeholder="10001"
+                        value={profile.zipCode}
+                        onChange={(e) => setProfile({ ...profile, zipCode: e.target.value })}
+                        className={`w-full rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
+                          isEditing ? "bg-white border-2 border-neutral-900 shadow-sm focus:ring-0" : "bg-neutral-50 border-2 border-transparent text-neutral-500"
+                        }`}
+                      />
+                    </div>
+                  </div>
+               </div>
             </div>
 
             <div className="pt-6 border-t border-neutral-50 flex items-center justify-between">

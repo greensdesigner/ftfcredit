@@ -13,6 +13,10 @@ export interface UserProfile {
   onboardingStep: number;
   plaidConnected: boolean;
   achAuthorized: boolean;
+  streetAddress?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
   createdAt: number;
   // Join fields
   plan_name?: string;

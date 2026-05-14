@@ -98,9 +98,19 @@ async function startServer() {
               onboardingStep INT DEFAULT 1,
               plaidConnected BOOLEAN DEFAULT FALSE,
               achAuthorized BOOLEAN DEFAULT FALSE,
+              streetAddress VARCHAR(255),
+              city VARCHAR(100),
+              state VARCHAR(100),
+              zipCode VARCHAR(20),
               createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
           `);
+
+          // Migrations
+          try { await pool.query("ALTER TABLE users ADD COLUMN streetAddress VARCHAR(255)"); } catch (e) {}
+          try { await pool.query("ALTER TABLE users ADD COLUMN city VARCHAR(100)"); } catch (e) {}
+          try { await pool.query("ALTER TABLE users ADD COLUMN state VARCHAR(100)"); } catch (e) {}
+          try { await pool.query("ALTER TABLE users ADD COLUMN zipCode VARCHAR(20)"); } catch (e) {}
 
           // Helper to add avatarUrl if it doesn't exist (migrations)
           try {
