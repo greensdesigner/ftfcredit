@@ -19,10 +19,23 @@ async function startServer() {
   // Stripe lazy init
   let stripe: Stripe | null = null;
   const getStripe = () => {
-    const key = process.env.STRIPE_SECRET_KEY?.trim();
-    if (!stripe && key) {
-      console.log(`Initializing Stripe with key length: ${key.length}`);
-      stripe = new Stripe(key);
+    const key = (process.env.STRIPE_SECRET_KEY || process.env.VITE_STRIPE_SECRET_KEY)?.trim();
+    
+    if (!key) {
+      console.error("STRIPE_SECRET_KEY is missing from environment variables.");
+      return null;
+    }
+
+    if (!stripe) {
+      try {
+        stripe = new Stripe(key, {
+          apiVersion: '2025-01-27.acacia' as any, // Use latest stable
+        });
+        console.log("✅ Stripe initialized successfully");
+      } catch (e) {
+        console.error("❌ Stripe initialization failed:", e);
+        return null;
+      }
     }
     return stripe;
   };
@@ -441,7 +454,14 @@ async function startServer() {
   // Create Stripe Customer Portal Session
   app.post("/api/admin/create-portal-session", async (req, res) => {
     const stripeInst = getStripe();
-    if (!stripeInst) return res.status(500).json({ error: "Stripe not configured. Please add STRIPE_SECRET_KEY to Environment Variables in Settings." });
+    if (!stripeInst) {
+      const isMissing = !process.env.STRIPE_SECRET_KEY && !process.env.VITE_STRIPE_SECRET_KEY;
+      return res.status(500).json({ 
+        error: isMissing 
+          ? "Stripe Secret Key not found in environment variables. Please add STRIPE_SECRET_KEY to Settings." 
+          : "Stripe was found but failed to initialize. Check if the key is valid." 
+      });
+    }
     if (!pool) return res.status(500).json({ error: "Database not configured" });
 
     try {
