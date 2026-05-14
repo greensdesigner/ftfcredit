@@ -344,10 +344,13 @@ async function startServer() {
       if (assignedRole === 'admin') {
         finalTenantId = uid; // Admin is the root of their own tenant
       } else if (assignedRole === 'client' && agencyName) {
-        // Here agencyName field is used to pass the Agency Email from Frontend
+        // Validation: Ensure the Agency Email exists in the system as an admin
         const [admins]: any = await pool.query("SELECT uid FROM users WHERE role = 'admin' AND email = ?", [agencyName]);
         if (admins && admins.length > 0) {
           finalTenantId = admins[0].uid;
+        } else {
+          // If no admin found with this email, block registration
+          return res.status(400).json({ error: "নিবন্ধিত কোনো এজেন্সির ইমেইল পাওয়া যায়নি। অনুগ্রহ করে সঠিক এজেন্সি ইমেইল ব্যবহার করুন।" });
         }
       }
 
