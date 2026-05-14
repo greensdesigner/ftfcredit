@@ -19,21 +19,27 @@ async function startServer() {
   // Stripe lazy init
   let stripe: Stripe | null = null;
   const getStripe = () => {
-    const key = (process.env.STRIPE_SECRET_KEY || process.env.VITE_STRIPE_SECRET_KEY)?.trim();
+    // Check multiple possible env var names
+    const key = (
+      process.env.STRIPE_SECRET_KEY || 
+      process.env.VITE_STRIPE_SECRET_KEY ||
+      process.env.STRIPE_API_KEY
+    )?.trim();
     
     if (!key) {
-      console.error("STRIPE_SECRET_KEY is missing from environment variables.");
+      console.error("❌ CRITICAL: STRIPE_SECRET_KEY is missing from process.env");
+      console.log("Current Env Keys available:", Object.keys(process.env).filter(k => k.includes('STRIPE') || k.includes('KEY')));
       return null;
     }
 
     if (!stripe) {
       try {
         stripe = new Stripe(key, {
-          apiVersion: '2025-01-27.acacia' as any, // Use latest stable
+          apiVersion: '2023-10-16' as any, // Use a widely supported version
         });
-        console.log("✅ Stripe initialized successfully");
-      } catch (e) {
-        console.error("❌ Stripe initialization failed:", e);
+        console.log("✅ Stripe successfully initialized with provided Secret Key");
+      } catch (e: any) {
+        console.error("❌ Stripe initialization ERROR:", e.message);
         return null;
       }
     }
