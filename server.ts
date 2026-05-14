@@ -350,7 +350,7 @@ async function startServer() {
           finalTenantId = admins[0].uid;
         } else {
           // If no admin found with this email, block registration
-          return res.status(400).json({ error: "নিবন্ধিত কোনো এজেন্সির ইমেইল পাওয়া যায়নি। অনুগ্রহ করে সঠিক এজেন্সি ইমেইল ব্যবহার করুন।" });
+          return res.status(400).json({ error: "The agency email is not registered. Please use a valid agency email address." });
         }
       }
 
