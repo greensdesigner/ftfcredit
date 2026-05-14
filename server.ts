@@ -19,8 +19,10 @@ async function startServer() {
   // Stripe lazy init
   let stripe: Stripe | null = null;
   const getStripe = () => {
-    if (!stripe && process.env.STRIPE_SECRET_KEY) {
-      stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    const key = process.env.STRIPE_SECRET_KEY?.trim();
+    if (!stripe && key) {
+      console.log(`Initializing Stripe with key length: ${key.length}`);
+      stripe = new Stripe(key);
     }
     return stripe;
   };
@@ -59,6 +61,10 @@ async function startServer() {
       if (missingVars.length > 0) {
         console.error(`❌ CRITICAL: Missing environment variables: ${missingVars.join(", ")}`);
         console.warn("Please set these in your application settings.");
+      }
+
+      if (!process.env.STRIPE_SECRET_KEY) {
+        console.warn("⚠️ STRIPE_SECRET_KEY is missing. System billing features will be disabled.");
       }
 
       console.log(`Connecting to database: ${process.env.DB_NAME}`);
@@ -451,9 +457,13 @@ async function startServer() {
         await pool.query("UPDATE system_settings SET stripeCustomerId = ? WHERE id = 1", [customerId]);
       }
 
+      const protocol = req.headers['x-forwarded-proto'] || 'http';
+      const host = req.headers.host;
+      const baseUrl = process.env.APP_URL || `${protocol}://${host}`;
+
       const session = await stripeInst.billingPortal.sessions.create({
         customer: customerId,
-        return_url: `${process.env.APP_URL || 'http://localhost:3000'}/admin-portal?tab=billing`,
+        return_url: `${baseUrl}/admin-portal?tab=billing`,
       });
 
       res.json({ url: session.url });
@@ -482,6 +492,10 @@ async function startServer() {
         await pool.query("UPDATE system_settings SET stripeCustomerId = ? WHERE id = 1", [customerId]);
       }
 
+      const protocol = req.headers['x-forwarded-proto'] || 'http';
+      const host = req.headers.host;
+      const baseUrl = process.env.APP_URL || `${protocol}://${host}`;
+
       const session = await stripeInst.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ['card'],
@@ -499,8 +513,8 @@ async function startServer() {
           },
         ],
         mode: 'payment',
-        success_url: `${process.env.APP_URL || 'http://localhost:3000'}/admin-portal?tab=billing&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${process.env.APP_URL || 'http://localhost:3000'}/admin-portal?tab=billing&success=false`,
+        success_url: `${baseUrl}/admin-portal?tab=billing&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/admin-portal?tab=billing&success=false`,
         metadata: {
           type: 'system_maintenance'
         }
