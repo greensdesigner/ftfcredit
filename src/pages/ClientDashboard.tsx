@@ -4,7 +4,16 @@ import { CreditCard, History, TrendingUp, AlertTriangle, CheckCircle2, Clock } f
 import { cn } from '../lib/utils';
 
 export default function ClientDashboard() {
-  const { user } = useAuth();
+  const { user, refreshProfile } = useAuth();
+
+  useEffect(() => {
+    // Poll for status updates every 5 seconds to provide "Live Updates"
+    const interval = setInterval(() => {
+      refreshProfile();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [refreshProfile]);
 
   const getStepStatus = (stepIdx: number) => {
     const currentStep = user?.onboardingStep || 1;
@@ -18,6 +27,7 @@ export default function ClientDashboard() {
     { label: 'Dispute Letters', description: 'Crafting legal dispute letters for local and national bureaus.', icon: History },
     { label: 'Sent to Bureaus', description: 'Letters have been dispatched and we are awaiting confirmation.', icon: Clock },
     { label: 'Verifying Results', description: 'Reviewing responses from creditors and credit bureaus.', icon: AlertTriangle },
+    { label: 'Project Completed', description: 'All goals have been successfully met. Project finalized.', icon: CheckCircle2 },
   ];
 
   const stats = [

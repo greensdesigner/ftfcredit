@@ -8,6 +8,7 @@ interface AuthContextType {
   logout: () => Promise<void>;
   signup: (email: string, password: string, fullName: string, phone: string, role?: UserRole, agencyName?: string, streetAddress?: string) => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -15,6 +16,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const refreshProfile = React.useCallback(async () => {
+    if (!user?.uid) return;
+    try {
+      const response = await fetch(`/api/users/${user.uid}`);
+      if (response.ok) {
+        const freshUser = await response.json();
+        setUser(freshUser);
+        localStorage.setItem('ftf_user', JSON.stringify(freshUser));
+      }
+    } catch (e) {
+      console.error("Failed to refresh profile:", e);
+    }
+  }, [user?.uid]);
 
   // Mock persistence for demo purposes
   useEffect(() => {
@@ -152,7 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout, signup, updateProfile }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, signup, updateProfile, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
