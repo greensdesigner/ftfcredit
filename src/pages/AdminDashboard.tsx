@@ -188,6 +188,24 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleUpdateSettings = async (updates: any) => {
+    try {
+      const newSettings = { ...systemSettings, ...updates };
+      const response = await fetch('/api/admin/system-settings/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newSettings),
+      });
+      if (response.ok) {
+        setSystemSettings(newSettings);
+      } else {
+        alert("Failed to update settings");
+      }
+    } catch (e) {
+      console.error("Settings update failed:", e);
+    }
+  };
+
   return (
     <DashboardLayout>
       {systemSettings?.subscriptionStatus === 'expired' && (
@@ -388,16 +406,36 @@ export default function AdminDashboard() {
                    <p className="font-bold">System Maintenance Mode</p>
                    <p className="text-xs text-neutral-500">Prevent client access during updates.</p>
                  </div>
-                 <div className="h-6 w-11 bg-neutral-200 rounded-full cursor-not-allowed"></div>
+                 <button 
+                  onClick={() => handleUpdateSettings({ maintenanceMode: !systemSettings?.maintenanceMode })}
+                  className={cn(
+                   "h-6 w-11 rounded-full p-1 transition-colors relative",
+                   systemSettings?.maintenanceMode ? "bg-neutral-900" : "bg-neutral-200"
+                  )}
+                 >
+                   <div className={cn(
+                     "size-4 bg-white rounded-full transition-transform",
+                     systemSettings?.maintenanceMode ? "translate-x-5" : "translate-x-0"
+                   )} />
+                 </button>
                </div>
                <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
                  <div>
                    <p className="font-bold">Automated Email Alerts</p>
                    <p className="text-xs text-neutral-500">Notify clients on progress updates automatically.</p>
                  </div>
-                 <div className="h-6 w-11 bg-neutral-900 rounded-full cursor-not-allowed relative">
-                   <div className="absolute right-1 top-1 size-4 bg-white rounded-full"></div>
-                 </div>
+                 <button 
+                  onClick={() => handleUpdateSettings({ emailAlerts: !systemSettings?.emailAlerts })}
+                  className={cn(
+                   "h-6 w-11 rounded-full p-1 transition-colors relative",
+                   systemSettings?.emailAlerts ? "bg-neutral-900" : "bg-neutral-200"
+                  )}
+                 >
+                   <div className={cn(
+                     "size-4 bg-white rounded-full transition-transform",
+                     systemSettings?.emailAlerts ? "translate-x-5" : "translate-x-0"
+                   )} />
+                 </button>
                </div>
             </div>
           </div>

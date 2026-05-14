@@ -49,6 +49,34 @@ async function startServer() {
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
+  // Maintenance Mode Middleware
+  app.use(async (req, res, next) => {
+    // Exclude health check, static files, login/signup and admin routes from 503 check
+    const excludedPaths = ['/health', '/api/health', '/api/auth/login', '/api/auth/signup', '/api/admin', '/api/admin/system-settings'];
+    const isExcluded = excludedPaths.some(path => req.path.startsWith(path));
+    
+    // Also exclude non-API routes if they are intended to serve the frontend (Vite/Static)
+    // Actually, we want to show a maintenance page on frontend too.
+    // For now, let's just protect the API.
+    
+    if (req.path.startsWith('/api/') && !isExcluded) {
+      if (pool) {
+        try {
+          const [rows]: any = await pool.query("SELECT maintenanceMode FROM system_settings WHERE id = 1");
+          if (rows[0]?.maintenanceMode) {
+            return res.status(503).json({ 
+              error: "Maintenance Mode", 
+              message: "The system is currently undergoing maintenance. Please try again later." 
+            });
+          }
+        } catch (e) {
+          // Ignore DB error here to avoid blocking app if DB is struggling
+        }
+      }
+    }
+    next();
+  });
+
   // Database Connection Configuration (Ready for Hostinger)
   const dbConfig = {
     host: process.env.DB_HOST || 'localhost',
@@ -150,6 +178,8 @@ async function startServer() {
               monthlyFee DECIMAL(10, 2) DEFAULT 100.00,
               stripeCustomerId VARCHAR(255),
               stripeSubscriptionId VARCHAR(255),
+              maintenanceMode BOOLEAN DEFAULT FALSE,
+              emailAlerts BOOLEAN DEFAULT TRUE,
               UNIQUE (id)
             )
           `);
@@ -157,6 +187,8 @@ async function startServer() {
           // Migrations
           try { await pool.query("ALTER TABLE system_settings ADD COLUMN stripeCustomerId VARCHAR(255)"); } catch (e) {}
           try { await pool.query("ALTER TABLE system_settings ADD COLUMN stripeSubscriptionId VARCHAR(255)"); } catch (e) {}
+          try { await pool.query("ALTER TABLE system_settings ADD COLUMN maintenanceMode BOOLEAN DEFAULT FALSE"); } catch (e) {}
+          try { await pool.query("ALTER TABLE system_settings ADD COLUMN emailAlerts BOOLEAN DEFAULT TRUE"); } catch (e) {}
 
           // Initialize system settings if not exists
           const [settings]: any = await pool.query("SELECT * FROM system_settings WHERE id = 1");
@@ -409,6 +441,20 @@ async function startServer() {
       }
       
       res.json(settings);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/system-settings/update", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { maintenanceMode, emailAlerts } = req.body;
+    try {
+      await pool.query(
+        "UPDATE system_settings SET maintenanceMode = ?, emailAlerts = ? WHERE id = 1",
+        [maintenanceMode === true, emailAlerts === true]
+      );
+      res.json({ status: "success", message: "Settings updated successfully" });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
