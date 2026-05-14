@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { User, Mail, Phone, Lock, ArrowRight, Eye, EyeOff, Briefcase, UserCircle } from 'lucide-react';
+import { User, Mail, Phone, Lock, ArrowRight, Eye, EyeOff, Briefcase, UserCircle, MapPin } from 'lucide-react';
 import { UserRole } from '../types';
 import { cn } from '../lib/utils';
 
@@ -11,6 +11,8 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [agencyName, setAgencyName] = useState('');
+  const [streetAddress, setStreetAddress] = useState('');
   const [role, setRole] = useState<UserRole>(UserRole.CLIENT);
   const [showPassword, setShowPassword] = useState(false);
   const { signup } = useAuth();
@@ -33,7 +35,7 @@ export default function SignupPage() {
     }
 
     try {
-      await signup(email, password, fullName, phone, role);
+      await signup(email, password, fullName, phone, role, agencyName, streetAddress);
       if (role === UserRole.ADMIN) {
         navigate('/admin-portal');
       } else {
@@ -133,6 +135,48 @@ export default function SignupPage() {
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={18} />
               </div>
             </div>
+
+            {role === UserRole.ADMIN && (
+              <>
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="relative"
+                >
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Agency / Company Name</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      value={agencyName}
+                      onChange={(e) => setAgencyName(e.target.value)}
+                      className="block w-full rounded-xl border border-neutral-200 pl-11 pr-4 py-3 text-neutral-900 outline-none transition-all placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 font-bold"
+                      placeholder="My Credit Agency"
+                    />
+                    <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={18} />
+                  </div>
+                </motion.div>
+
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="relative"
+                >
+                  <label className="block text-sm font-medium text-neutral-700 mb-1.5">Office Address</label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      value={streetAddress}
+                      onChange={(e) => setStreetAddress(e.target.value)}
+                      className="block w-full rounded-xl border border-neutral-200 pl-11 pr-4 py-3 text-neutral-900 outline-none transition-all placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900"
+                      placeholder="123 Business St, Suite 100"
+                    />
+                    <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={18} />
+                  </div>
+                </motion.div>
+              </>
+            )}
 
             <div className="relative">
               <label className="block text-sm font-medium text-neutral-700 mb-1.5">Password</label>

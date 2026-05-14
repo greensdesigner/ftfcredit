@@ -326,7 +326,7 @@ async function startServer() {
   // User Signup
   app.post("/api/auth/signup", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured. Check DB environment variables." });
-    const { uid, email, fullName, password, role, phone, tenantId: providedTenantId } = req.body;
+    const { uid, email, fullName, password, role, phone, tenantId: providedTenantId, agencyName, streetAddress } = req.body;
     try {
       // Check if user exists first to provide better error
       const [existing]: any = await pool.query("SELECT uid FROM users WHERE email = ?", [email]);
@@ -346,8 +346,8 @@ async function startServer() {
       }
 
       await pool.query(
-        "INSERT INTO users (uid, email, fullName, password, role, phone, tenantId) VALUES (?, ?, ?, ?, ?, ?, ?)",
-        [uid, email, fullName, hashedPassword, assignedRole, phone, finalTenantId]
+        "INSERT INTO users (uid, email, fullName, password, role, phone, tenantId, agencyName, streetAddress) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [uid, email, fullName, hashedPassword, assignedRole, phone, finalTenantId, agencyName, streetAddress]
       );
       console.log(`✅ User created successfully: ${email} (${uid}) [Tenant: ${finalTenantId}]`);
       res.json({ status: "success", message: "User created in DB", tenantId: finalTenantId });

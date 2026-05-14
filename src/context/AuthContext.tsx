@@ -6,7 +6,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  signup: (email: string, password: string, fullName: string, phone: string, role?: UserRole) => Promise<void>;
+  signup: (email: string, password: string, fullName: string, phone: string, role?: UserRole, agencyName?: string, streetAddress?: string) => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
 }
 
@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   };
 
-  const signup = async (email: string, password: string, fullName: string, phone: string, role?: UserRole) => {
+  const signup = async (email: string, password: string, fullName: string, phone: string, role?: UserRole, agencyName?: string, streetAddress?: string) => {
     setLoading(true);
     const uid = 'user_' + Math.random().toString(36).substr(2, 9);
     const assignedRole = role || UserRole.CLIENT;
@@ -70,6 +70,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       fullName,
       phone,
       role: assignedRole,
+      agencyName,
+      streetAddress,
     };
 
     try {
@@ -90,10 +92,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const profile: UserProfile = {
         uid,
         tenantId: data.tenantId,
+        agencyName: agencyName,
         email,
         fullName,
         phone,
         role: assignedRole,
+        streetAddress,
         onboardingStep: 1,
         plaidConnected: false,
         achAuthorized: false,
