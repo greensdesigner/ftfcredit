@@ -801,9 +801,18 @@ function StripeConnectSection({ user }: { user: any }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: user.uid, email: user.email }),
       });
-      const { url, error } = await response.json();
-      if (error) throw new Error(error);
-      if (url) window.location.href = url;
+      const data = await response.json();
+      
+      if (data.error) {
+        if (data.error.includes("signed up for Connect")) {
+          alert("Action Required: Please enable 'Stripe Connect' in your Stripe Dashboard (dashboard.stripe.com/connect) first, then try again.");
+        } else {
+          throw new Error(data.error);
+        }
+        return;
+      }
+      
+      if (data.url) window.location.href = data.url;
     } catch (e: any) {
       alert("Connection failed: " + e.message);
     } finally {
