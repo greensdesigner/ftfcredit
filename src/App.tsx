@@ -36,12 +36,22 @@ export default function App() {
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  const { user } = useAuth();
+
   useEffect(() => {
     const checkStatus = async () => {
       try {
+        if (user?.role === 'admin' && user?.agencyName) {
+           document.title = user.agencyName;
+        } else if (user?.tenantId) {
+          const res = await fetch(`/api/users/${user.tenantId}`);
+          const admin = await res.json();
+          if (admin.agencyName) document.title = admin.agencyName;
+        }
+
         const response = await fetch('/api/admin/system-settings');
         const data = await response.json();
-        if (data.systemName) {
+        if (data.systemName && !document.title) {
           document.title = data.systemName;
         }
         if (data.maintenanceMode) {
@@ -54,7 +64,7 @@ export default function App() {
       }
     };
     checkStatus();
-  }, []);
+  }, [user]);
 
   if (loading) return null;
   if (isMaintenance && !window.location.pathname.startsWith('/admin-portal')) {

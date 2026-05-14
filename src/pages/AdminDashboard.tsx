@@ -419,6 +419,77 @@ export default function AdminDashboard() {
                   <p className="text-[10px] text-neutral-400 mt-2 font-bold uppercase tracking-wider">Updates browser tab and dashboards instantly</p>
                 </div>
 
+                <div className="p-8 bg-neutral-50 rounded-[32px] border border-neutral-100 mt-8">
+                  <h4 className="text-lg font-bold mb-6 font-display">Agency Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-bold text-neutral-600 ml-1">Admin Full Name</label>
+                      <input 
+                        type="text" 
+                        defaultValue={user?.fullName}
+                        id="fullName"
+                        className="w-full bg-white border border-neutral-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-neutral-900 transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-bold text-neutral-600 ml-1">Company / Agency Name</label>
+                      <input 
+                        type="text" 
+                        defaultValue={user?.agencyName}
+                        id="agencyName"
+                        className="w-full bg-white border border-neutral-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-neutral-900 transition-all font-bold"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-bold text-neutral-600 ml-1">Phone Number</label>
+                      <input 
+                        type="text" 
+                        defaultValue={user?.phone}
+                        id="phone"
+                        className="w-full bg-white border border-neutral-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-neutral-900 transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-sm font-bold text-neutral-600 ml-1">Office Address</label>
+                      <input 
+                        type="text" 
+                        defaultValue={user?.streetAddress}
+                        id="streetAddress"
+                        className="w-full bg-white border border-neutral-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-neutral-900 transition-all"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-8 flex justify-end">
+                    <button 
+                      onClick={async () => {
+                        const updates = {
+                          uid: user?.uid,
+                          fullName: (document.getElementById('fullName') as HTMLInputElement).value,
+                          agencyName: (document.getElementById('agencyName') as HTMLInputElement).value,
+                          phone: (document.getElementById('phone') as HTMLInputElement).value,
+                          streetAddress: (document.getElementById('streetAddress') as HTMLInputElement).value,
+                        };
+                        try {
+                          const res = await fetch('/api/admin/agency-settings/update', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(updates),
+                          });
+                          if (res.ok) {
+                            alert("Agency settings saved successfully!");
+                            window.location.reload(); // Refresh to apply branding
+                          }
+                        } catch (e) {
+                          alert("Save failed");
+                        }
+                      }}
+                      className="bg-neutral-900 text-white px-8 py-3 rounded-xl font-bold hover:shadow-lg transition-all"
+                    >
+                      Save Agency Details
+                    </button>
+                  </div>
+                </div>
+
                <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
                  <div>
                    <p className="font-bold">System Maintenance Mode</p>

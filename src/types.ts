@@ -7,6 +7,7 @@ export enum UserRole {
 export interface UserProfile {
   uid: string;
   tenantId?: string;
+  agencyName?: string;
   email: string;
   fullName: string;
   role: UserRole;

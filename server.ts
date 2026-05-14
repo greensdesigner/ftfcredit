@@ -172,6 +172,7 @@ async function startServer() {
 
           // Migrations for multi-tenancy
           try { await pool.query("ALTER TABLE users ADD COLUMN tenantId VARCHAR(128)"); } catch (e) {}
+          try { await pool.query("ALTER TABLE users ADD COLUMN agencyName VARCHAR(255)"); } catch (e) {}
           try { await pool.query("ALTER TABLE users MODIFY COLUMN role ENUM('client', 'admin', 'super_admin') DEFAULT 'client'"); } catch (e) {}
 
           // System settings table for platform subscription
@@ -459,6 +460,20 @@ async function startServer() {
       }
       
       res.json(settings);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/agency-settings/update", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { uid, fullName, agencyName, phone, streetAddress, city, state, zipCode } = req.body;
+    try {
+      await pool.query(
+        "UPDATE users SET fullName = ?, agencyName = ?, phone = ?, streetAddress = ?, city = ?, state = ?, zipCode = ? WHERE uid = ?",
+        [fullName, agencyName, phone, streetAddress, city, state, zipCode, uid]
+      );
+      res.json({ status: "success", message: "Agency settings updated" });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

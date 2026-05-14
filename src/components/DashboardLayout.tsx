@@ -37,13 +37,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [systemName, setSystemName] = useState('FTF Consulting');
 
   React.useEffect(() => {
-    fetch('/api/admin/system-settings')
-      .then(res => res.json())
-      .then(data => {
-        if (data.systemName) setSystemName(data.systemName);
-      })
-      .catch(console.error);
-  }, []);
+    if (user?.role === 'admin' && user?.agencyName) {
+      setSystemName(user.agencyName);
+    } else if (user?.tenantId) {
+      // Fetch the admin's agency name for this client
+      fetch(`/api/users/${user.tenantId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.agencyName) setSystemName(data.agencyName);
+        })
+        .catch(console.error);
+    } else {
+      fetch('/api/admin/system-settings')
+        .then(res => res.json())
+        .then(data => {
+          if (data.systemName) setSystemName(data.systemName);
+        })
+        .catch(console.error);
+    }
+  }, [user]);
 
   return (
     <div className="flex min-h-screen bg-neutral-50 text-neutral-900">
