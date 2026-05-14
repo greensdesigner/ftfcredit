@@ -242,7 +242,8 @@ async function startServer() {
     const { email, password } = req.body;
     try {
       const [rows]: any = await pool.query(`
-        SELECT u.*, s.planName as plan_name, s.status as sub_status, s.amount as sub_amount
+        SELECT u.*, s.planName as plan_name, s.status as sub_status, s.amount as sub_amount,
+               u.plaidConnected, u.achAuthorized
         FROM users u
         LEFT JOIN subscriptions s ON u.uid = s.userId
         WHERE u.email = ?

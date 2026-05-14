@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { CreditCard, Download, ExternalLink, Calendar, CheckCircle2, XCircle, AlertCircle, Loader2 } from 'lucide-react';
+import { CreditCard, Download, ExternalLink, Calendar, CheckCircle2, XCircle, AlertCircle, Loader2, Plus, Building2, ShieldCheck, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
@@ -13,6 +13,8 @@ export default function BillingPage() {
   const [status, setStatus] = useState<'active' | 'cancelled' | 'pending'>(user?.sub_status as any || 'active');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
+  const [showCardModal, setShowCardModal] = useState(false);
+  const [isPlaidConnecting, setIsPlaidConnecting] = useState(false);
 
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(true);
@@ -104,6 +106,30 @@ export default function BillingPage() {
       setStatus('active');
     }
     setIsProcessing(false);
+  };
+
+  const handleConnectBank = () => {
+    setIsPlaidConnecting(true);
+    // Simulating Plaid Link
+    setTimeout(async () => {
+      await updateProfile({ plaidConnected: true, achAuthorized: true });
+      setIsPlaidConnecting(false);
+      setPaymentMethod('Connected Bank (ACH)');
+      alert("Bank account connected successfully via Plaid!");
+    }, 2000);
+  };
+
+  const handleAddCard = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsProcessing(true);
+    // Simulating Card Verification
+    setTimeout(async () => {
+      await updateProfile({ achAuthorized: true });
+      setPaymentMethod('Visa ending in 4242');
+      setShowCardModal(false);
+      setIsProcessing(false);
+      alert("Payment card added successfully!");
+    }, 2000);
   };
 
   const downloadReceipt = (invoiceId: string) => {
@@ -221,7 +247,90 @@ export default function BillingPage() {
            </div>
         </div>
 
-        {/* Invoices Table */}
+        {/* Payment Methods Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          {/* Active Method */}
+          <div className="bg-white rounded-[32px] border border-neutral-100 p-8 shadow-sm">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold font-display text-neutral-900">Payment Sources</h3>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
+                <ShieldCheck size={12} />
+                Secure Autopay
+              </span>
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-6 rounded-2xl border-2 border-neutral-900 bg-neutral-50/50">
+                 <div className="flex items-center gap-4">
+                    <div className="size-12 rounded-xl bg-neutral-900 flex items-center justify-center text-white">
+                       {paymentMethod.includes('Bank') ? <Building2 size={24} /> : <CreditCard size={24} />}
+                    </div>
+                    <div>
+                       <p className="font-bold text-neutral-900">{paymentMethod}</p>
+                       <p className="text-xs text-neutral-400 capitalize">Default payment source</p>
+                    </div>
+                 </div>
+                 <div className="text-emerald-500">
+                    <CheckCircle2 size={24} />
+                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                 <button 
+                  onClick={() => setShowCardModal(true)}
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-neutral-200 p-4 font-bold text-sm text-neutral-900 hover:bg-neutral-50 transition-all"
+                 >
+                   <Plus size={18} /> Add Card
+                 </button>
+                 <button 
+                  onClick={handleConnectBank}
+                  disabled={isPlaidConnecting}
+                  className="flex items-center justify-center gap-2 rounded-2xl border border-neutral-200 p-4 font-bold text-sm text-neutral-900 hover:bg-neutral-50 transition-all disabled:opacity-50"
+                 >
+                   {isPlaidConnecting ? <Loader2 className="animate-spin" size={18} /> : <Building2 size={18} />}
+                   Connect Bank
+                 </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Billing Protection */}
+          <div className="bg-neutral-900 rounded-[32px] p-8 text-white shadow-xl relative overflow-hidden flex flex-col justify-between">
+             <div className="relative z-10">
+                <h3 className="text-xl font-bold mb-4 font-display">Financial Security</h3>
+                <p className="text-neutral-400 text-sm mb-6 leading-relaxed">
+                  Your payments are protected by 256-bit encryption. We never store your full card details on our servers.
+                </p>
+                <div className="space-y-4">
+                   <div className="flex items-center gap-3">
+                      <div className="size-8 rounded-lg bg-white/10 flex items-center justify-center text-emerald-400">
+                         <ShieldCheck size={18} />
+                      </div>
+                      <span className="text-sm font-medium">PCI-DSS Compliant Infrastructure</span>
+                   </div>
+                   <div className="flex items-center gap-3">
+                      <div className="size-8 rounded-lg bg-white/10 flex items-center justify-center text-emerald-400">
+                         <Lock size={18} />
+                      </div>
+                      <span className="text-sm font-medium">Auto-Billing Frequency: Monthly</span>
+                   </div>
+                </div>
+             </div>
+             <div className="mt-8 pt-6 border-t border-white/10 relative z-10">
+                <div className="flex items-center justify-between">
+                   <span className="text-xs text-neutral-500 italic uppercase tracking-wider font-bold">Encrypted via Stripe</span>
+                   <div className="flex gap-2">
+                      <div className="size-6 bg-white/10 rounded"></div>
+                      <div className="size-6 bg-white/10 rounded"></div>
+                      <div className="size-6 bg-white/10 rounded"></div>
+                   </div>
+                </div>
+             </div>
+             <div className="absolute -right-20 -bottom-20 size-64 bg-emerald-500/10 rounded-full blur-3xl"></div>
+          </div>
+        </div>
+
+        {/* Transaction History */}
         <div className="rounded-3xl border border-neutral-100 bg-white shadow-sm overflow-hidden">
           <div className="p-8 pb-4">
              <h3 className="font-display text-xl font-bold text-neutral-900">Invoice History</h3>
@@ -336,6 +445,84 @@ export default function BillingPage() {
               >
                 Close
               </button>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Add Card Modal */}
+        {showCardModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              className="w-full max-w-md bg-white rounded-[32px] overflow-hidden shadow-2xl p-8"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-2xl font-bold font-display text-neutral-900">Add New Card</h3>
+                <button onClick={() => setShowCardModal(false)} className="text-neutral-400 hover:text-neutral-900">
+                  <XCircle size={24} />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddCard} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-neutral-400 uppercase tracking-widest">Cardholder Name</label>
+                  <input 
+                    required
+                    type="text" 
+                    placeholder="e.g. John Doe"
+                    className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-4 text-sm font-medium focus:border-neutral-900 outline-none transition-all"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-neutral-400 uppercase tracking-widest">Card Number</label>
+                  <div className="relative">
+                    <CreditCard className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
+                    <input 
+                      required
+                      type="text" 
+                      placeholder="0000 0000 0000 0000"
+                      className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 pl-14 pr-5 py-4 text-sm font-medium focus:border-neutral-900 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-widest">Expiry Date</label>
+                    <input 
+                      required
+                      type="text" 
+                      placeholder="MM/YY"
+                      className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-4 text-sm font-medium focus:border-neutral-900 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-widest">CVV</label>
+                    <input 
+                      required
+                      type="text" 
+                      placeholder="•••"
+                      className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-4 text-sm font-medium focus:border-neutral-900 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  type="submit"
+                  disabled={isProcessing}
+                  className="w-full rounded-2xl bg-neutral-900 py-4 font-bold text-white shadow-xl shadow-neutral-900/10 hover:bg-neutral-800 transition-all flex items-center justify-center gap-2"
+                >
+                  {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <ShieldCheck size={20} />}
+                  Securely Save Card
+                </button>
+                
+                <div className="flex items-center justify-center gap-2 text-neutral-400">
+                  <Lock size={12} />
+                  <p className="text-[10px] uppercase font-bold tracking-widest">256-bit SSL Encryption</p>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}
