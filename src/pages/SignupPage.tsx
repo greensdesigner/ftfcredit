@@ -98,6 +98,7 @@ export default function SignupPage() {
                   type="text"
                   required
                   value={fullName}
+                  autoComplete="name"
                   onChange={(e) => setFullName(e.target.value)}
                   className="block w-full rounded-xl border border-neutral-200 pl-11 pr-4 py-3 text-neutral-900 outline-none transition-all placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900"
                   placeholder="John Doe"
@@ -113,6 +114,7 @@ export default function SignupPage() {
                   type="email"
                   required
                   value={email}
+                  autoComplete="email"
                   onChange={(e) => setEmail(e.target.value)}
                   className="block w-full rounded-xl border border-neutral-200 pl-11 pr-4 py-3 text-neutral-900 outline-none transition-all placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900"
                   placeholder="name@company.com"
@@ -128,6 +130,7 @@ export default function SignupPage() {
                   type="tel"
                   required
                   value={phone}
+                  autoComplete="tel"
                   onChange={(e) => setPhone(e.target.value)}
                   className="block w-full rounded-xl border border-neutral-200 pl-11 pr-4 py-3 text-neutral-900 outline-none transition-all placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900"
                   placeholder="+1 (555) 000-0000"
@@ -149,6 +152,7 @@ export default function SignupPage() {
                       type="text"
                       required
                       value={agencyName}
+                      autoComplete="organization"
                       onChange={(e) => setAgencyName(e.target.value)}
                       className="block w-full rounded-xl border border-neutral-200 pl-11 pr-4 py-3 text-neutral-900 outline-none transition-all placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900 font-bold"
                       placeholder="My Credit Agency"
@@ -168,6 +172,7 @@ export default function SignupPage() {
                       type="text"
                       required
                       value={streetAddress}
+                      autoComplete="street-address"
                       onChange={(e) => setStreetAddress(e.target.value)}
                       className="block w-full rounded-xl border border-neutral-200 pl-11 pr-4 py-3 text-neutral-900 outline-none transition-all placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900"
                       placeholder="123 Business St, Suite 100"
@@ -187,6 +192,7 @@ export default function SignupPage() {
                   <input
                     type="email"
                     value={agencyName}
+                    autoComplete="email"
                     onChange={(e) => setAgencyName(e.target.value)}
                     className="block w-full rounded-xl border border-neutral-200 pl-11 pr-4 py-3 text-neutral-900 outline-none transition-all placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900"
                     placeholder="Enter agency email to connect..."

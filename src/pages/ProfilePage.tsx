@@ -156,6 +156,7 @@ export default function ProfilePage() {
                     type="text"
                     disabled={!isEditing}
                     value={profile.fullName}
+                    autoComplete="name"
                     onChange={(e) => setProfile({ ...profile, fullName: e.target.value })}
                     className={`w-full rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
                       isEditing ? "bg-white border-2 border-neutral-900 shadow-sm focus:ring-0" : "bg-neutral-50 border-2 border-transparent text-neutral-500"
@@ -173,6 +174,7 @@ export default function ProfilePage() {
                     type="email"
                     disabled={!isEditing}
                     value={profile.email}
+                    autoComplete="email"
                     onChange={(e) => setProfile({ ...profile, email: e.target.value })}
                     className={`w-full rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
                       isEditing ? "bg-white border-2 border-neutral-900 shadow-sm focus:ring-0" : "bg-neutral-50 border-2 border-transparent text-neutral-500"
@@ -190,6 +192,7 @@ export default function ProfilePage() {
                     type="tel"
                     disabled={!isEditing}
                     value={profile.phone}
+                    autoComplete="tel"
                     onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
                     className={`w-full rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
                       isEditing ? "bg-white border-2 border-neutral-900 shadow-sm focus:ring-0" : "bg-neutral-50 border-2 border-transparent text-neutral-500"
@@ -225,6 +228,7 @@ export default function ProfilePage() {
                       disabled={!isEditing}
                       placeholder="Enter your street address"
                       value={profile.streetAddress}
+                      autoComplete="street-address"
                       onChange={(e) => setProfile({ ...profile, streetAddress: e.target.value })}
                       className={`w-full rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
                         isEditing ? "bg-white border-2 border-neutral-900 shadow-sm focus:ring-0" : "bg-neutral-50 border-2 border-transparent text-neutral-500"
@@ -240,6 +244,7 @@ export default function ProfilePage() {
                       disabled={!isEditing}
                       placeholder="e.g. New York"
                       value={profile.city}
+                      autoComplete="address-level2"
                       onChange={(e) => setProfile({ ...profile, city: e.target.value })}
                       className={`w-full rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
                         isEditing ? "bg-white border-2 border-neutral-900 shadow-sm focus:ring-0" : "bg-neutral-50 border-2 border-transparent text-neutral-500"
@@ -256,6 +261,7 @@ export default function ProfilePage() {
                         disabled={!isEditing}
                         placeholder="NY"
                         value={profile.state}
+                        autoComplete="address-level1"
                         onChange={(e) => setProfile({ ...profile, state: e.target.value })}
                         className={`w-full rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
                           isEditing ? "bg-white border-2 border-neutral-900 shadow-sm focus:ring-0" : "bg-neutral-50 border-2 border-transparent text-neutral-500"
@@ -269,6 +275,7 @@ export default function ProfilePage() {
                         disabled={!isEditing}
                         placeholder="10001"
                         value={profile.zipCode}
+                        autoComplete="postal-code"
                         onChange={(e) => setProfile({ ...profile, zipCode: e.target.value })}
                         className={`w-full rounded-2xl px-4 py-3 text-sm font-bold transition-all ${
                           isEditing ? "bg-white border-2 border-neutral-900 shadow-sm focus:ring-0" : "bg-neutral-50 border-2 border-transparent text-neutral-500"

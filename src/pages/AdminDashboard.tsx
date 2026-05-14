@@ -428,6 +428,7 @@ export default function AdminDashboard() {
                         type="text" 
                         defaultValue={user?.fullName}
                         id="fullName"
+                        autoComplete="name"
                         className="w-full bg-white border border-neutral-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-neutral-900 transition-all"
                       />
                     </div>
@@ -437,6 +438,7 @@ export default function AdminDashboard() {
                         type="text" 
                         defaultValue={user?.agencyName}
                         id="agencyName"
+                        autoComplete="organization"
                         className="w-full bg-white border border-neutral-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-neutral-900 transition-all font-bold"
                       />
                     </div>
@@ -446,6 +448,7 @@ export default function AdminDashboard() {
                         type="email" 
                         defaultValue={user?.email}
                         id="email"
+                        autoComplete="email"
                         className="w-full bg-white border border-neutral-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-neutral-900 transition-all"
                       />
                     </div>
@@ -455,6 +458,7 @@ export default function AdminDashboard() {
                         type="text" 
                         defaultValue={user?.phone}
                         id="phone"
+                        autoComplete="tel"
                         className="w-full bg-white border border-neutral-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-neutral-900 transition-all"
                       />
                     </div>
@@ -464,6 +468,7 @@ export default function AdminDashboard() {
                         type="text" 
                         defaultValue={user?.streetAddress}
                         id="streetAddress"
+                        autoComplete="street-address"
                         className="w-full bg-white border border-neutral-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-neutral-900 transition-all"
                       />
                     </div>
