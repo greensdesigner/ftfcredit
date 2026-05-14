@@ -340,6 +340,7 @@ async function startServer() {
     try {
       const [clients]: any = await pool.query(`
         SELECT u.uid, u.email, u.fullName, u.phone, u.avatarUrl, u.role, u.onboardingStep,
+               u.streetAddress, u.city, u.state, u.zipCode,
                s.planName as plan_name, s.status as sub_status, s.amount, s.nextBillingDate as next_billing_date
         FROM users u
         LEFT JOIN subscriptions s ON u.uid = s.userId

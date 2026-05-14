@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
-import { Users, CreditCard, AlertCircle, Search, Filter, MoreHorizontal, ArrowUpRight, ArrowDownRight, CheckCircle2, RotateCcw, Loader2, X, Mail, Phone, Calendar, User } from 'lucide-react';
+import { Users, CreditCard, AlertCircle, Search, Filter, MoreHorizontal, ArrowUpRight, ArrowDownRight, CheckCircle2, RotateCcw, Loader2, X, Mail, Phone, Calendar, User, MapPin } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface Client {
@@ -12,6 +12,10 @@ interface Client {
   avatarUrl: string;
   role: string;
   onboardingStep: number;
+  streetAddress?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
   plan_name: string | null;
   sub_status: string | null;
   amount: number | null;
@@ -366,6 +370,26 @@ export default function AdminDashboard() {
                         <p className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider">Next Billing</p>
                         <p className="font-medium">{selectedClient.next_billing_date ? new Date(selectedClient.next_billing_date).toLocaleDateString() : 'N/A'}</p>
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Address Section */}
+                <div className="pt-6 border-t border-neutral-100">
+                  <div className="flex items-start gap-4">
+                    <div className="size-10 rounded-xl bg-neutral-50 flex items-center justify-center text-neutral-400">
+                      <MapPin size={20} />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider mb-1">Residence Address</p>
+                      {selectedClient.streetAddress ? (
+                        <div className="text-sm font-bold text-neutral-900 leading-relaxed">
+                          <p>{selectedClient.streetAddress}</p>
+                          <p>{selectedClient.city}, {selectedClient.state} {selectedClient.zipCode}</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm italic text-neutral-400">No address provided</p>
+                      )}
                     </div>
                   </div>
                 </div>
