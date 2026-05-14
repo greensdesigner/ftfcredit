@@ -106,6 +106,25 @@ async function startServer() {
             )
           `);
 
+          // System settings table for platform subscription
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS system_settings (
+              id INT PRIMARY KEY DEFAULT 1,
+              subscriptionStatus ENUM('active', 'expired') DEFAULT 'active',
+              expiryDate TIMESTAMP,
+              monthlyFee DECIMAL(10, 2) DEFAULT 100.00,
+              UNIQUE (id)
+            )
+          `);
+
+          // Initialize system settings if not exists
+          const [settings]: any = await pool.query("SELECT * FROM system_settings WHERE id = 1");
+          if (settings.length === 0) {
+            const nextMonth = new Date();
+            nextMonth.setDate(nextMonth.getDate() + 30);
+            await pool.query("INSERT INTO system_settings (id, subscriptionStatus, expiryDate) VALUES (1, 'active', ?)", [nextMonth]);
+          }
+
           // Migrations
           try { await pool.query("ALTER TABLE users ADD COLUMN streetAddress VARCHAR(255)"); } catch (e) {}
           try { await pool.query("ALTER TABLE users ADD COLUMN city VARCHAR(100)"); } catch (e) {}
@@ -329,6 +348,41 @@ async function startServer() {
         [step, plaidConnected, achAuthorized, req.params.uid]
       );
       res.json({ status: "success" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // --- System Subscription Management ---
+  app.get("/api/admin/system-settings", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    try {
+      const [rows]: any = await pool.query("SELECT * FROM system_settings WHERE id = 1");
+      const settings = rows[0];
+      
+      // Auto-expire check
+      const now = new Date();
+      if (settings.expiryDate && new Date(settings.expiryDate) < now && settings.subscriptionStatus === 'active') {
+        await pool.query("UPDATE system_settings SET subscriptionStatus = 'expired' WHERE id = 1");
+        settings.subscriptionStatus = 'expired';
+      }
+      
+      res.json(settings);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/system-pay", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    try {
+      const nextMonth = new Date();
+      nextMonth.setDate(nextMonth.getDate() + 30);
+      await pool.query(
+        "UPDATE system_settings SET subscriptionStatus = 'active', expiryDate = ? WHERE id = 1",
+        [nextMonth]
+      );
+      res.json({ status: "success", message: "Subscription renewed for 30 days" });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

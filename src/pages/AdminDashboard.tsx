@@ -28,12 +28,43 @@ export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [systemSettings, setSystemSettings] = useState<any>(null);
+  const [isPaying, setIsPaying] = useState(false);
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'settings' | 'billing'>('overview');
+
+  useEffect(() => {
+    fetchSystemSettings();
+  }, []);
+
+  const fetchSystemSettings = async () => {
+    try {
+      const response = await fetch('/api/admin/system-settings');
+      const data = await response.json();
+      setSystemSettings(data);
+    } catch (error) {
+      console.error("Failed to fetch system settings:", error);
+    }
+  };
+
+  const handleSystemPay = async () => {
+    setIsPaying(true);
+    try {
+      const response = await fetch('/api/admin/system-pay', { method: 'POST' });
+      if (response.ok) {
+        alert("Subscription renewed successfully!");
+        fetchSystemSettings();
+      }
+    } catch (error) {
+      console.error("Payment failed:", error);
+    } finally {
+      setIsPaying(false);
+    }
+  };
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab === 'clients' || tab === 'settings' || tab === 'overview') {
+    if (tab === 'clients' || tab === 'settings' || tab === 'overview' || tab === 'billing') {
       setActiveTab(tab as any);
     }
   }, [searchParams]);
@@ -103,6 +134,30 @@ export default function AdminDashboard() {
 
   return (
     <DashboardLayout>
+      {systemSettings?.subscriptionStatus === 'expired' && (
+        <div className="fixed inset-0 z-[200] bg-neutral-900/95 backdrop-blur-md flex items-center justify-center p-4">
+           <div className="w-full max-w-md bg-white rounded-[32px] p-10 text-center shadow-2xl animate-in zoom-in-95 duration-300">
+              <div className="size-20 rounded-3xl bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-6">
+                 <AlertCircle size={40} />
+              </div>
+              <h2 className="text-3xl font-bold font-display text-neutral-900 mb-4">System Locked</h2>
+              <p className="text-neutral-500 mb-8 leading-relaxed">
+                 Your platform subscription has expired. Please pay the monthly maintenance fee of $100 to reactivate all administrative features.
+              </p>
+              <button 
+                onClick={handleSystemPay}
+                disabled={isPaying}
+                className="w-full rounded-2xl bg-neutral-900 py-4 font-bold text-white shadow-xl shadow-neutral-900/20 hover:bg-neutral-800 transition-all flex items-center justify-center gap-2"
+              >
+                {isPaying ? <Loader2 className="animate-spin" size={20} /> : <CreditCard size={20} />}
+                Pay $100 & Reactivate
+              </button>
+              <p className="mt-6 text-[10px] text-neutral-400 uppercase font-bold tracking-widest flex items-center justify-center gap-1">
+                 <MapPin size={10} /> Secure Enterprise Payment
+              </p>
+           </div>
+        </div>
+      )}
       <div className="space-y-8 max-w-7xl animate-in fade-in duration-500 text-left">
         <div className="flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
           <div className="flex flex-col gap-1">
@@ -287,6 +342,90 @@ export default function AdminDashboard() {
                  <div className="h-6 w-11 bg-neutral-900 rounded-full cursor-not-allowed relative">
                    <div className="absolute right-1 top-1 size-4 bg-white rounded-full"></div>
                  </div>
+               </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'billing' && (
+          <div className="animate-in fade-in duration-500 space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+               <div className="md:col-span-2 bg-white rounded-[32px] border border-neutral-100 p-8 shadow-sm">
+                  <div className="flex items-center justify-between mb-8">
+                     <h3 className="text-xl font-bold font-display text-neutral-900">Platform Subscription</h3>
+                     <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-900 px-3 py-1 text-[10px] font-bold text-white uppercase tracking-wider">
+                        Enterprise License
+                     </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                     <div className="p-6 rounded-2xl bg-neutral-50 border border-neutral-100">
+                        <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-2">Subscription Fee</p>
+                        <p className="text-3xl font-bold text-neutral-900 font-display">$100<span className="text-sm text-neutral-400">/month</span></p>
+                     </div>
+                     <div className="p-6 rounded-2xl bg-neutral-50 border border-neutral-100">
+                        <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-2">Next Payment</p>
+                        <p className="text-lg font-bold text-neutral-900">
+                          {systemSettings?.expiryDate ? new Date(systemSettings.expiryDate).toLocaleDateString() : 'N/A'}
+                        </p>
+                     </div>
+                  </div>
+
+                  <div className="space-y-4">
+                     <p className="text-sm font-bold text-neutral-900 mb-4">Payment Method</p>
+                     <div className="flex items-center justify-between p-6 rounded-2xl border-2 border-neutral-900 bg-neutral-50/50">
+                        <div className="flex items-center gap-4">
+                           <div className="size-12 rounded-xl bg-neutral-900 flex items-center justify-center text-white">
+                              <CreditCard size={24} />
+                           </div>
+                           <div>
+                              <p className="font-bold text-neutral-900">Visa ending in 9876</p>
+                              <p className="text-xs text-neutral-400">Default for platform fees</p>
+                           </div>
+                        </div>
+                        <div className="text-emerald-500">
+                           <CheckCircle2 size={24} />
+                        </div>
+                     </div>
+                     <button 
+                      onClick={handleSystemPay}
+                      disabled={isPaying || systemSettings?.subscriptionStatus === 'active'}
+                      className="w-full rounded-2xl border border-neutral-200 py-4 font-bold text-neutral-900 hover:bg-neutral-50 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                     >
+                        {isPaying ? <Loader2 className="animate-spin" size={18} /> : (systemSettings?.subscriptionStatus === 'active' ? 'Subscription Active' : 'Renew Subscription')}
+                     </button>
+                  </div>
+               </div>
+
+               <div className="bg-neutral-900 rounded-[32px] p-8 text-white flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold mb-4 font-display">Billing Support</h3>
+                    <p className="text-neutral-400 text-sm leading-relaxed mb-6">
+                       Your enterprise platform fee includes priority support, unlimited client capacity, and dedicated server resources.
+                    </p>
+                    <ul className="space-y-3">
+                       {[
+                         'API Scaling: Enabled',
+                         'Client CRM: Unlimited',
+                         'Dispute Engine: Pro',
+                         'Compliance: Tier 1'
+                       ].map(item => (
+                         <li key={item} className="flex items-center gap-2 text-xs font-medium">
+                            <div className="size-1.5 rounded-full bg-emerald-500"></div>
+                            {item}
+                         </li>
+                       ))}
+                    </ul>
+                  </div>
+                  <div className="mt-8 pt-6 border-t border-white/10">
+                     <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-1">Status</p>
+                     <p className={cn(
+                       "font-bold",
+                       systemSettings?.subscriptionStatus === 'active' ? "text-emerald-400" : "text-red-400"
+                     )}>
+                        {systemSettings?.subscriptionStatus === 'active' ? 'Account in good standing' : 'Account Expired'}
+                     </p>
+                  </div>
                </div>
             </div>
           </div>

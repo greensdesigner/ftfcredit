@@ -25,6 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     ? [
         { icon: LayoutDashboard, label: 'Overview', path: '/admin-portal?tab=overview' },
         { icon: Users, label: 'Client List', path: '/admin-portal?tab=clients' },
+        { icon: CreditCard, label: 'System Billing', path: '/admin-portal?tab=billing' },
         { icon: Settings, label: 'Settings', path: '/admin-portal?tab=settings' },
       ]
     : [
