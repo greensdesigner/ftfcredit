@@ -166,13 +166,17 @@ async function startServer() {
               city VARCHAR(100),
               state VARCHAR(100),
               zipCode VARCHAR(20),
+              stripeAccountId VARCHAR(255),
+              stripeCustomerId VARCHAR(255),
               createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
           `);
 
-          // Migrations for multi-tenancy
+          // Migrations for multi-tenancy and Stripe Connect
           try { await pool.query("ALTER TABLE users ADD COLUMN tenantId VARCHAR(128)"); } catch (e) {}
           try { await pool.query("ALTER TABLE users ADD COLUMN agencyName VARCHAR(255)"); } catch (e) {}
+          try { await pool.query("ALTER TABLE users ADD COLUMN stripeAccountId VARCHAR(255)"); } catch (e) {}
+          try { await pool.query("ALTER TABLE users ADD COLUMN stripeCustomerId VARCHAR(255)"); } catch (e) {}
           try { await pool.query("ALTER TABLE users MODIFY COLUMN role ENUM('client', 'admin', 'super_admin') DEFAULT 'client'"); } catch (e) {}
 
           // System settings table for platform subscription
@@ -677,6 +681,181 @@ async function startServer() {
       console.error("System expiry checker error:", e);
     }
   }, 1000 * 60 * 60); // Check every hour
+
+  // --- Stripe Connect for Admins ---
+  app.get("/api/admin/stripe/status", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { uid } = req.query;
+    try {
+      const [rows]: any = await pool.query("SELECT stripeAccountId FROM users WHERE uid = ?", [uid]);
+      const stripeAccountId = rows[0]?.stripeAccountId;
+      
+      let isConnected = false;
+      if (stripeAccountId) {
+        const stripeInst = getStripe();
+        if (stripeInst) {
+          const account = await stripeInst.accounts.retrieve(stripeAccountId);
+          isConnected = account.details_submitted;
+        }
+      }
+      
+      res.json({ isConnected, stripeAccountId });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.post("/api/admin/stripe/onboard", async (req, res) => {
+    const stripeInst = getStripe();
+    if (!stripeInst) return res.status(500).json({ error: "Stripe not configured" });
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+
+    const { uid, email } = req.body;
+    try {
+      const [rows]: any = await pool.query("SELECT stripeAccountId FROM users WHERE uid = ?", [uid]);
+      let stripeAccountId = rows[0]?.stripeAccountId;
+
+      if (!stripeAccountId) {
+        const account = await stripeInst.accounts.create({
+          type: 'express',
+          email,
+          capabilities: {
+            card_payments: { requested: true },
+            transfers: { requested: true },
+          },
+        });
+        stripeAccountId = account.id;
+        await pool.query("UPDATE users SET stripeAccountId = ? WHERE uid = ?", [stripeAccountId, uid]);
+      }
+
+      const protocol = req.headers['x-forwarded-proto'] || 'http';
+      const host = req.headers.host;
+      const baseUrl = process.env.APP_URL || `${protocol}://${host}`;
+
+      const accountLink = await stripeInst.accountLinks.create({
+        account: stripeAccountId,
+        refresh_url: `${baseUrl}/admin-portal?tab=settings`,
+        return_url: `${baseUrl}/admin-portal?tab=settings`,
+        type: 'account_onboarding',
+      });
+
+      res.json({ url: accountLink.url });
+    } catch (error: any) {
+      console.error("Stripe Onboarding Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // --- Client Billing (Stripe) ---
+  app.post("/api/client/create-setup-intent", async (req, res) => {
+    const stripeInst = getStripe();
+    if (!stripeInst) return res.status(500).json({ error: "Stripe not configured" });
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+
+    const { uid, email } = req.body;
+    try {
+      const [rows]: any = await pool.query("SELECT stripeCustomerId FROM users WHERE uid = ?", [uid]);
+      let stripeCustomerId = rows[0]?.stripeCustomerId;
+
+      if (!stripeCustomerId) {
+        const customer = await stripeInst.customers.create({ email, metadata: { userId: uid } });
+        stripeCustomerId = customer.id;
+        await pool.query("UPDATE users SET stripeCustomerId = ? WHERE uid = ?", [stripeCustomerId, uid]);
+      }
+
+      const setupIntent = await stripeInst.setupIntents.create({
+        customer: stripeCustomerId,
+        payment_method_types: ['card'],
+      });
+
+      res.json({ clientSecret: setupIntent.client_secret });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/client/payment-methods/:uid", async (req, res) => {
+    const stripeInst = getStripe();
+    if (!stripeInst) return res.status(500).json({ error: "Stripe not configured" });
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+
+    try {
+      const [rows]: any = await pool.query("SELECT stripeCustomerId FROM users WHERE uid = ?", [req.params.uid]);
+      const customerId = rows[0]?.stripeCustomerId;
+      if (!customerId) return res.json([]);
+
+      const paymentMethods = await stripeInst.paymentMethods.list({
+        customer: customerId,
+        type: 'card',
+      });
+
+      res.json(paymentMethods.data);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Process Subscription Charge (Manual Monthly for Demo)
+  app.post("/api/client/subscribe-connect", async (req, res) => {
+    const stripeInst = getStripe();
+    if (!stripeInst) return res.status(500).json({ error: "Stripe not configured" });
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+
+    const { userId, planName, amount, paymentMethodId, tenantId } = req.body;
+    try {
+      // 1. Get Admin's Stripe Account ID
+      const [admins]: any = await pool.query("SELECT stripeAccountId FROM users WHERE uid = ?", [tenantId]);
+      const destinationAccount = admins[0]?.stripeAccountId;
+
+      if (!destinationAccount) {
+        return res.status(400).json({ error: "Agency has not connected their Stripe account yet." });
+      }
+
+      // 2. Get Client's Customer ID
+      const [clients]: any = await pool.query("SELECT stripeCustomerId FROM users WHERE uid = ?", [userId]);
+      const customerId = clients[0]?.stripeCustomerId;
+
+      // 3. Create Payment Intent with Destination Charge (Service Fee model)
+      // Percentage fee for the platform (10% as example)
+      const applicationFeeAmount = Math.round(amount * 100 * 0.1); 
+
+      const paymentIntent = await stripeInst.paymentIntents.create({
+        amount: Math.round(amount * 100),
+        currency: 'usd',
+        customer: customerId,
+        payment_method: paymentMethodId,
+        off_session: true,
+        confirm: true,
+        application_fee_amount: applicationFeeAmount,
+        transfer_data: {
+          destination: destinationAccount,
+        },
+        metadata: { userId, planName }
+      });
+
+      // 4. Record in Subscriptions table
+      const nextMonth = new Date();
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      
+      await pool.query(
+        `INSERT INTO subscriptions (userId, planName, amount, status, nextBillingDate, tenantId) 
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE planName = VALUES(planName), amount = VALUES(amount), status = VALUES(status), nextBillingDate = VALUES(nextBillingDate)`,
+        [userId, planName, amount, 'active', nextMonth, tenantId]
+      );
+
+      // 5. Record Payment
+      await pool.query(
+        "INSERT INTO payments (id, userId, amount, status, paymentType) VALUES (?, ?, ?, ?, ?)",
+        [paymentIntent.id, userId, amount, 'success', 'CARD']
+      );
+
+      res.json({ status: "success", paymentIntentId: paymentIntent.id });
+    } catch (error: any) {
+      console.error("Subscription Connect Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
 
   // Admin: Get all clients with their subscriptions (Isolated by Tenant)
   app.get("/api/admin/clients", async (req, res) => {

@@ -519,7 +519,10 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-               <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
+                {/* Stripe Connect Section */}
+                <StripeConnectSection user={user} />
+
+               <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100 mt-8">
                  <div>
                    <p className="font-bold">System Maintenance Mode</p>
                    <p className="text-xs text-neutral-500">Prevent client access during updates.</p>
@@ -774,5 +777,96 @@ export default function AdminDashboard() {
         )}
       </div>
     </DashboardLayout>
+  );
+}
+
+function StripeConnectSection({ user }: { user: any }) {
+  const [connectStatus, setConnectStatus] = useState<{ isConnected: boolean; stripeAccountId: string | null } | null>(null);
+  const [connecting, setConnecting] = useState(false);
+
+  useEffect(() => {
+    if (user?.uid) {
+      fetch(`/api/admin/stripe/status?uid=${user.uid}`)
+        .then(res => res.json())
+        .then(data => setConnectStatus(data))
+        .catch(console.error);
+    }
+  }, [user]);
+
+  const handleConnect = async () => {
+    setConnecting(true);
+    try {
+      const response = await fetch('/api/admin/stripe/onboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: user.uid, email: user.email }),
+      });
+      const { url, error } = await response.json();
+      if (error) throw new Error(error);
+      if (url) window.location.href = url;
+    } catch (e: any) {
+      alert("Connection failed: " + e.message);
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  return (
+    <div className="p-8 bg-neutral-50 rounded-[32px] border border-neutral-100 mt-8">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h4 className="text-lg font-bold font-display text-neutral-900">Payment Integration</h4>
+          <p className="text-xs text-neutral-500">Connect your Stripe account to receive payments from your clients.</p>
+        </div>
+        {connectStatus?.isConnected ? (
+          <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl border border-emerald-100 text-xs font-bold">
+            <CheckCircle2 size={16} />
+            STRIPE CONNECTED
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 bg-amber-50 text-amber-600 px-4 py-2 rounded-xl border border-amber-100 text-xs font-bold">
+            <AlertCircle size={16} />
+            STRIPE NOT CONNECTED
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white rounded-2xl border border-neutral-100 p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="size-12 rounded-xl bg-neutral-900 flex items-center justify-center text-white">
+            <CreditCard size={24} />
+          </div>
+          <div>
+            <p className="font-bold text-neutral-900">Stripe Connect Account</p>
+            <p className="text-xs text-neutral-400">
+              {connectStatus?.isConnected 
+                ? `Account ID: ${connectStatus.stripeAccountId}`
+                : "Redirects to Stripe for verification"}
+            </p>
+          </div>
+        </div>
+        
+        <button
+          onClick={handleConnect}
+          disabled={connecting}
+          className={cn(
+            "rounded-xl px-6 py-3 text-sm font-bold transition-all flex items-center gap-2",
+            connectStatus?.isConnected
+              ? "bg-neutral-100 text-neutral-900 hover:bg-neutral-200"
+              : "bg-neutral-900 text-white hover:bg-neutral-800 shadow-lg shadow-neutral-900/10"
+          )}
+        >
+          {connecting ? <Loader2 className="animate-spin" size={18} /> : null}
+          {connectStatus?.isConnected ? "Manage Stripe Account" : "Connect with Stripe"}
+          {!connecting && <ArrowUpRight size={18} />}
+        </button>
+      </div>
+      
+      {!connectStatus?.isConnected && (
+        <p className="mt-4 text-[10px] text-neutral-400 uppercase font-bold tracking-widest text-center">
+          Note: You must complete onboarding to receive client payments.
+        </p>
+      )}
+    </div>
   );
 }

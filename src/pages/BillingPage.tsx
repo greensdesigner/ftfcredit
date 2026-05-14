@@ -4,6 +4,120 @@ import { CreditCard, Download, ExternalLink, Calendar, CheckCircle2, XCircle, Al
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+
+// Initialize Stripe with public key from env
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
+
+function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, planName }: any) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      // 1. Create Setup Intent
+      const siRes = await fetch('/api/client/create-setup-intent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: userId, email }),
+      });
+      const { clientSecret, error: siError } = await siRes.json();
+      if (siError) throw new Error(siError);
+
+      // 2. Confirm Card Setup
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) throw new Error("Card element not found");
+
+      const { setupIntent, error: confirmError } = await stripe.confirmCardSetup(clientSecret, {
+        payment_method: {
+          card: cardElement,
+        },
+      });
+
+      if (confirmError) throw new Error(confirmError.message);
+
+      // 3. Initiate Subscription Charge via Connect
+      const subRes = await fetch('/api/client/subscribe-connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          tenantId,
+          planName,
+          amount,
+          paymentMethodId: setupIntent?.payment_method
+        }),
+      });
+
+      const subResult = await subRes.json();
+      if (subResult.error) throw new Error(subResult.error);
+
+      onSuccess(setupIntent?.payment_method);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-2">
+        <label className="text-xs font-bold text-neutral-400 uppercase tracking-widest">Secure Credit or Debit Card</label>
+        <div className="p-4 rounded-2xl border border-neutral-200 bg-neutral-50 focus-within:border-neutral-900 transition-all">
+          <CardElement options={{
+            style: {
+              base: {
+                fontSize: '16px',
+                color: '#171717',
+                '::placeholder': { color: '#a3a3a3' },
+              },
+            }
+          }} />
+        </div>
+      </div>
+
+      {error && (
+        <div className="p-3 rounded-xl bg-red-50 text-red-600 text-xs font-bold flex items-center gap-2">
+          <AlertCircle size={14} />
+          {error}
+        </div>
+      )}
+
+      <button 
+        type="submit"
+        disabled={isProcessing || !stripe}
+        className="w-full rounded-2xl bg-neutral-900 py-4 font-bold text-white shadow-xl shadow-neutral-900/10 hover:bg-neutral-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+      >
+        {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <ShieldCheck size={20} />}
+        {isProcessing ? "Processing Securely..." : `Subscribe & Pay $${amount}`}
+      </button>
+
+      <button 
+        type="button"
+        onClick={onCancel}
+        disabled={isProcessing}
+        className="w-full py-2 text-xs font-bold text-neutral-400 hover:text-neutral-900 transition-all"
+      >
+        Cancel
+      </button>
+
+      <div className="flex items-center justify-center gap-2 text-neutral-400">
+        <Lock size={12} />
+        <p className="text-[10px] uppercase font-bold tracking-widest">Stripe Secure 256-bit Encryption</p>
+      </div>
+    </form>
+  );
+}
 
 export default function BillingPage() {
   const { user, updateProfile } = useAuth();
@@ -25,8 +139,25 @@ export default function BillingPage() {
       if (user.sub_amount) setAmount(user.sub_amount);
       if (user.sub_status) setStatus(user.sub_status as any);
       fetchInvoices();
+      fetchPaymentMethods();
     }
   }, [user]);
+
+  const fetchPaymentMethods = async () => {
+    if (!user) return;
+    try {
+      const response = await fetch(`/api/client/payment-methods/${user.uid}`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.length > 0) {
+          const card = data[0].card;
+          setPaymentMethod(`${card.brand.toUpperCase()} •••• ${card.last4}`);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to fetch payment methods:", e);
+    }
+  };
 
   const fetchInvoices = async () => {
     if (!user) return;
@@ -458,71 +589,29 @@ export default function BillingPage() {
               className="w-full max-w-md bg-white rounded-[32px] overflow-hidden shadow-2xl p-8"
             >
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-2xl font-bold font-display text-neutral-900">Add New Card</h3>
+                <h3 className="text-2xl font-bold font-display text-neutral-900">Configure Billing</h3>
                 <button onClick={() => setShowCardModal(false)} className="text-neutral-400 hover:text-neutral-900">
                   <XCircle size={24} />
                 </button>
               </div>
 
-              <form onSubmit={handleAddCard} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-neutral-400 uppercase tracking-widest">Cardholder Name</label>
-                  <input 
-                    required
-                    type="text" 
-                    placeholder="e.g. John Doe"
-                    className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-4 text-sm font-medium focus:border-neutral-900 outline-none transition-all"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-neutral-400 uppercase tracking-widest">Card Number</label>
-                  <div className="relative">
-                    <CreditCard className="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-400" size={20} />
-                    <input 
-                      required
-                      type="text" 
-                      placeholder="0000 0000 0000 0000"
-                      className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 pl-14 pr-5 py-4 text-sm font-medium focus:border-neutral-900 outline-none transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-widest">Expiry Date</label>
-                    <input 
-                      required
-                      type="text" 
-                      placeholder="MM/YY"
-                      className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-4 text-sm font-medium focus:border-neutral-900 outline-none transition-all"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-neutral-400 uppercase tracking-widest">CVV</label>
-                    <input 
-                      required
-                      type="text" 
-                      placeholder="•••"
-                      className="w-full rounded-2xl border border-neutral-200 bg-neutral-50 px-5 py-4 text-sm font-medium focus:border-neutral-900 outline-none transition-all"
-                    />
-                  </div>
-                </div>
-
-                <button 
-                  type="submit"
-                  disabled={isProcessing}
-                  className="w-full rounded-2xl bg-neutral-900 py-4 font-bold text-white shadow-xl shadow-neutral-900/10 hover:bg-neutral-800 transition-all flex items-center justify-center gap-2"
-                >
-                  {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <ShieldCheck size={20} />}
-                  Securely Save Card
-                </button>
-                
-                <div className="flex items-center justify-center gap-2 text-neutral-400">
-                  <Lock size={12} />
-                  <p className="text-[10px] uppercase font-bold tracking-widest">256-bit SSL Encryption</p>
-                </div>
-              </form>
+              <Elements stripe={stripePromise}>
+                <AddCardForm 
+                  userId={user?.uid}
+                  email={user?.email}
+                  tenantId={user?.tenantId}
+                  amount={amount}
+                  planName={currentPlan}
+                  onCancel={() => setShowCardModal(false)} 
+                  onSuccess={(pmId: string) => {
+                    setShowCardModal(false);
+                    fetchPaymentMethods();
+                    fetchInvoices();
+                    refreshProfile();
+                    alert("Subscription activated and card saved successfully!");
+                  }} 
+                />
+              </Elements>
             </motion.div>
           </div>
         )}
