@@ -123,10 +123,12 @@ async function startServer() {
               subscriptionStatus ENUM('active', 'expired') DEFAULT 'active',
               expiryDate TIMESTAMP,
               monthlyFee DECIMAL(10, 2) DEFAULT 100.00,
-              stripeCustomerId VARCHAR(255),
               UNIQUE (id)
             )
           `);
+
+          // Migration for system_settings
+          try { await pool.query("ALTER TABLE system_settings ADD COLUMN stripeCustomerId VARCHAR(255)"); } catch (e) {}
 
           // Initialize system settings if not exists
           const [settings]: any = await pool.query("SELECT * FROM system_settings WHERE id = 1");
@@ -433,7 +435,7 @@ async function startServer() {
   // Create Stripe Customer Portal Session
   app.post("/api/admin/create-portal-session", async (req, res) => {
     const stripeInst = getStripe();
-    if (!stripeInst) return res.status(500).json({ error: "Stripe not configured" });
+    if (!stripeInst) return res.status(500).json({ error: "Stripe not configured. Please add STRIPE_SECRET_KEY to Environment Variables in Settings." });
     if (!pool) return res.status(500).json({ error: "Database not configured" });
 
     try {
