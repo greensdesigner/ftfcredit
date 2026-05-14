@@ -5,6 +5,7 @@ import fs from 'fs';
 import mysql from "mysql2/promise";
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
+import Stripe from "stripe";
 
 dotenv.config();
 
@@ -14,6 +15,15 @@ const __dirname = path.dirname(__filename);
 async function startServer() {
   const app = express();
   const PORT = process.env.PORT || 3000;
+
+  // Stripe lazy init
+  let stripe: Stripe | null = null;
+  const getStripe = () => {
+    if (!stripe && process.env.STRIPE_SECRET_KEY) {
+      stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+    }
+    return stripe;
+  };
 
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -384,6 +394,73 @@ async function startServer() {
       );
       res.json({ status: "success", message: "Subscription renewed for 30 days" });
     } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Verify and Process Stripe Payment (Alternative to Webhooks)
+  app.post("/api/admin/verify-system-payment", async (req, res) => {
+    const stripeInst = getStripe();
+    if (!stripeInst) return res.status(500).json({ error: "Stripe not configured" });
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+
+    const { sessionId } = req.body;
+    if (!sessionId) return res.status(400).json({ error: "Session ID is required" });
+
+    try {
+      // Retrieve the session from Stripe
+      const session = await stripeInst.checkout.sessions.retrieve(sessionId);
+
+      if (session.payment_status === 'paid' && session.metadata?.type === 'system_maintenance') {
+        // Update database
+        const nextMonth = new Date();
+        nextMonth.setDate(nextMonth.getDate() + 30);
+        await pool.query(
+          "UPDATE system_settings SET subscriptionStatus = 'active', expiryDate = ? WHERE id = 1",
+          [nextMonth]
+        );
+        return res.json({ status: "success", message: "Subscription activated successfully" });
+      } else {
+        return res.status(400).json({ error: "Payment not verified or incorrect session type" });
+      }
+    } catch (error: any) {
+      console.error("Verification Error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Create Stripe Checkout Session for System Payment
+  app.post("/api/admin/create-system-checkout", async (req, res) => {
+    const stripeInst = getStripe();
+    if (!stripeInst) return res.status(500).json({ error: "Stripe not configured. Please add STRIPE_SECRET_KEY to secrets." });
+
+    try {
+      const session = await stripeInst.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+              currency: 'usd',
+              product_data: {
+                name: 'Platform Maintenance Fee',
+                description: '30-day extended access to administrative features',
+              },
+              unit_amount: 10000, // $100.00
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${process.env.APP_URL || 'http://localhost:3000'}/admin-portal?tab=billing&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${process.env.APP_URL || 'http://localhost:3000'}/admin-portal?tab=billing&success=false`,
+        metadata: {
+          type: 'system_maintenance'
+        }
+      });
+
+      res.json({ sessionId: session.id, url: session.url });
+    } catch (error: any) {
+      console.error("Stripe Checkout Error:", error);
       res.status(500).json({ error: error.message });
     }
   });

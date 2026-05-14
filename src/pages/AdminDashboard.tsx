@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
-import { Users, CreditCard, AlertCircle, Search, Filter, MoreHorizontal, ArrowUpRight, ArrowDownRight, CheckCircle2, RotateCcw, Loader2, X, Mail, Phone, Calendar, User, MapPin } from 'lucide-react';
+import { Users, CreditCard, AlertCircle, Search, Filter, MoreHorizontal, ArrowUpRight, ArrowDownRight, CheckCircle2, RotateCcw, Loader2, X, Mail, Phone, Calendar, User, MapPin, ShieldCheck } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { loadStripe } from '@stripe/stripe-js';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface Client {
   uid: string;
@@ -50,17 +52,56 @@ export default function AdminDashboard() {
   const handleSystemPay = async () => {
     setIsPaying(true);
     try {
-      const response = await fetch('/api/admin/system-pay', { method: 'POST' });
-      if (response.ok) {
-        alert("Subscription renewed successfully!");
-        fetchSystemSettings();
+      const response = await fetch('/api/admin/create-system-checkout', { method: 'POST' });
+      const { url, error } = await response.json();
+      
+      if (error) {
+        throw new Error(error);
       }
-    } catch (error) {
+
+      if (url) {
+        window.location.href = url;
+      } else {
+        throw new Error("No checkout URL returned from server.");
+      }
+    } catch (error: any) {
       console.error("Payment failed:", error);
+      alert("Payment initialization failed: " + error.message);
     } finally {
       setIsPaying(false);
     }
   };
+
+  useEffect(() => {
+    const sessionId = searchParams.get('session_id');
+    const verifyPayment = async (sid: string) => {
+      try {
+        const response = await fetch('/api/admin/verify-system-payment', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: sid })
+        });
+        if (response.ok) {
+          alert("System billing reactivated successfully!");
+          fetchSystemSettings();
+        } else {
+          const error = await response.json();
+          console.error("Payment verification failed:", error);
+        }
+      } catch (err) {
+        console.error("Error verifying payment:", err);
+      }
+    };
+
+    if (sessionId) {
+      verifyPayment(sessionId);
+    }
+    
+    if (searchParams.get('success') === 'true') {
+      alert("System billing reactivated successfully!");
+      fetchSystemSettings();
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -379,21 +420,24 @@ export default function AdminDashboard() {
                               <CreditCard size={24} />
                            </div>
                            <div>
-                              <p className="font-bold text-neutral-900">Visa ending in 9876</p>
-                              <p className="text-xs text-neutral-400">Default for platform fees</p>
+                              <p className="font-bold text-neutral-900">Secure Payment via Stripe</p>
+                              <p className="text-xs text-neutral-400">Live integration for system billing</p>
                            </div>
                         </div>
                         <div className="text-emerald-500">
-                           <CheckCircle2 size={24} />
+                           <ShieldCheck size={24} />
                         </div>
                      </div>
                      <button 
                       onClick={handleSystemPay}
                       disabled={isPaying || systemSettings?.subscriptionStatus === 'active'}
-                      className="w-full rounded-2xl border border-neutral-200 py-4 font-bold text-neutral-900 hover:bg-neutral-50 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                      className="w-full rounded-2xl bg-neutral-900 py-4 font-bold text-white hover:bg-neutral-800 shadow-xl shadow-neutral-900/10 transition-all flex items-center justify-center gap-2 disabled:bg-neutral-200 disabled:text-neutral-400 disabled:shadow-none"
                      >
-                        {isPaying ? <Loader2 className="animate-spin" size={18} /> : (systemSettings?.subscriptionStatus === 'active' ? 'Subscription Active' : 'Renew Subscription')}
+                        {isPaying ? <Loader2 className="animate-spin" size={18} /> : (systemSettings?.subscriptionStatus === 'active' ? 'Subscription Active' : 'Renew with Stripe')}
                      </button>
+                     <p className="text-[10px] text-center text-neutral-400 font-bold uppercase tracking-widest">
+                        Redirects to Stripe Secure Checkout
+                     </p>
                   </div>
                </div>
 
