@@ -148,12 +148,15 @@ async function startServer() {
               subscriptionStatus ENUM('active', 'expired') DEFAULT 'active',
               expiryDate TIMESTAMP,
               monthlyFee DECIMAL(10, 2) DEFAULT 100.00,
+              stripeCustomerId VARCHAR(255),
+              stripeSubscriptionId VARCHAR(255),
               UNIQUE (id)
             )
           `);
 
-          // Migration for system_settings
+          // Migrations
           try { await pool.query("ALTER TABLE system_settings ADD COLUMN stripeCustomerId VARCHAR(255)"); } catch (e) {}
+          try { await pool.query("ALTER TABLE system_settings ADD COLUMN stripeSubscriptionId VARCHAR(255)"); } catch (e) {}
 
           // Initialize system settings if not exists
           const [settings]: any = await pool.query("SELECT * FROM system_settings WHERE id = 1");
@@ -440,12 +443,21 @@ async function startServer() {
       const session = await stripeInst.checkout.sessions.retrieve(sessionId);
 
       if (session.payment_status === 'paid' && session.metadata?.type === 'system_maintenance') {
+        const subscriptionId = session.subscription as string;
+        
+        // If it's a subscription, get the next billing date
+        let expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 30);
+
+        if (subscriptionId) {
+          const subscription: any = await stripeInst.subscriptions.retrieve(subscriptionId);
+          expiryDate = new Date(subscription.current_period_end * 1000);
+        }
+
         // Update database
-        const nextMonth = new Date();
-        nextMonth.setDate(nextMonth.getDate() + 30);
         await pool.query(
-          "UPDATE system_settings SET subscriptionStatus = 'active', expiryDate = ? WHERE id = 1",
-          [nextMonth]
+          "UPDATE system_settings SET subscriptionStatus = 'active', expiryDate = ?, stripeSubscriptionId = ? WHERE id = 1",
+          [expiryDate, subscriptionId || null]
         );
         return res.json({ status: "success", message: "Subscription activated successfully" });
       } else {
@@ -461,11 +473,9 @@ async function startServer() {
   app.post("/api/admin/create-portal-session", async (req, res) => {
     const stripeInst = getStripe();
     if (!stripeInst) {
-      const isMissing = !process.env.STRIPE_SECRET_KEY && !process.env.VITE_STRIPE_SECRET_KEY;
+      const foundKeys = Object.keys(process.env).filter(k => k.includes('STRIPE') || k.includes('SECRET') || k.includes('KEY'));
       return res.status(500).json({ 
-        error: isMissing 
-          ? "Stripe Secret Key not found in environment variables. Please add STRIPE_SECRET_KEY to Settings." 
-          : "Stripe was found but failed to initialize. Check if the key is valid." 
+        error: `Stripe not initialized. Available env keys: [${foundKeys.join(', ')}]. If you are on a custom domain (like Hostinger), please ensure you have set STRIPE_SECRET_KEY in your server's environment settings or .env file.`
       });
     }
     if (!pool) return res.status(500).json({ error: "Database not configured" });
@@ -502,7 +512,12 @@ async function startServer() {
   // Create Stripe Checkout Session for System Payment
   app.post("/api/admin/create-system-checkout", async (req, res) => {
     const stripeInst = getStripe();
-    if (!stripeInst) return res.status(500).json({ error: "Stripe not configured. Please add STRIPE_SECRET_KEY to secrets." });
+    if (!stripeInst) {
+      const foundKeys = Object.keys(process.env).filter(k => k.includes('STRIPE') || k.includes('SECRET') || k.includes('KEY'));
+      return res.status(500).json({ 
+        error: `Stripe not initialized. Available env keys: [${foundKeys.join(', ')}]. Please ensure STRIPE_SECRET_KEY is set correctly.`
+      });
+    }
     if (!pool) return res.status(500).json({ error: "Database not configured" });
 
     try {
@@ -522,6 +537,7 @@ async function startServer() {
       const host = req.headers.host;
       const baseUrl = process.env.APP_URL || `${protocol}://${host}`;
 
+      // Create a recurring price if it doesn't exist (conceptually, or just use price_data)
       const session = await stripeInst.checkout.sessions.create({
         customer: customerId,
         payment_method_types: ['card'],
@@ -530,15 +546,18 @@ async function startServer() {
             price_data: {
               currency: 'usd',
               product_data: {
-                name: 'Platform Maintenance Fee',
-                description: '30-day extended access to administrative features',
+                name: 'Platform Monthly Subscription',
+                description: 'Automatic monthly maintenance & administrative access',
               },
               unit_amount: 10000, // $100.00
+              recurring: {
+                interval: 'month',
+              },
             },
             quantity: 1,
           },
         ],
-        mode: 'payment',
+        mode: 'subscription',
         success_url: `${baseUrl}/admin-portal?tab=billing&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/admin-portal?tab=billing&success=false`,
         metadata: {
@@ -552,6 +571,24 @@ async function startServer() {
       res.status(500).json({ error: error.message });
     }
   });
+
+  // Background Checker for System Expiry
+  setInterval(async () => {
+    if (!pool) return;
+    try {
+      const [rows]: any = await pool.query("SELECT id, expiryDate, subscriptionStatus FROM system_settings WHERE id = 1");
+      if (rows.length > 0) {
+        const settings = rows[0];
+        const now = new Date();
+        if (settings.expiryDate && new Date(settings.expiryDate) < now && settings.subscriptionStatus === 'active') {
+          console.log("🕒 System subscription expired. Updating status to 'expired'.");
+          await pool.query("UPDATE system_settings SET subscriptionStatus = 'expired' WHERE id = 1");
+        }
+      }
+    } catch (e) {
+      console.error("System expiry checker error:", e);
+    }
+  }, 1000 * 60 * 60); // Check every hour
 
   // Admin: Get all clients with their subscriptions
   app.get("/api/admin/clients", async (req, res) => {
