@@ -41,11 +41,10 @@ export default function App() {
       try {
         const response = await fetch('/api/admin/system-settings');
         const data = await response.json();
+        if (data.systemName) {
+          document.title = data.systemName;
+        }
         if (data.maintenanceMode) {
-          // Additional check: Don't show maintenance for admin-like paths OR 
-          // we could check the user role if we had access to auth here, 
-          // but maintenance is usually for everyone except dev bypass.
-          // For now, let's keep it simple.
           setIsMaintenance(true);
         }
       } catch (e) {

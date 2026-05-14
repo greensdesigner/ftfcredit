@@ -34,6 +34,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         { icon: Settings, label: 'Profile', path: '/dashboard/profile' },
       ];
 
+  const [systemName, setSystemName] = useState('FTF Consulting');
+
+  React.useEffect(() => {
+    fetch('/api/admin/system-settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data.systemName) setSystemName(data.systemName);
+      })
+      .catch(console.error);
+  }, []);
+
   return (
     <div className="flex min-h-screen bg-neutral-50 text-neutral-900">
       {/* Sidebar Desktop */}
@@ -41,8 +52,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex h-full flex-col">
           <div className="border-b border-neutral-100 p-6">
             <Link to="/" className="flex items-center gap-2 font-display text-xl font-bold tracking-tight text-neutral-900">
-              <div className="size-8 rounded-lg bg-neutral-900 flex items-center justify-center text-white font-display">FTF</div>
-              <span>FTF Consulting</span>
+              <div className="size-8 rounded-lg bg-neutral-900 flex items-center justify-center text-white font-display">
+                {systemName.charAt(0)}
+              </div>
+              <span>{systemName}</span>
             </Link>
           </div>
           <nav className="flex-1 space-y-1 p-4">
@@ -83,7 +96,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <aside className="w-64 h-full bg-white animate-in slide-in-from-left duration-300" onClick={(e) => e.stopPropagation()}>
             <div className="flex h-full flex-col">
               <div className="flex items-center justify-between border-b border-neutral-100 p-6">
-                <span className="font-display text-xl font-bold text-neutral-900">FTF Consulting</span>
+                <span className="font-display text-xl font-bold text-neutral-900">{systemName}</span>
                 <button onClick={() => setSidebarOpen(false)} className="text-neutral-500">
                   <X />
                 </button>

@@ -401,6 +401,18 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-3xl border border-neutral-100 p-8 shadow-sm animate-in fade-in duration-500">
             <h3 className="text-xl font-bold mb-4 font-display">Administrative Settings</h3>
             <div className="space-y-6">
+                <div className="p-6 bg-neutral-50 rounded-2xl border border-neutral-100">
+                  <label className="block text-sm font-bold text-neutral-700 mb-2">Application Name (Branding)</label>
+                  <input 
+                    type="text" 
+                    defaultValue={systemSettings?.systemName || 'FTF Consulting'}
+                    onBlur={(e) => handleUpdateSettings({ systemName: e.target.value })}
+                    className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-neutral-900 transition-all font-medium"
+                    placeholder="Enter platform name..."
+                  />
+                  <p className="text-[10px] text-neutral-400 mt-2 font-bold uppercase tracking-wider">Updates browser tab and dashboards instantly</p>
+                </div>
+
                <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
                  <div>
                    <p className="font-bold">System Maintenance Mode</p>
