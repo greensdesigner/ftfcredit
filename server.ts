@@ -343,11 +343,17 @@ async function startServer() {
       let finalTenantId = providedTenantId;
       if (assignedRole === 'admin') {
         finalTenantId = uid; // Admin is the root of their own tenant
+      } else if (assignedRole === 'client' && agencyName) {
+        // Look up the admin who owns this agencyName
+        const [admins]: any = await pool.query("SELECT uid FROM users WHERE role = 'admin' AND agencyName = ?", [agencyName]);
+        if (admins && admins.length > 0) {
+          finalTenantId = admins[0].uid;
+        }
       }
 
       await pool.query(
         "INSERT INTO users (uid, email, fullName, password, role, phone, tenantId, agencyName, streetAddress) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        [uid, email, fullName, hashedPassword, assignedRole, phone, finalTenantId, agencyName, streetAddress]
+        [uid, email, fullName, hashedPassword, assignedRole, phone, finalTenantId, assignedRole === 'admin' ? agencyName : null, streetAddress]
       );
       console.log(`✅ User created successfully: ${email} (${uid}) [Tenant: ${finalTenantId}]`);
       res.json({ status: "success", message: "User created in DB", tenantId: finalTenantId });

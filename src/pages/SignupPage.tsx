@@ -136,7 +136,7 @@ export default function SignupPage() {
               </div>
             </div>
 
-            {role === UserRole.ADMIN && (
+            {role === UserRole.ADMIN ? (
               <>
                 <motion.div 
                   initial={{ opacity: 0, height: 0 }}
@@ -176,6 +176,25 @@ export default function SignupPage() {
                   </div>
                 </motion.div>
               </>
+            ) : (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="relative"
+              >
+                <label className="block text-sm font-medium text-neutral-700 mb-1.5">Your Service Provider (Agency Name)</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={agencyName}
+                    onChange={(e) => setAgencyName(e.target.value)}
+                    className="block w-full rounded-xl border border-neutral-200 pl-11 pr-4 py-3 text-neutral-900 outline-none transition-all placeholder:text-neutral-400 focus:border-neutral-900 focus:ring-1 focus:ring-neutral-900"
+                    placeholder="Enter agency name to connect..."
+                  />
+                  <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" size={18} />
+                </div>
+                <p className="text-[10px] text-neutral-400 mt-1.5 ml-1">Connects your dashboard to your credit repair specialist</p>
+              </motion.div>
             )}
 
             <div className="relative">
