@@ -2,13 +2,16 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import { User, Mail, Phone, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Phone, Lock, ArrowRight, Eye, EyeOff, Briefcase, UserCircle } from 'lucide-react';
+import { UserRole } from '../types';
+import { cn } from '../lib/utils';
 
 export default function SignupPage() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState<UserRole>(UserRole.CLIENT);
   const [showPassword, setShowPassword] = useState(false);
   const { signup } = useAuth();
   const navigate = useNavigate();
@@ -30,15 +33,19 @@ export default function SignupPage() {
     }
 
     try {
-      await signup(email, password, fullName, phone);
-      navigate('/onboarding');
+      await signup(email, password, fullName, phone, role);
+      if (role === UserRole.ADMIN) {
+        navigate('/admin-portal');
+      } else {
+        navigate('/onboarding');
+      }
     } catch (err) {
       // Error is handled in AuthContext (alert)
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
+    <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4 py-20">
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -47,11 +54,41 @@ export default function SignupPage() {
         <div className="text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-900 text-white font-display text-2xl font-bold">FTF</div>
           <h1 className="mt-6 font-display text-3xl font-bold tracking-tight text-neutral-900">Create Account</h1>
-          <p className="mt-2 text-neutral-500">Join FTF Consulting for premium credit repair</p>
+          <p className="mt-2 text-neutral-500">Join the platform as a Client or Agency Owner</p>
         </div>
 
         <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
           <div className="space-y-4">
+            {/* Role Selection */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <button
+                type="button"
+                onClick={() => setRole(UserRole.CLIENT)}
+                className={cn(
+                  "flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all",
+                  role === UserRole.CLIENT 
+                    ? "border-neutral-900 bg-neutral-900 text-white shadow-lg" 
+                    : "border-neutral-100 bg-neutral-50 text-neutral-500 hover:border-neutral-200"
+                )}
+              >
+                <UserCircle size={24} />
+                <span className="text-xs font-bold uppercase tracking-widest">Client</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRole(UserRole.ADMIN)}
+                className={cn(
+                  "flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all",
+                  role === UserRole.ADMIN 
+                    ? "border-neutral-900 bg-neutral-900 text-white shadow-lg" 
+                    : "border-neutral-100 bg-neutral-50 text-neutral-500 hover:border-neutral-200"
+                )}
+              >
+                <Briefcase size={24} />
+                <span className="text-xs font-bold uppercase tracking-widest">Agency</span>
+              </button>
+            </div>
+
             <div className="relative">
               <label className="block text-sm font-medium text-neutral-700 mb-1.5">Full Name</label>
               <div className="relative">
@@ -137,7 +174,7 @@ export default function SignupPage() {
             type="submit"
             className="group flex w-full items-center justify-center gap-2 rounded-xl bg-neutral-900 py-3.5 text-sm font-semibold text-white shadow-xl transition-all hover:bg-neutral-800 focus:outline-none focus:ring-2 focus:ring-neutral-900 focus:ring-offset-2"
           >
-            Create Account
+            Create {role === UserRole.ADMIN ? 'Agency' : 'Client'} Account
             <ArrowRight className="transition-transform group-hover:translate-x-1" size={18} />
           </button>
         </form>

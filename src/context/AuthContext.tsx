@@ -6,7 +6,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  signup: (email: string, password: string, fullName: string, phone: string) => Promise<void>;
+  signup: (email: string, password: string, fullName: string, phone: string, role?: UserRole) => Promise<void>;
   updateProfile: (data: Partial<UserProfile>) => Promise<void>;
 }
 
@@ -58,16 +58,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setLoading(false);
   };
 
-  const signup = async (email: string, password: string, fullName: string, phone: string) => {
+  const signup = async (email: string, password: string, fullName: string, phone: string, role?: UserRole) => {
     setLoading(true);
     const uid = 'user_' + Math.random().toString(36).substr(2, 9);
+    const assignedRole = role || UserRole.CLIENT;
+    
     const userData = {
       uid,
       email,
       password,
       fullName,
       phone,
-      role: UserRole.CLIENT,
+      role: assignedRole,
     };
 
     try {
@@ -82,13 +84,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         throw new Error(errorData.error || 'Signup failed on server');
       }
 
+      const data = await response.json();
+
       // After successful signup, we can construct the profile for the state
       const profile: UserProfile = {
         uid,
+        tenantId: data.tenantId,
         email,
         fullName,
         phone,
-        role: UserRole.CLIENT,
+        role: assignedRole,
         onboardingStep: 1,
         plaidConnected: false,
         achAuthorized: false,

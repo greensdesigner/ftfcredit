@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
+import { useAuth } from '../context/AuthContext';
 import { Users, CreditCard, AlertCircle, Search, Filter, MoreHorizontal, ArrowUpRight, ArrowDownRight, CheckCircle2, RotateCcw, Loader2, X, Mail, Phone, Calendar, User, MapPin, ShieldCheck } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { loadStripe } from '@stripe/stripe-js';
@@ -34,6 +35,8 @@ export default function AdminDashboard() {
   const [isPaying, setIsPaying] = useState(false);
   const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'settings' | 'billing'>('overview');
+  const { user } = useAuth();
+  const tenantId = user?.tenantId;
 
   useEffect(() => {
     fetchSystemSettings();
@@ -126,13 +129,16 @@ export default function AdminDashboard() {
   }, [searchParams]);
 
   useEffect(() => {
-    fetchClients();
-  }, []);
+    if (tenantId) {
+      fetchClients();
+    }
+  }, [tenantId]);
 
   const fetchClients = async () => {
+    if (!tenantId) return;
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/clients');
+      const response = await fetch(`/api/admin/clients?tenantId=${tenantId}`);
       const data = await response.json();
       if (Array.isArray(data)) {
         setClients(data);

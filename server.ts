@@ -152,10 +152,11 @@ async function startServer() {
           await pool.query(`
             CREATE TABLE IF NOT EXISTS users (
               uid VARCHAR(128) PRIMARY KEY,
+              tenantId VARCHAR(128),
               email VARCHAR(255) NOT NULL UNIQUE,
               fullName VARCHAR(255) NOT NULL,
               password VARCHAR(255),
-              role ENUM('client', 'admin') DEFAULT 'client',
+              role ENUM('client', 'admin', 'super_admin') DEFAULT 'client',
               phone VARCHAR(20),
               avatarUrl LONGTEXT,
               onboardingStep INT DEFAULT 1,
@@ -168,6 +169,10 @@ async function startServer() {
               createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
           `);
+
+          // Migrations for multi-tenancy
+          try { await pool.query("ALTER TABLE users ADD COLUMN tenantId VARCHAR(128)"); } catch (e) {}
+          try { await pool.query("ALTER TABLE users MODIFY COLUMN role ENUM('client', 'admin', 'super_admin') DEFAULT 'client'"); } catch (e) {}
 
           // System settings table for platform subscription
           await pool.query(`
@@ -227,6 +232,7 @@ async function startServer() {
             CREATE TABLE IF NOT EXISTS subscriptions (
               id INT AUTO_INCREMENT PRIMARY KEY,
               userId VARCHAR(128) NOT NULL,
+              tenantId VARCHAR(128),
               planName VARCHAR(255) NOT NULL,
               status ENUM('active', 'pending', 'failed', 'paused', 'canceled') DEFAULT 'pending',
               amount DECIMAL(10, 2) NOT NULL,
@@ -236,6 +242,8 @@ async function startServer() {
               FOREIGN KEY (userId) REFERENCES users(uid) ON DELETE CASCADE
             )
           `);
+
+          try { await pool.query("ALTER TABLE subscriptions ADD COLUMN tenantId VARCHAR(128)"); } catch (e) {}
 
           // Migrating to VARCHAR if it was ENUM
           try {
@@ -317,7 +325,7 @@ async function startServer() {
   // User Signup
   app.post("/api/auth/signup", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured. Check DB environment variables." });
-    const { uid, email, fullName, password, role, phone } = req.body;
+    const { uid, email, fullName, password, role, phone, tenantId: providedTenantId } = req.body;
     try {
       // Check if user exists first to provide better error
       const [existing]: any = await pool.query("SELECT uid FROM users WHERE email = ?", [email]);
@@ -327,13 +335,21 @@ async function startServer() {
 
       const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
       const assignedRole = role || 'client';
+      
+      // SaaS Logic: 
+      // If admin, they get a new tenantId (usually their own UID)
+      // If client, they must belong to a tenantId (the admin who signed them up)
+      let finalTenantId = providedTenantId;
+      if (assignedRole === 'admin') {
+        finalTenantId = uid; // Admin is the root of their own tenant
+      }
 
       await pool.query(
-        "INSERT INTO users (uid, email, fullName, password, role, phone) VALUES (?, ?, ?, ?, ?, ?)",
-        [uid, email, fullName, hashedPassword, assignedRole, phone]
+        "INSERT INTO users (uid, email, fullName, password, role, phone, tenantId) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [uid, email, fullName, hashedPassword, assignedRole, phone, finalTenantId]
       );
-      console.log(`✅ User created successfully: ${email} (${uid})`);
-      res.json({ status: "success", message: "User created in DB" });
+      console.log(`✅ User created successfully: ${email} (${uid}) [Tenant: ${finalTenantId}]`);
+      res.json({ status: "success", message: "User created in DB", tenantId: finalTenantId });
     } catch (error: any) {
       console.error(`❌ Signup DB Error for ${email}:`, error.message);
       res.status(500).json({ error: "Database Error: " + error.message });
@@ -638,19 +654,25 @@ async function startServer() {
     }
   }, 1000 * 60 * 60); // Check every hour
 
-  // Admin: Get all clients with their subscriptions
+  // Admin: Get all clients with their subscriptions (Isolated by Tenant)
   app.get("/api/admin/clients", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { tenantId } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: "Tenant ID required for administration" });
+    }
+
     try {
       const [clients]: any = await pool.query(`
         SELECT u.uid, u.email, u.fullName, u.phone, u.avatarUrl, u.role, u.onboardingStep,
-               u.streetAddress, u.city, u.state, u.zipCode,
+               u.streetAddress, u.city, u.state, u.zipCode, u.tenantId,
                s.planName as plan_name, s.status as sub_status, s.amount, s.nextBillingDate as next_billing_date
         FROM users u
         LEFT JOIN subscriptions s ON u.uid = s.userId
-        WHERE u.role = 'client'
+        WHERE u.role = 'client' AND u.tenantId = ?
         ORDER BY u.uid DESC
-      `);
+      `, [tenantId]);
       res.json(clients);
     } catch (error: any) {
       console.error("Admin Fetch Clients Error:", error.message);

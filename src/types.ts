@@ -1,10 +1,12 @@
 export enum UserRole {
   CLIENT = 'client',
   ADMIN = 'admin',
+  SUPER_ADMIN = 'super_admin',
 }
 
 export interface UserProfile {
   uid: string;
+  tenantId?: string;
   email: string;
   fullName: string;
   role: UserRole;
