@@ -441,6 +441,15 @@ export default function AdminDashboard() {
                       />
                     </div>
                     <div className="space-y-1.5">
+                      <label className="text-sm font-bold text-neutral-600 ml-1">Email Address</label>
+                      <input 
+                        type="email" 
+                        defaultValue={user?.email}
+                        id="email"
+                        className="w-full bg-white border border-neutral-100 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-neutral-900 transition-all"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
                       <label className="text-sm font-bold text-neutral-600 ml-1">Phone Number</label>
                       <input 
                         type="text" 
@@ -466,6 +475,7 @@ export default function AdminDashboard() {
                           uid: user?.uid,
                           fullName: (document.getElementById('fullName') as HTMLInputElement).value,
                           agencyName: (document.getElementById('agencyName') as HTMLInputElement).value,
+                          email: (document.getElementById('email') as HTMLInputElement).value,
                           phone: (document.getElementById('phone') as HTMLInputElement).value,
                           streetAddress: (document.getElementById('streetAddress') as HTMLInputElement).value,
                         };

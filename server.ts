@@ -467,11 +467,11 @@ async function startServer() {
 
   app.post("/api/admin/agency-settings/update", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured" });
-    const { uid, fullName, agencyName, phone, streetAddress, city, state, zipCode } = req.body;
+    const { uid, fullName, agencyName, email, phone, streetAddress, city, state, zipCode } = req.body;
     try {
       await pool.query(
-        "UPDATE users SET fullName = ?, agencyName = ?, phone = ?, streetAddress = ?, city = ?, state = ?, zipCode = ? WHERE uid = ?",
-        [fullName, agencyName, phone, streetAddress, city, state, zipCode, uid]
+        "UPDATE users SET fullName = ?, agencyName = ?, email = ?, phone = ?, streetAddress = ?, city = ?, state = ?, zipCode = ? WHERE uid = ?",
+        [fullName, agencyName, email, phone, streetAddress, city, state, zipCode, uid]
       );
       res.json({ status: "success", message: "Agency settings updated" });
     } catch (error: any) {
