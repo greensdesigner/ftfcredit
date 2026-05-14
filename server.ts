@@ -306,11 +306,11 @@ async function startServer() {
   // Update User Profile
   app.patch("/api/users/:uid", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured" });
-    const { fullName, phone, avatarUrl, email } = req.body;
+    const { fullName, phone, avatarUrl, email, streetAddress, city, state, zipCode } = req.body;
     try {
       await pool.query(
-        "UPDATE users SET fullName = ?, phone = ?, avatarUrl = ?, email = ? WHERE uid = ?",
-        [fullName, phone, avatarUrl, email, req.params.uid]
+        "UPDATE users SET fullName = ?, phone = ?, avatarUrl = ?, email = ?, streetAddress = ?, city = ?, state = ?, zipCode = ? WHERE uid = ?",
+        [fullName, phone, avatarUrl, email, streetAddress, city, state, zipCode, req.params.uid]
       );
       res.json({ status: "success", message: "Profile updated" });
     } catch (error: any) {
