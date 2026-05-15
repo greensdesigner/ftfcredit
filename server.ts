@@ -716,16 +716,28 @@ async function startServer() {
       let stripeAccountId = rows[0]?.stripeAccountId;
 
       if (!stripeAccountId) {
-        const account = await stripeInst.accounts.create({
-          type: 'express',
-          email,
-          capabilities: {
-            card_payments: { requested: true },
-            transfers: { requested: true },
-          },
-        });
-        stripeAccountId = account.id;
-        await pool.query("UPDATE users SET stripeAccountId = ? WHERE uid = ?", [stripeAccountId, uid]);
+        try {
+          // Switching to 'standard' account type which is easier for users to sign-in with existing accounts
+          // and requires less platform-level verification upfront than 'express'.
+          const account = await stripeInst.accounts.create({
+            type: 'standard', 
+            email,
+          });
+          stripeAccountId = account.id;
+          await pool.query("UPDATE users SET stripeAccountId = ? WHERE uid = ?", [stripeAccountId, uid]);
+        } catch (err: any) {
+          console.error("DEBUG - Stripe Account Create Error:", err);
+          
+          let errorMessage = err.message;
+          if (errorMessage.includes("platform profile")) {
+            errorMessage = "Action Required: Your main Stripe account's 'Platform Profile' is incomplete. Please go to Stripe Dashboard > Settings > Connect > Platform Profile and fill in your business details (website, description, etc.).";
+          }
+          
+          return res.status(400).json({ 
+            error: errorMessage,
+            suggestion: "Visit https://dashboard.stripe.com/settings/applications to ensure Connect is enabled."
+          });
+        }
       }
 
       const protocol = req.headers['x-forwarded-proto'] || 'http';

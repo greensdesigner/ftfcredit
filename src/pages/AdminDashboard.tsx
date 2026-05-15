@@ -804,10 +804,13 @@ function StripeConnectSection({ user }: { user: any }) {
       const data = await response.json();
       
       if (data.error) {
-        if (data.error.includes("signed up for Connect")) {
+        // Show specific guidance for platform profile error
+        if (data.error.includes("Platform Profile") || data.error.includes("platform profile")) {
+          alert("Platform Setup Needed:\n\n" + data.error + "\n\nOnce filled, click 'Connect' again.");
+        } else if (data.error.includes("signed up for Connect")) {
           alert("Action Required: Please enable 'Stripe Connect' in your Stripe Dashboard (dashboard.stripe.com/connect) first, then try again.");
         } else {
-          throw new Error(data.error);
+          alert("Connection Error: " + data.error + (data.suggestion ? "\n\nSuggestion: " + data.suggestion : ""));
         }
         return;
       }
