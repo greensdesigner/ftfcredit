@@ -858,20 +858,54 @@ function StripeConnectSection({ user }: { user: any }) {
           </div>
         </div>
         
-        <button
-          onClick={handleConnect}
-          disabled={connecting}
-          className={cn(
-            "rounded-xl px-6 py-3 text-sm font-bold transition-all flex items-center gap-2",
-            connectStatus?.isConnected
-              ? "bg-neutral-100 text-neutral-900 hover:bg-neutral-200"
-              : "bg-neutral-900 text-white hover:bg-neutral-800 shadow-lg shadow-neutral-900/10"
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={handleConnect}
+            disabled={connecting}
+            className={cn(
+              "rounded-xl px-6 py-3 text-sm font-bold transition-all flex items-center gap-2",
+              connectStatus?.isConnected
+                ? "bg-neutral-100 text-neutral-900 hover:bg-neutral-200"
+                : "bg-neutral-900 text-white hover:bg-neutral-800 shadow-lg shadow-neutral-900/10"
+            )}
+          >
+            {connecting ? <Loader2 className="animate-spin" size={18} /> : null}
+            {connectStatus?.isConnected ? "Manage Stripe Account" : "Automatic Connect (Recommended)"}
+            {!connecting && <ArrowUpRight size={18} />}
+          </button>
+          
+          {!connectStatus?.isConnected && (
+            <div className="flex items-center gap-2">
+              <input 
+                type="text"
+                placeholder="Alternative: Paste Account ID (acct_...)"
+                id="manualStripeId"
+                className="text-[10px] bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 outline-none focus:ring-1 focus:ring-neutral-900 w-full min-w-[200px]"
+              />
+              <button 
+                onClick={async () => {
+                  const id = (document.getElementById('manualStripeId') as HTMLInputElement).value;
+                  if (!id.startsWith('acct_')) return alert("Invalid Account ID. Must start with acct_");
+                  setConnecting(true);
+                  try {
+                    const res = await fetch('/api/admin/update-settings', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ uid: user.uid, updates: { stripeAccountId: id } }),
+                    });
+                    if (res.ok) {
+                      alert("Stripe ID saved manually! Please ensure this account is fully verified on Stripe.");
+                      window.location.reload();
+                    }
+                  } catch (e) {} finally { setConnecting(false); }
+                }}
+                className="bg-neutral-200 text-neutral-700 px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-neutral-300"
+              >
+                SAVE
+              </button>
+            </div>
           )}
-        >
-          {connecting ? <Loader2 className="animate-spin" size={18} /> : null}
-          {connectStatus?.isConnected ? "Manage Stripe Account" : "Connect with Stripe"}
-          {!connecting && <ArrowUpRight size={18} />}
-        </button>
+        </div>
       </div>
       
       {!connectStatus?.isConnected && (
