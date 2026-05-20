@@ -286,48 +286,48 @@ export default function AdminDashboard() {
             </div>
 
             {/* Daily Operations - Expanded Interactive Panel */}
-            <div className="rounded-3xl border border-neutral-100 bg-white p-6 shadow-sm">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-100 pb-5 mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="p-3 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100/50">
-                      <Briefcase size={24} className="animate-pulse" />
+            <div className="rounded-3xl border border-neutral-100 bg-white p-8 shadow-sm">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 border-b border-neutral-100 pb-6 mb-8">
+                  <div className="flex items-center gap-4">
+                    <div className="p-4 rounded-3xl bg-amber-50 text-amber-600 border border-amber-100/50">
+                      <Briefcase size={28} className="animate-pulse" />
                     </div>
                     <div>
-                      <h3 className="font-display font-bold text-xl md:text-2xl text-neutral-900">Daily Operations Hub</h3>
-                      <p className="text-sm text-neutral-500 mt-1">Track onboarding progress, process batches, and manage administrative tasks.</p>
+                      <h3 className="font-display font-black text-2xl md:text-3xl lg:text-4xl text-neutral-900 leading-tight">Daily Operations Hub</h3>
+                      <p className="text-base md:text-lg text-neutral-500 mt-1.5 font-medium">Track onboarding progress, process batches, and manage administrative tasks.</p>
                     </div>
                   </div>
 
                   {/* Operation Tabs */}
-                  <div className="flex bg-neutral-100 p-1 rounded-xl text-sm font-bold shrink-0">
+                  <div className="flex bg-neutral-100 p-1.5 rounded-2xl text-base font-bold shrink-0">
                     <button
                       onClick={() => setOpTab('individual')}
                       className={cn(
-                        "px-4 py-2.5 rounded-lg transition-all cursor-pointer flex items-center gap-2",
-                        opTab === 'individual' ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-950"
+                        "px-5 py-3 rounded-xl transition-all cursor-pointer flex items-center gap-2.5",
+                        opTab === 'individual' ? "bg-white text-neutral-900 shadow-md" : "text-neutral-500 hover:text-neutral-950"
                       )}
                     >
-                      <User size={16} />
+                      <User size={18} />
                       Individual Processing
                     </button>
                     <button
                       onClick={() => setOpTab('batch')}
                       className={cn(
-                        "px-4 py-2.5 rounded-lg transition-all cursor-pointer flex items-center gap-2",
-                        opTab === 'batch' ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-950"
+                        "px-5 py-3 rounded-xl transition-all cursor-pointer flex items-center gap-2.5",
+                        opTab === 'batch' ? "bg-white text-neutral-900 shadow-md" : "text-neutral-500 hover:text-neutral-950"
                       )}
                     >
-                      <Sparkles size={16} />
+                      <Sparkles size={18} />
                       Batch Actions ({clients.filter(c => c.onboardingStep === 1).length})
                     </button>
                     <button
                       onClick={() => setOpTab('checklist')}
                       className={cn(
-                        "px-4 py-2.5 rounded-lg transition-all cursor-pointer flex items-center gap-2",
-                        opTab === 'checklist' ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-950"
+                        "px-5 py-3 rounded-xl transition-all cursor-pointer flex items-center gap-2.5",
+                        opTab === 'checklist' ? "bg-white text-neutral-900 shadow-md" : "text-neutral-500 hover:text-neutral-950"
                       )}
                     >
-                      <ClipboardList size={16} />
+                      <ClipboardList size={18} />
                       Daily Checklist ({manualTasks.filter(t => t.completed).length}/{manualTasks.length})
                     </button>
                   </div>
@@ -335,82 +335,82 @@ export default function AdminDashboard() {
 
                 {/* Tab Content: Individual Tasks */}
                 {opTab === 'individual' && (
-                  <div className="space-y-6">
+                  <div className="space-y-8">
                     {/* Step Categories */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                       
                       {/* Section 1: Analysis Pending */}
-                      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-5 flex flex-col justify-between">
+                      <div className="rounded-3xl border border-neutral-100 bg-neutral-50/50 p-6 md:p-8 flex flex-col justify-between">
                         <div>
-                          <div className="flex items-center justify-between mb-4">
-                            <span className="text-sm font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100 flex items-center gap-1.5">
-                              <span className="size-2 rounded-full bg-amber-500 animate-ping" />
+                          <div className="flex items-center justify-between mb-5">
+                            <span className="text-base md:text-lg font-bold text-amber-700 bg-amber-50 px-4 py-2 rounded-full border border-amber-100 flex items-center gap-2">
+                              <span className="size-2.5 rounded-full bg-amber-500 animate-ping" />
                               Step 1: Initial Analysis ({clients.filter(c => c.onboardingStep === 1).length})
                             </span>
                           </div>
-                          <div className="space-y-3 max-h-56 overflow-y-auto mb-4 pr-1">
+                          <div className="space-y-4 max-h-64 overflow-y-auto mb-6 pr-1">
                             {clients.filter(c => c.onboardingStep === 1).length === 0 ? (
-                              <p className="text-sm text-neutral-400 italic py-6 text-center">No clients pending analysis.</p>
+                              <p className="text-base md:text-lg text-neutral-400 italic py-8 text-center font-medium">No clients pending analysis.</p>
                             ) : (
                               clients.filter(c => c.onboardingStep === 1).map(c => (
-                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-3.5 rounded-xl shadow-sm">
-                                  <div className="truncate">
-                                    <p className="text-sm font-bold text-neutral-900 truncate">{c.fullName}</p>
-                                    <p className="text-xs text-neutral-500 truncate mt-0.5">{c.email}</p>
+                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-4 rounded-2xl shadow-sm">
+                                  <div className="truncate pr-4">
+                                    <p className="text-base md:text-lg font-extrabold text-neutral-900 truncate">{c.fullName}</p>
+                                    <p className="text-sm md:text-base text-neutral-500 truncate mt-1">{c.email}</p>
                                   </div>
                                   <button
                                     onClick={() => updateClientProgress(c.uid, 2)}
                                     disabled={updatingId === c.uid}
-                                    className="px-3.5 py-2 rounded-lg bg-neutral-900 text-white text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer shrink-0 ml-2"
+                                    className="px-5 py-2.5 rounded-xl bg-neutral-900 text-white text-sm font-bold hover:bg-neutral-800 transition-all cursor-pointer shrink-0 ml-2"
                                   >
-                                    {updatingId === c.uid ? <Loader2 size={12} className="animate-spin" /> : 'Analyze'}
+                                    {updatingId === c.uid ? <Loader2 size={14} className="animate-spin" /> : 'Analyze'}
                                   </button>
                                 </div>
                               ))
                             )}
                           </div>
                         </div>
-                        <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-xs font-medium text-neutral-500">
+                        <div className="border-t border-dashed border-neutral-200/60 pt-4 flex justify-between items-center text-sm md:text-base font-bold text-neutral-600">
                           <span>Action: Auto-analyze clients</span>
-                          <span className="font-mono bg-neutral-100 px-2 py-0.5 rounded text-neutral-600">Step: 1 → 2</span>
+                          <span className="font-mono bg-neutral-100 px-3 py-1 rounded text-neutral-700 text-xs md:text-sm">Step: 1 → 2</span>
                         </div>
                       </div>
 
                       {/* Section 2: Dispute Mailing Queue */}
-                      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-5 flex flex-col justify-between">
+                      <div className="rounded-3xl border border-neutral-100 bg-neutral-50/50 p-6 md:p-8 flex flex-col justify-between">
                         <div>
-                          <div className="flex items-center justify-between mb-4">
-                            <span className="text-sm font-bold text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 flex items-center gap-1.5">
-                              <span className="size-2 rounded-full bg-blue-500 animate-ping" />
+                          <div className="flex items-center justify-between mb-5">
+                            <span className="text-base md:text-lg font-bold text-blue-700 bg-blue-50 px-4 py-2 rounded-full border border-blue-100 flex items-center gap-2">
+                              <span className="size-2.5 rounded-full bg-blue-500 animate-ping" />
                               Step 2: Dispute Mailing ({clients.filter(c => c.onboardingStep === 2).length})
                             </span>
                           </div>
-                          <div className="space-y-3 max-h-56 overflow-y-auto mb-4 pr-1">
+                          <div className="space-y-4 max-h-64 overflow-y-auto mb-6 pr-1">
                             {clients.filter(c => c.onboardingStep === 2).length === 0 ? (
-                              <p className="text-sm text-neutral-400 italic py-6 text-center">No clients in mailing queue.</p>
+                              <p className="text-base md:text-lg text-neutral-400 italic py-8 text-center font-medium">No clients in mailing queue.</p>
                             ) : (
                               clients.filter(c => c.onboardingStep === 2).map(c => (
-                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-3.5 rounded-xl shadow-sm">
-                                  <div className="truncate">
-                                    <p className="text-sm font-bold text-neutral-900 truncate">{c.fullName}</p>
-                                    <p className="text-xs text-neutral-500 truncate mt-0.5">{c.phone || c.email}</p>
+                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-4 rounded-2xl shadow-sm">
+                                  <div className="truncate pr-4">
+                                    <p className="text-base md:text-lg font-extrabold text-neutral-900 truncate">{c.fullName}</p>
+                                    <p className="text-sm md:text-base text-neutral-500 truncate mt-1">{c.phone || c.email}</p>
                                   </div>
-                                  <div className="flex gap-1.5">
+                                  <div className="flex gap-2">
                                     <button
                                       onClick={() => {
                                         alert(`Dispute letters for ${c.fullName} have been drafted! Please print and mail them via post.`);
                                       }}
-                                      className="p-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-xs font-bold text-neutral-700 cursor-pointer flex items-center justify-center"
+                                      className="p-3 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-sm font-bold text-neutral-700 cursor-pointer flex items-center justify-center"
                                       title="Download Letter Drafts"
                                     >
-                                      <Download size={12} />
+                                      <Download size={14} />
                                     </button>
                                     <button
                                       onClick={() => updateClientProgress(c.uid, 3)}
                                       disabled={updatingId === c.uid}
-                                      className="px-3.5 py-2 rounded-lg bg-neutral-900 text-white text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer shrink-0"
+                                      className="px-5 py-2.5 rounded-xl bg-neutral-900 text-white text-sm font-bold hover:bg-neutral-800 transition-all cursor-pointer shrink-0"
                                     >
-                                      {updatingId === c.uid ? <Loader2 size={12} className="animate-spin" /> : 'Mark Sent'}
+                                      {updatingId === c.uid ? <Loader2 size={14} className="animate-spin" /> : 'Mark Sent'}
                                     </button>
                                   </div>
                                 </div>
@@ -418,83 +418,83 @@ export default function AdminDashboard() {
                             )}
                           </div>
                         </div>
-                        <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-xs font-medium text-neutral-500">
+                        <div className="border-t border-dashed border-neutral-200/60 pt-4 flex justify-between items-center text-sm md:text-base font-bold text-neutral-600">
                           <span>Action: Submit letters directly to bureaus</span>
-                          <span className="font-mono bg-neutral-100 px-2 py-0.5 rounded text-neutral-600">Step: 2 → 3</span>
+                          <span className="font-mono bg-neutral-100 px-3 py-1 rounded text-neutral-700 text-xs md:text-sm">Step: 2 → 3</span>
                         </div>
                       </div>
 
                       {/* Section 3: Sent to Bureaus */}
-                      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-5 flex flex-col justify-between">
+                      <div className="rounded-3xl border border-neutral-100 bg-neutral-50/50 p-6 md:p-8 flex flex-col justify-between">
                         <div>
-                          <div className="flex items-center justify-between mb-4">
-                            <span className="text-sm font-bold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 flex items-center gap-1.5">
-                              <span className="size-2 rounded-full bg-indigo-500 animate-ping" />
+                          <div className="flex items-center justify-between mb-5">
+                            <span className="text-base md:text-lg font-bold text-indigo-700 bg-indigo-50 px-4 py-2 rounded-full border border-indigo-100 flex items-center gap-2">
+                              <span className="size-2.5 rounded-full bg-indigo-500 animate-ping" />
                               Step 3: Bureau Processing ({clients.filter(c => c.onboardingStep === 3).length})
                             </span>
                           </div>
-                          <div className="space-y-3 max-h-56 overflow-y-auto mb-4 pr-1">
+                          <div className="space-y-4 max-h-64 overflow-y-auto mb-6 pr-1">
                             {clients.filter(c => c.onboardingStep === 3).length === 0 ? (
-                              <p className="text-sm text-neutral-400 italic py-6 text-center">No files under bureau processing.</p>
+                              <p className="text-base md:text-lg text-neutral-400 italic py-8 text-center font-medium">No files under bureau processing.</p>
                             ) : (
                               clients.filter(c => c.onboardingStep === 3).map(c => (
-                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-3.5 rounded-xl shadow-sm">
-                                  <div className="truncate">
-                                    <p className="text-sm font-bold text-neutral-900 truncate">{c.fullName}</p>
-                                    <p className="text-xs text-emerald-600 font-bold font-mono mt-0.5">32 days elapsed</p>
+                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-4 rounded-2xl shadow-sm">
+                                  <div className="truncate pr-4">
+                                    <p className="text-base md:text-lg font-extrabold text-neutral-900 truncate">{c.fullName}</p>
+                                    <p className="text-sm md:text-base text-emerald-600 font-bold font-mono mt-1">32 days elapsed</p>
                                   </div>
                                   <button
                                     onClick={() => updateClientProgress(c.uid, 4)}
                                     disabled={updatingId === c.uid}
-                                    className="px-3.5 py-2 rounded-lg bg-neutral-900 text-white text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer shrink-0 ml-2"
+                                    className="px-5 py-2.5 rounded-xl bg-neutral-900 text-white text-sm font-bold hover:bg-neutral-800 transition-all cursor-pointer shrink-0 ml-2"
                                   >
-                                    {updatingId === c.uid ? <Loader2 size={12} className="animate-spin" /> : 'Verify'}
+                                    {updatingId === c.uid ? <Loader2 size={14} className="animate-spin" /> : 'Verify'}
                                   </button>
                                 </div>
                               ))
                             )}
                           </div>
                         </div>
-                        <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-xs font-medium text-neutral-500">
+                        <div className="border-t border-dashed border-neutral-200/60 pt-4 flex justify-between items-center text-sm md:text-base font-bold text-neutral-600">
                           <span>Action: Track bureaus and review outcomes</span>
-                          <span className="font-mono bg-neutral-100 px-2 py-0.5 rounded text-neutral-600">Step: 3 → 4</span>
+                          <span className="font-mono bg-neutral-100 px-3 py-1 rounded text-neutral-700 text-xs md:text-sm">Step: 3 → 4</span>
                         </div>
                       </div>
 
                       {/* Section 4: Result Verifications */}
-                      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-5 flex flex-col justify-between">
+                      <div className="rounded-3xl border border-neutral-100 bg-neutral-50/50 p-6 md:p-8 flex flex-col justify-between">
                         <div>
-                          <div className="flex items-center justify-between mb-4">
-                            <span className="text-sm font-bold text-purple-700 bg-purple-50 px-3 py-1.5 rounded-full border border-purple-100 flex items-center gap-1.5">
-                              <span className="size-2 rounded-full bg-purple-500 animate-ping" />
+                          <div className="flex items-center justify-between mb-5">
+                            <span className="text-base md:text-lg font-bold text-purple-700 bg-purple-50 px-4 py-2 rounded-full border border-purple-100 flex items-center gap-2">
+                              <span className="size-2.5 rounded-full bg-purple-500 animate-ping" />
                               Step 4: Final Check & Credit Results ({clients.filter(c => c.onboardingStep === 4).length})
                             </span>
                           </div>
-                          <div className="space-y-3 max-h-56 overflow-y-auto mb-4 pr-1">
+                          <div className="space-y-4 max-h-64 overflow-y-auto mb-6 pr-1">
                             {clients.filter(c => c.onboardingStep === 4).length === 0 ? (
-                              <p className="text-sm text-neutral-400 italic py-6 text-center">No final checks pending result upload.</p>
+                              <p className="text-base md:text-lg text-neutral-400 italic py-8 text-center font-medium">No final checks pending result upload.</p>
                             ) : (
                               clients.filter(c => c.onboardingStep === 4).map(c => (
-                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-3.5 rounded-xl shadow-sm">
-                                  <div className="truncate">
-                                    <p className="text-sm font-bold text-neutral-900 truncate">{c.fullName}</p>
-                                    <p className="text-xs text-purple-600 font-semibold mt-0.5">{c.plan_name || 'Subscriber'}</p>
+                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-4 rounded-2xl shadow-sm">
+                                  <div className="truncate pr-4">
+                                    <p className="text-base md:text-lg font-extrabold text-neutral-900 truncate">{c.fullName}</p>
+                                    <p className="text-sm md:text-base text-purple-600 font-semibold mt-1">{c.plan_name || 'Subscriber'}</p>
                                   </div>
                                   <button
                                     onClick={() => updateClientProgress(c.uid, 5)}
                                     disabled={updatingId === c.uid}
-                                    className="px-3.5 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors cursor-pointer shrink-0 ml-2"
+                                    className="px-5 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition-all cursor-pointer shrink-0 ml-2"
                                   >
-                                    {updatingId === c.uid ? <Loader2 size={12} className="animate-spin" /> : 'Close Case'}
+                                    {updatingId === c.uid ? <Loader2 size={14} className="animate-spin" /> : 'Close Case'}
                                   </button>
                                 </div>
                               ))
                             )}
                           </div>
                         </div>
-                        <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-xs font-medium text-neutral-500">
+                        <div className="border-t border-dashed border-neutral-200/60 pt-4 flex justify-between items-center text-sm md:text-base font-bold text-neutral-600">
                           <span>Action: Complete and update customer credit report</span>
-                          <span className="font-mono bg-neutral-100 px-2 py-0.5 rounded text-neutral-600">Step: 4 → 5</span>
+                          <span className="font-mono bg-neutral-100 px-3 py-1 rounded text-neutral-700 text-xs md:text-sm">Step: 4 → 5</span>
                         </div>
                       </div>
 
@@ -504,18 +504,18 @@ export default function AdminDashboard() {
 
                 {/* Tab Content: Batch Actions */}
                 {opTab === 'batch' && (
-                  <div className="p-8 bg-neutral-50 rounded-2xl border border-neutral-100 text-center space-y-6">
-                    <div className="mx-auto size-16 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 border border-amber-100">
-                      <Sparkles size={32} className={batchProcessing ? "animate-spin" : ""} />
+                  <div className="p-10 bg-neutral-50 rounded-3xl border border-neutral-100 text-center space-y-6">
+                    <div className="mx-auto size-20 bg-amber-50 rounded-3xl flex items-center justify-center text-amber-600 border border-amber-100">
+                      <Sparkles size={40} className={batchProcessing ? "animate-spin" : ""} />
                     </div>
                     <div>
-                      <h4 className="text-lg md:text-xl font-bold text-neutral-900">Smart Batch Processing & Letter Generation</h4>
-                      <p className="text-sm md:text-base text-neutral-500 mt-2 max-w-xl mx-auto leading-relaxed">
+                      <h4 className="text-xl md:text-2xl font-black text-neutral-900">Smart Batch Processing & Letter Generation</h4>
+                      <p className="text-base md:text-lg text-neutral-500 mt-3 max-w-2xl mx-auto leading-relaxed font-medium">
                         Analyze all pending clients in Step 1 in a single click, generate intelligent dispute letters, and move them directly to the mailing queue (Step 2).
                       </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-3">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-5 pt-4">
                       <button
                         disabled={batchProcessing || clients.filter(c => c.onboardingStep === 1).length === 0}
                         onClick={async () => {
@@ -541,9 +541,9 @@ export default function AdminDashboard() {
                             setBatchProcessing(false);
                           }
                         }}
-                        className="rounded-xl px-6 py-3.5 font-bold text-white bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:hover:bg-neutral-900 shadow-md shadow-neutral-900/10 flex items-center justify-center gap-2.5 cursor-pointer w-full sm:w-auto text-sm"
+                        className="rounded-2xl px-8 py-4.5 font-bold text-white bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:hover:bg-neutral-900 shadow-lg shadow-neutral-900/10 flex items-center justify-center gap-3 cursor-pointer w-full sm:w-auto text-base md:text-lg"
                       >
-                        {batchProcessing ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />}
+                        {batchProcessing ? <Loader2 size={22} className="animate-spin" /> : <RefreshCw size={22} />}
                         Analyze all pending clients ({clients.filter(c => c.onboardingStep === 1).length})
                       </button>
 
@@ -552,9 +552,9 @@ export default function AdminDashboard() {
                         onClick={() => {
                           alert("Downloading a consolidated PDF of all dispute letters for today...");
                         }}
-                        className="rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 px-6 py-3.5 font-bold text-neutral-700 text-sm flex items-center justify-center gap-2.5 cursor-pointer w-full sm:w-auto"
+                        className="rounded-2xl border border-neutral-200 bg-white hover:bg-neutral-50 px-8 py-4.5 font-bold text-neutral-700 text-base md:text-lg flex items-center justify-center gap-3 cursor-pointer w-full sm:w-auto"
                       >
-                        <Download size={18} />
+                        <Download size={22} />
                         Download Consolidated Mailing Batch (PDF)
                       </button>
                     </div>
@@ -563,23 +563,23 @@ export default function AdminDashboard() {
 
                 {/* Tab Content: Checklist */}
                 {opTab === 'checklist' && (
-                  <div className="space-y-5">
-                    <div className="flex items-center justify-between text-sm md:text-base font-bold text-neutral-600 mb-1">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between text-base md:text-lg font-extrabold text-neutral-600 mb-1">
                       <span>Administrative Actions Checklist</span>
-                      <span className="text-neutral-900 font-mono">
+                      <span className="text-neutral-900 font-mono text-base md:text-lg font-bold">
                         {manualTasks.filter(t => t.completed).length}/{manualTasks.length} Completed
                       </span>
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="h-3 w-full bg-neutral-100 rounded-full overflow-hidden">
+                    <div className="h-4 w-full bg-neutral-100 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-emerald-500 transition-all duration-500"
                         style={{ width: `${(manualTasks.filter(t => t.completed).length / manualTasks.length) * 100}%` }}
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5 pt-3">
                       {manualTasks.map(task => (
                         <div 
                           key={task.id} 
@@ -587,21 +587,21 @@ export default function AdminDashboard() {
                             setManualTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t));
                           }}
                           className={cn(
-                            "p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-3.5",
+                            "p-5 rounded-2xl border transition-all cursor-pointer flex items-start gap-4",
                             task.completed 
-                              ? "bg-emerald-50/40 border-emerald-100 text-neutral-500" 
+                              ? "bg-emerald-50/40 border-emerald-100 text-neutral-400" 
                               : "bg-white border-neutral-150 text-neutral-800 hover:border-neutral-300 shadow-sm"
                           )}
                         >
-                          <div className="mt-0.5 text-neutral-400 shrink-0">
+                          <div className="mt-1 text-neutral-400 shrink-0">
                             {task.completed ? (
-                              <CheckSquare size={18} className="text-emerald-500" />
+                              <CheckSquare size={22} className="text-emerald-500" />
                             ) : (
-                              <Square size={18} />
+                              <Square size={22} />
                             )}
                           </div>
                           <div>
-                            <p className={cn("text-sm md:text-base font-semibold leading-relaxed", task.completed && "line-through text-neutral-400")}>
+                            <p className={cn("text-base md:text-lg font-extrabold leading-relaxed", task.completed && "line-through text-neutral-400")}>
                               {task.text}
                             </p>
                           </div>
