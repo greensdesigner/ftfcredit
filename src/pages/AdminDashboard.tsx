@@ -289,45 +289,45 @@ export default function AdminDashboard() {
             <div className="rounded-3xl border border-neutral-100 bg-white p-6 shadow-sm">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-100 pb-5 mb-6">
                   <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100/50">
-                      <Briefcase size={22} className="animate-pulse" />
+                    <div className="p-3 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100/50">
+                      <Briefcase size={24} className="animate-pulse" />
                     </div>
                     <div>
-                      <h3 className="font-display font-bold text-lg text-neutral-900">Daily Operations Hub</h3>
-                      <p className="text-xs text-neutral-500">Track onboarding progress, process batches, and manage administrative tasks.</p>
+                      <h3 className="font-display font-bold text-xl md:text-2xl text-neutral-900">Daily Operations Hub</h3>
+                      <p className="text-sm text-neutral-500 mt-1">Track onboarding progress, process batches, and manage administrative tasks.</p>
                     </div>
                   </div>
 
                   {/* Operation Tabs */}
-                  <div className="flex bg-neutral-100 p-1 rounded-xl text-xs font-bold shrink-0">
+                  <div className="flex bg-neutral-100 p-1 rounded-xl text-sm font-bold shrink-0">
                     <button
                       onClick={() => setOpTab('individual')}
                       className={cn(
-                        "px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5",
+                        "px-4 py-2.5 rounded-lg transition-all cursor-pointer flex items-center gap-2",
                         opTab === 'individual' ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-950"
                       )}
                     >
-                      <User size={14} />
+                      <User size={16} />
                       Individual Processing
                     </button>
                     <button
                       onClick={() => setOpTab('batch')}
                       className={cn(
-                        "px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5",
+                        "px-4 py-2.5 rounded-lg transition-all cursor-pointer flex items-center gap-2",
                         opTab === 'batch' ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-950"
                       )}
                     >
-                      <Sparkles size={14} />
+                      <Sparkles size={16} />
                       Batch Actions ({clients.filter(c => c.onboardingStep === 1).length})
                     </button>
                     <button
                       onClick={() => setOpTab('checklist')}
                       className={cn(
-                        "px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5",
+                        "px-4 py-2.5 rounded-lg transition-all cursor-pointer flex items-center gap-2",
                         opTab === 'checklist' ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-950"
                       )}
                     >
-                      <ClipboardList size={14} />
+                      <ClipboardList size={16} />
                       Daily Checklist ({manualTasks.filter(t => t.completed).length}/{manualTasks.length})
                     </button>
                   </div>
@@ -340,77 +340,77 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       
                       {/* Section 1: Analysis Pending */}
-                      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-4 flex flex-col justify-between">
+                      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-5 flex flex-col justify-between">
                         <div>
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100 flex items-center gap-1.5">
-                              <span className="size-1.5 rounded-full bg-amber-500 animate-ping" />
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-sm font-bold text-amber-700 bg-amber-50 px-3 py-1.5 rounded-full border border-amber-100 flex items-center gap-1.5">
+                              <span className="size-2 rounded-full bg-amber-500 animate-ping" />
                               Step 1: Initial Analysis ({clients.filter(c => c.onboardingStep === 1).length})
                             </span>
                           </div>
-                          <div className="space-y-2.5 max-h-48 overflow-y-auto mb-4 pr-1">
+                          <div className="space-y-3 max-h-56 overflow-y-auto mb-4 pr-1">
                             {clients.filter(c => c.onboardingStep === 1).length === 0 ? (
-                              <p className="text-xs text-neutral-400 italic py-4 text-center">No clients pending analysis.</p>
+                              <p className="text-sm text-neutral-400 italic py-6 text-center">No clients pending analysis.</p>
                             ) : (
                               clients.filter(c => c.onboardingStep === 1).map(c => (
-                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-2.5 rounded-xl">
+                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-3.5 rounded-xl shadow-sm">
                                   <div className="truncate">
-                                    <p className="text-xs font-bold text-neutral-900 truncate">{c.fullName}</p>
-                                    <p className="text-[10px] text-neutral-400 truncate">{c.email}</p>
+                                    <p className="text-sm font-bold text-neutral-900 truncate">{c.fullName}</p>
+                                    <p className="text-xs text-neutral-500 truncate mt-0.5">{c.email}</p>
                                   </div>
                                   <button
                                     onClick={() => updateClientProgress(c.uid, 2)}
                                     disabled={updatingId === c.uid}
-                                    className="px-2.5 py-1.5 rounded-lg bg-neutral-900 text-white text-[10px] font-bold hover:bg-neutral-800 transition-colors cursor-pointer shrink-0 ml-2"
+                                    className="px-3.5 py-2 rounded-lg bg-neutral-900 text-white text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer shrink-0 ml-2"
                                   >
-                                    {updatingId === c.uid ? <Loader2 size={10} className="animate-spin" /> : 'Analyze'}
+                                    {updatingId === c.uid ? <Loader2 size={12} className="animate-spin" /> : 'Analyze'}
                                   </button>
                                 </div>
                               ))
                             )}
                           </div>
                         </div>
-                        <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-[10px] text-neutral-400">
+                        <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-xs font-medium text-neutral-500">
                           <span>Action: Auto-analyze clients</span>
-                          <span className="font-mono">Step: 1 → 2</span>
+                          <span className="font-mono bg-neutral-100 px-2 py-0.5 rounded text-neutral-600">Step: 1 → 2</span>
                         </div>
                       </div>
 
                       {/* Section 2: Dispute Mailing Queue */}
-                      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-4 flex flex-col justify-between">
+                      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-5 flex flex-col justify-between">
                         <div>
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100 flex items-center gap-1.5">
-                              <span className="size-1.5 rounded-full bg-blue-500 animate-ping" />
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-sm font-bold text-blue-700 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 flex items-center gap-1.5">
+                              <span className="size-2 rounded-full bg-blue-500 animate-ping" />
                               Step 2: Dispute Mailing ({clients.filter(c => c.onboardingStep === 2).length})
                             </span>
                           </div>
-                          <div className="space-y-2.5 max-h-48 overflow-y-auto mb-4 pr-1">
+                          <div className="space-y-3 max-h-56 overflow-y-auto mb-4 pr-1">
                             {clients.filter(c => c.onboardingStep === 2).length === 0 ? (
-                              <p className="text-xs text-neutral-400 italic py-4 text-center">No clients in mailing queue.</p>
+                              <p className="text-sm text-neutral-400 italic py-6 text-center">No clients in mailing queue.</p>
                             ) : (
                               clients.filter(c => c.onboardingStep === 2).map(c => (
-                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-2.5 rounded-xl">
+                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-3.5 rounded-xl shadow-sm">
                                   <div className="truncate">
-                                    <p className="text-xs font-bold text-neutral-900 truncate">{c.fullName}</p>
-                                    <p className="text-[10px] text-neutral-400 truncate">{c.phone || c.email}</p>
+                                    <p className="text-sm font-bold text-neutral-900 truncate">{c.fullName}</p>
+                                    <p className="text-xs text-neutral-500 truncate mt-0.5">{c.phone || c.email}</p>
                                   </div>
-                                  <div className="flex gap-1">
+                                  <div className="flex gap-1.5">
                                     <button
                                       onClick={() => {
                                         alert(`Dispute letters for ${c.fullName} have been drafted! Please print and mail them via post.`);
                                       }}
-                                      className="px-2 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-[10px] font-bold text-neutral-700 cursor-pointer"
+                                      className="p-2 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-xs font-bold text-neutral-700 cursor-pointer flex items-center justify-center"
                                       title="Download Letter Drafts"
                                     >
-                                      <Download size={10} />
+                                      <Download size={12} />
                                     </button>
                                     <button
                                       onClick={() => updateClientProgress(c.uid, 3)}
                                       disabled={updatingId === c.uid}
-                                      className="px-2.5 py-1.5 rounded-lg bg-neutral-900 text-white text-[10px] font-bold hover:bg-neutral-800 transition-colors cursor-pointer shrink-0"
+                                      className="px-3.5 py-2 rounded-lg bg-neutral-900 text-white text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer shrink-0"
                                     >
-                                      {updatingId === c.uid ? <Loader2 size={10} className="animate-spin" /> : 'Mark Sent'}
+                                      {updatingId === c.uid ? <Loader2 size={12} className="animate-spin" /> : 'Mark Sent'}
                                     </button>
                                   </div>
                                 </div>
@@ -418,83 +418,83 @@ export default function AdminDashboard() {
                             )}
                           </div>
                         </div>
-                        <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-[10px] text-neutral-400">
+                        <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-xs font-medium text-neutral-500">
                           <span>Action: Submit letters directly to bureaus</span>
-                          <span className="font-mono">Step: 2 → 3</span>
+                          <span className="font-mono bg-neutral-100 px-2 py-0.5 rounded text-neutral-600">Step: 2 → 3</span>
                         </div>
                       </div>
 
                       {/* Section 3: Sent to Bureaus */}
-                      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-4 flex flex-col justify-between">
+                      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-5 flex flex-col justify-between">
                         <div>
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100 flex items-center gap-1.5">
-                              <span className="size-1.5 rounded-full bg-indigo-500 animate-ping" />
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-sm font-bold text-indigo-700 bg-indigo-50 px-3 py-1.5 rounded-full border border-indigo-100 flex items-center gap-1.5">
+                              <span className="size-2 rounded-full bg-indigo-500 animate-ping" />
                               Step 3: Bureau Processing ({clients.filter(c => c.onboardingStep === 3).length})
                             </span>
                           </div>
-                          <div className="space-y-2.5 max-h-48 overflow-y-auto mb-4 pr-1">
+                          <div className="space-y-3 max-h-56 overflow-y-auto mb-4 pr-1">
                             {clients.filter(c => c.onboardingStep === 3).length === 0 ? (
-                              <p className="text-xs text-neutral-400 italic py-4 text-center">No files under bureau processing.</p>
+                              <p className="text-sm text-neutral-400 italic py-6 text-center">No files under bureau processing.</p>
                             ) : (
                               clients.filter(c => c.onboardingStep === 3).map(c => (
-                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-2.5 rounded-xl">
+                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-3.5 rounded-xl shadow-sm">
                                   <div className="truncate">
-                                    <p className="text-xs font-bold text-neutral-900 truncate">{c.fullName}</p>
-                                    <p className="text-[10px] text-emerald-500 font-bold font-mono">32 days elapsed</p>
+                                    <p className="text-sm font-bold text-neutral-900 truncate">{c.fullName}</p>
+                                    <p className="text-xs text-emerald-600 font-bold font-mono mt-0.5">32 days elapsed</p>
                                   </div>
                                   <button
                                     onClick={() => updateClientProgress(c.uid, 4)}
                                     disabled={updatingId === c.uid}
-                                    className="px-2.5 py-1.5 rounded-lg bg-neutral-900 text-white text-[10px] font-bold hover:bg-neutral-800 transition-colors cursor-pointer shrink-0 ml-2"
+                                    className="px-3.5 py-2 rounded-lg bg-neutral-900 text-white text-xs font-bold hover:bg-neutral-800 transition-colors cursor-pointer shrink-0 ml-2"
                                   >
-                                    {updatingId === c.uid ? <Loader2 size={10} className="animate-spin" /> : 'Verify'}
+                                    {updatingId === c.uid ? <Loader2 size={12} className="animate-spin" /> : 'Verify'}
                                   </button>
                                 </div>
                               ))
                             )}
                           </div>
                         </div>
-                        <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-[10px] text-neutral-400">
+                        <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-xs font-medium text-neutral-500">
                           <span>Action: Track bureaus and review outcomes</span>
-                          <span className="font-mono">Step: 3 → 4</span>
+                          <span className="font-mono bg-neutral-100 px-2 py-0.5 rounded text-neutral-600">Step: 3 → 4</span>
                         </div>
                       </div>
 
                       {/* Section 4: Result Verifications */}
-                      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-4 flex flex-col justify-between">
+                      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-5 flex flex-col justify-between">
                         <div>
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-100 flex items-center gap-1.5">
-                              <span className="size-1.5 rounded-full bg-purple-500 animate-ping" />
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-sm font-bold text-purple-700 bg-purple-50 px-3 py-1.5 rounded-full border border-purple-100 flex items-center gap-1.5">
+                              <span className="size-2 rounded-full bg-purple-500 animate-ping" />
                               Step 4: Final Check & Credit Results ({clients.filter(c => c.onboardingStep === 4).length})
                             </span>
                           </div>
-                          <div className="space-y-2.5 max-h-48 overflow-y-auto mb-4 pr-1">
+                          <div className="space-y-3 max-h-56 overflow-y-auto mb-4 pr-1">
                             {clients.filter(c => c.onboardingStep === 4).length === 0 ? (
-                              <p className="text-xs text-neutral-400 italic py-4 text-center">No final checks pending result upload.</p>
+                              <p className="text-sm text-neutral-400 italic py-6 text-center">No final checks pending result upload.</p>
                             ) : (
                               clients.filter(c => c.onboardingStep === 4).map(c => (
-                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-2.5 rounded-xl">
+                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-3.5 rounded-xl shadow-sm">
                                   <div className="truncate">
-                                    <p className="text-xs font-bold text-neutral-900 truncate">{c.fullName}</p>
-                                    <p className="text-[10px] text-purple-500 font-bold">{c.plan_name || 'Subscriber'}</p>
+                                    <p className="text-sm font-bold text-neutral-900 truncate">{c.fullName}</p>
+                                    <p className="text-xs text-purple-600 font-semibold mt-0.5">{c.plan_name || 'Subscriber'}</p>
                                   </div>
                                   <button
                                     onClick={() => updateClientProgress(c.uid, 5)}
                                     disabled={updatingId === c.uid}
-                                    className="px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-[10px] font-bold hover:bg-emerald-700 transition-colors cursor-pointer shrink-0 ml-2"
+                                    className="px-3.5 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 transition-colors cursor-pointer shrink-0 ml-2"
                                   >
-                                    {updatingId === c.uid ? <Loader2 size={10} className="animate-spin" /> : 'Close Case'}
+                                    {updatingId === c.uid ? <Loader2 size={12} className="animate-spin" /> : 'Close Case'}
                                   </button>
                                 </div>
                               ))
                             )}
                           </div>
                         </div>
-                        <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-[10px] text-neutral-400">
+                        <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-xs font-medium text-neutral-500">
                           <span>Action: Complete and update customer credit report</span>
-                          <span className="font-mono">Step: 4 → 5</span>
+                          <span className="font-mono bg-neutral-100 px-2 py-0.5 rounded text-neutral-600">Step: 4 → 5</span>
                         </div>
                       </div>
 
@@ -504,18 +504,18 @@ export default function AdminDashboard() {
 
                 {/* Tab Content: Batch Actions */}
                 {opTab === 'batch' && (
-                  <div className="p-6 bg-neutral-50 rounded-2xl border border-neutral-100 text-center space-y-6">
+                  <div className="p-8 bg-neutral-50 rounded-2xl border border-neutral-100 text-center space-y-6">
                     <div className="mx-auto size-16 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 border border-amber-100">
-                      <Sparkles size={28} className={batchProcessing ? "animate-spin" : ""} />
+                      <Sparkles size={32} className={batchProcessing ? "animate-spin" : ""} />
                     </div>
                     <div>
-                      <h4 className="text-md font-bold text-neutral-900">Smart Batch Processing & Letter Generation</h4>
-                      <p className="text-xs text-neutral-500 mt-1 max-w-lg mx-auto">
+                      <h4 className="text-lg md:text-xl font-bold text-neutral-900">Smart Batch Processing & Letter Generation</h4>
+                      <p className="text-sm md:text-base text-neutral-500 mt-2 max-w-xl mx-auto leading-relaxed">
                         Analyze all pending clients in Step 1 in a single click, generate intelligent dispute letters, and move them directly to the mailing queue (Step 2).
                       </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-3">
                       <button
                         disabled={batchProcessing || clients.filter(c => c.onboardingStep === 1).length === 0}
                         onClick={async () => {
@@ -541,9 +541,9 @@ export default function AdminDashboard() {
                             setBatchProcessing(false);
                           }
                         }}
-                        className="rounded-xl px-6 py-3 font-bold text-white bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:hover:bg-neutral-900 shadow-md shadow-neutral-900/10 flex items-center gap-2 cursor-pointer w-full sm:w-auto justify-center"
+                        className="rounded-xl px-6 py-3.5 font-bold text-white bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:hover:bg-neutral-900 shadow-md shadow-neutral-900/10 flex items-center justify-center gap-2.5 cursor-pointer w-full sm:w-auto text-sm"
                       >
-                        {batchProcessing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                        {batchProcessing ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />}
                         Analyze all pending clients ({clients.filter(c => c.onboardingStep === 1).length})
                       </button>
 
@@ -552,9 +552,9 @@ export default function AdminDashboard() {
                         onClick={() => {
                           alert("Downloading a consolidated PDF of all dispute letters for today...");
                         }}
-                        className="rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 px-6 py-3 font-bold text-neutral-700 text-xs flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto"
+                        className="rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 px-6 py-3.5 font-bold text-neutral-700 text-sm flex items-center justify-center gap-2.5 cursor-pointer w-full sm:w-auto"
                       >
-                        <Download size={14} />
+                        <Download size={18} />
                         Download Consolidated Mailing Batch (PDF)
                       </button>
                     </div>
@@ -563,8 +563,8 @@ export default function AdminDashboard() {
 
                 {/* Tab Content: Checklist */}
                 {opTab === 'checklist' && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between text-xs font-bold text-neutral-500 mb-2">
+                  <div className="space-y-5">
+                    <div className="flex items-center justify-between text-sm md:text-base font-bold text-neutral-600 mb-1">
                       <span>Administrative Actions Checklist</span>
                       <span className="text-neutral-900 font-mono">
                         {manualTasks.filter(t => t.completed).length}/{manualTasks.length} Completed
@@ -572,14 +572,14 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="h-2 w-full bg-neutral-100 rounded-full overflow-hidden">
+                    <div className="h-3 w-full bg-neutral-100 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-emerald-500 transition-all duration-500"
                         style={{ width: `${(manualTasks.filter(t => t.completed).length / manualTasks.length) * 100}%` }}
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                       {manualTasks.map(task => (
                         <div 
                           key={task.id} 
@@ -587,7 +587,7 @@ export default function AdminDashboard() {
                             setManualTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t));
                           }}
                           className={cn(
-                            "p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3",
+                            "p-4 rounded-xl border transition-all cursor-pointer flex items-start gap-3.5",
                             task.completed 
                               ? "bg-emerald-50/40 border-emerald-100 text-neutral-500" 
                               : "bg-white border-neutral-150 text-neutral-800 hover:border-neutral-300 shadow-sm"
@@ -595,13 +595,13 @@ export default function AdminDashboard() {
                         >
                           <div className="mt-0.5 text-neutral-400 shrink-0">
                             {task.completed ? (
-                              <CheckSquare size={16} className="text-emerald-500" />
+                              <CheckSquare size={18} className="text-emerald-500" />
                             ) : (
-                              <Square size={16} />
+                              <Square size={18} />
                             )}
                           </div>
                           <div>
-                            <p className={cn("text-xs font-semibold leading-relaxed", task.completed && "line-through text-neutral-400")}>
+                            <p className={cn("text-sm md:text-base font-semibold leading-relaxed", task.completed && "line-through text-neutral-400")}>
                               {task.text}
                             </p>
                           </div>
