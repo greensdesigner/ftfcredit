@@ -187,7 +187,7 @@ export default function AdminDashboard() {
   );
 
   const stats = [
-    { label: 'Total MRR', value: `$${clients.reduce((acc, c) => acc + (c.amount || 0), 0)}`, trend: 'Real-time', up: true },
+    { label: 'Total MRR', value: `$${clients.reduce((acc, c) => acc + Number(c.amount || 0), 0).toFixed(2)}`, trend: 'Real-time', up: true },
     { label: 'Active Clients', value: clients.filter(c => c.sub_status === 'active').length.toString(), trend: '+3', up: true },
     { label: 'Total Registrations', value: clients.length.toString(), trend: 'Overall', up: true },
     { label: 'Processing', value: clients.filter(c => c.onboardingStep > 1 && c.onboardingStep < 5).length.toString(), trend: 'Active Work', up: true },
