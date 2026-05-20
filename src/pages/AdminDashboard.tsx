@@ -293,8 +293,8 @@ export default function AdminDashboard() {
                       <Briefcase size={22} className="animate-pulse" />
                     </div>
                     <div>
-                      <h3 className="font-display font-bold text-lg text-neutral-900">দৈনন্দিন অপারেশনস (Daily Operations Hub)</h3>
-                      <p className="text-xs text-neutral-500">অনবোর্ডিং প্রসেস ট্র্যাকিং, ব্যাচ জেনারেশন এবং প্রশাসনিক কাজ সম্পন্ন করুন</p>
+                      <h3 className="font-display font-bold text-lg text-neutral-900">Daily Operations Hub</h3>
+                      <p className="text-xs text-neutral-500">Track onboarding progress, process batches, and manage administrative tasks.</p>
                     </div>
                   </div>
 
@@ -308,7 +308,7 @@ export default function AdminDashboard() {
                       )}
                     >
                       <User size={14} />
-                      ব্যক্তিগত প্রসেসিং
+                      Individual Processing
                     </button>
                     <button
                       onClick={() => setOpTab('batch')}
@@ -318,7 +318,7 @@ export default function AdminDashboard() {
                       )}
                     >
                       <Sparkles size={14} />
-                      ব্যাচ অ্যাকশন ({clients.filter(c => c.onboardingStep === 1).length})
+                      Batch Actions ({clients.filter(c => c.onboardingStep === 1).length})
                     </button>
                     <button
                       onClick={() => setOpTab('checklist')}
@@ -328,7 +328,7 @@ export default function AdminDashboard() {
                       )}
                     >
                       <ClipboardList size={14} />
-                      দৈনিক চেকলিস্ট ({manualTasks.filter(t => t.completed).length}/{manualTasks.length})
+                      Daily Checklist ({manualTasks.filter(t => t.completed).length}/{manualTasks.length})
                     </button>
                   </div>
                 </div>
@@ -345,12 +345,12 @@ export default function AdminDashboard() {
                           <div className="flex items-center justify-between mb-3">
                             <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100 flex items-center gap-1.5">
                               <span className="size-1.5 rounded-full bg-amber-500 animate-ping" />
-                              ধাপ ১: ইনিশিয়াল অ্যানালাইসিস ({clients.filter(c => c.onboardingStep === 1).length})
+                              Step 1: Initial Analysis ({clients.filter(c => c.onboardingStep === 1).length})
                             </span>
                           </div>
                           <div className="space-y-2.5 max-h-48 overflow-y-auto mb-4 pr-1">
                             {clients.filter(c => c.onboardingStep === 1).length === 0 ? (
-                              <p className="text-xs text-neutral-400 italic py-4 text-center">বিশ্লেষণের জন্য কোনো ক্লায়েন্ট পেন্ডিং নেই।</p>
+                              <p className="text-xs text-neutral-400 italic py-4 text-center">No clients pending analysis.</p>
                             ) : (
                               clients.filter(c => c.onboardingStep === 1).map(c => (
                                 <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-2.5 rounded-xl">
@@ -363,7 +363,7 @@ export default function AdminDashboard() {
                                     disabled={updatingId === c.uid}
                                     className="px-2.5 py-1.5 rounded-lg bg-neutral-900 text-white text-[10px] font-bold hover:bg-neutral-800 transition-colors cursor-pointer shrink-0 ml-2"
                                   >
-                                    {updatingId === c.uid ? <Loader2 size={10} className="animate-spin" /> : 'অ্যানালাইজ'}
+                                    {updatingId === c.uid ? <Loader2 size={10} className="animate-spin" /> : 'Analyze'}
                                   </button>
                                 </div>
                               ))
@@ -371,7 +371,7 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                         <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-[10px] text-neutral-400">
-                          <span>ক্রিয়া: ক্লায়েন্টদের অটো-অ্যানালাইজ করুন</span>
+                          <span>Action: Auto-analyze clients</span>
                           <span className="font-mono">Step: 1 → 2</span>
                         </div>
                       </div>
@@ -382,12 +382,12 @@ export default function AdminDashboard() {
                           <div className="flex items-center justify-between mb-3">
                             <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100 flex items-center gap-1.5">
                               <span className="size-1.5 rounded-full bg-blue-500 animate-ping" />
-                              ধাপ ২: বিরোধের চিঠি মেইলিং ({clients.filter(c => c.onboardingStep === 2).length})
+                              Step 2: Dispute Mailing ({clients.filter(c => c.onboardingStep === 2).length})
                             </span>
                           </div>
                           <div className="space-y-2.5 max-h-48 overflow-y-auto mb-4 pr-1">
                             {clients.filter(c => c.onboardingStep === 2).length === 0 ? (
-                              <p className="text-xs text-neutral-400 italic py-4 text-center">মেইলিং পেন্ডিং তালিকায় কোনো ক্লায়েন্ট নেই।</p>
+                              <p className="text-xs text-neutral-400 italic py-4 text-center">No clients in mailing queue.</p>
                             ) : (
                               clients.filter(c => c.onboardingStep === 2).map(c => (
                                 <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-2.5 rounded-xl">
@@ -398,10 +398,10 @@ export default function AdminDashboard() {
                                   <div className="flex gap-1">
                                     <button
                                       onClick={() => {
-                                        alert(`${c.fullName}-এর বিরোধিতার চিঠিগুলো ড্রাফট হিসেবে প্রসেস করা হয়েছে! খাম প্রিন্ট করে ডাকযোগে পাঠিয়ে দিন।`);
+                                        alert(`Dispute letters for ${c.fullName} have been drafted! Please print and mail them via post.`);
                                       }}
                                       className="px-2 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-[10px] font-bold text-neutral-700 cursor-pointer"
-                                      title="চিঠি ড্রাফট ডাউনলোড"
+                                      title="Download Letter Drafts"
                                     >
                                       <Download size={10} />
                                     </button>
@@ -410,7 +410,7 @@ export default function AdminDashboard() {
                                       disabled={updatingId === c.uid}
                                       className="px-2.5 py-1.5 rounded-lg bg-neutral-900 text-white text-[10px] font-bold hover:bg-neutral-800 transition-colors cursor-pointer shrink-0"
                                     >
-                                      {updatingId === c.uid ? <Loader2 size={10} className="animate-spin" /> : 'চিঠি পাঠান'}
+                                      {updatingId === c.uid ? <Loader2 size={10} className="animate-spin" /> : 'Mark Sent'}
                                     </button>
                                   </div>
                                 </div>
@@ -419,7 +419,7 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                         <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-[10px] text-neutral-400">
-                          <span>ক্রিয়া: চিঠি সরাসরি ব্যুরোকে সোপর্দ করুন</span>
+                          <span>Action: Submit letters directly to bureaus</span>
                           <span className="font-mono">Step: 2 → 3</span>
                         </div>
                       </div>
@@ -430,25 +430,25 @@ export default function AdminDashboard() {
                           <div className="flex items-center justify-between mb-3">
                             <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100 flex items-center gap-1.5">
                               <span className="size-1.5 rounded-full bg-indigo-500 animate-ping" />
-                              ধাপ ৩: ব্যুরো প্রসেসিং ({clients.filter(c => c.onboardingStep === 3).length})
+                              Step 3: Bureau Processing ({clients.filter(c => c.onboardingStep === 3).length})
                             </span>
                           </div>
                           <div className="space-y-2.5 max-h-48 overflow-y-auto mb-4 pr-1">
                             {clients.filter(c => c.onboardingStep === 3).length === 0 ? (
-                              <p className="text-xs text-neutral-400 italic py-4 text-center">ব্যুরো রিভিউতে কোনো ফাইল নেই।</p>
+                              <p className="text-xs text-neutral-400 italic py-4 text-center">No files under bureau processing.</p>
                             ) : (
                               clients.filter(c => c.onboardingStep === 3).map(c => (
                                 <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-2.5 rounded-xl">
                                   <div className="truncate">
                                     <p className="text-xs font-bold text-neutral-900 truncate">{c.fullName}</p>
-                                    <p className="text-[10px] text-emerald-500 font-bold font-mono">৩২ দিন অতিবাহিত</p>
+                                    <p className="text-[10px] text-emerald-500 font-bold font-mono">32 days elapsed</p>
                                   </div>
                                   <button
                                     onClick={() => updateClientProgress(c.uid, 4)}
                                     disabled={updatingId === c.uid}
                                     className="px-2.5 py-1.5 rounded-lg bg-neutral-900 text-white text-[10px] font-bold hover:bg-neutral-800 transition-colors cursor-pointer shrink-0 ml-2"
                                   >
-                                    {updatingId === c.uid ? <Loader2 size={10} className="animate-spin" /> : 'ভেরিফিকেশন করুন'}
+                                    {updatingId === c.uid ? <Loader2 size={10} className="animate-spin" /> : 'Verify'}
                                   </button>
                                 </div>
                               ))
@@ -456,7 +456,7 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                         <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-[10px] text-neutral-400">
-                          <span>ক্রিয়া: ব্যুরোর ট্র্যাকিং এবং ফলাফল রিভিউ</span>
+                          <span>Action: Track bureaus and review outcomes</span>
                           <span className="font-mono">Step: 3 → 4</span>
                         </div>
                       </div>
@@ -467,25 +467,25 @@ export default function AdminDashboard() {
                           <div className="flex items-center justify-between mb-3">
                             <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-100 flex items-center gap-1.5">
                               <span className="size-1.5 rounded-full bg-purple-500 animate-ping" />
-                              ধাপ ৪: ফাইনাল চেক ও ক্রেডিট রেজাল্ট ({clients.filter(c => c.onboardingStep === 4).length})
+                              Step 4: Final Check & Credit Results ({clients.filter(c => c.onboardingStep === 4).length})
                             </span>
                           </div>
                           <div className="space-y-2.5 max-h-48 overflow-y-auto mb-4 pr-1">
                             {clients.filter(c => c.onboardingStep === 4).length === 0 ? (
-                              <p className="text-xs text-neutral-400 italic py-4 text-center">ফলাফল আপলোডের জন্য কোনো ফাইনাল চেক পেন্ডিং নেই।</p>
+                              <p className="text-xs text-neutral-400 italic py-4 text-center">No final checks pending result upload.</p>
                             ) : (
                               clients.filter(c => c.onboardingStep === 4).map(c => (
                                 <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-2.5 rounded-xl">
                                   <div className="truncate">
                                     <p className="text-xs font-bold text-neutral-900 truncate">{c.fullName}</p>
-                                    <p className="text-[10px] text-purple-500 font-bold">{c.plan_name || 'সাবস্ক্রাইবার'}</p>
+                                    <p className="text-[10px] text-purple-500 font-bold">{c.plan_name || 'Subscriber'}</p>
                                   </div>
                                   <button
                                     onClick={() => updateClientProgress(c.uid, 5)}
                                     disabled={updatingId === c.uid}
                                     className="px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-[10px] font-bold hover:bg-emerald-700 transition-colors cursor-pointer shrink-0 ml-2"
                                   >
-                                    {updatingId === c.uid ? <Loader2 size={10} className="animate-spin" /> : 'কেস ক্লোজ করুন'}
+                                    {updatingId === c.uid ? <Loader2 size={10} className="animate-spin" /> : 'Close Case'}
                                   </button>
                                 </div>
                               ))
@@ -493,7 +493,7 @@ export default function AdminDashboard() {
                           </div>
                         </div>
                         <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-[10px] text-neutral-400">
-                          <span>ক্রিয়া: সম্পন্ন করে কাস্টমার ক্রেডিট রিপোর্ট আপডেট করুন</span>
+                          <span>Action: Complete and update customer credit report</span>
                           <span className="font-mono">Step: 4 → 5</span>
                         </div>
                       </div>
@@ -509,9 +509,9 @@ export default function AdminDashboard() {
                       <Sparkles size={28} className={batchProcessing ? "animate-spin" : ""} />
                     </div>
                     <div>
-                      <h4 className="text-md font-bold text-neutral-900">স্মার্ট ব্যাচ প্রসেসিং এবং লেটার জেনারেশন</h4>
+                      <h4 className="text-md font-bold text-neutral-900">Smart Batch Processing & Letter Generation</h4>
                       <p className="text-xs text-neutral-500 mt-1 max-w-lg mx-auto">
-                        ধাপ ১-এ থাকা সকল পেন্ডিং ক্লায়েন্টের ডেটা এক ক্লিকে বিশ্লেষণ করে ইন্টেলিজেন্ট ডিসপুট লেটার ফাইল আউটপুট করুন এবং তাদেরকে সরাসরি মেইলিং ধাপে (ধাপ ২) পাঠিয়ে দিন।
+                        Analyze all pending clients in Step 1 in a single click, generate intelligent dispute letters, and move them directly to the mailing queue (Step 2).
                       </p>
                     </div>
 
@@ -521,7 +521,7 @@ export default function AdminDashboard() {
                         onClick={async () => {
                           const pending = clients.filter(c => c.onboardingStep === 1);
                           if (pending.length === 0) {
-                            alert("বিশ্লেষণের জন্য কোনো ক্লায়েন্ট পেন্ডিং নেই।");
+                            alert("No clients pending analysis.");
                             return;
                           }
                           setBatchProcessing(true);
@@ -534,7 +534,7 @@ export default function AdminDashboard() {
                               });
                             }
                             setClients(prev => prev.map(c => c.onboardingStep === 1 ? { ...c, onboardingStep: 2 } : c));
-                            alert("সাফল্যের সাথে সমস্ত ক্লায়েন্টের অ্যানালাইসিস সম্পন্ন হয়েছে এবং ডিসপুট লেটার জেনারেট করা হয়েছে!");
+                            alert("Successfully completed analysis and generated dispute letters for all clients!");
                           } catch (err: any) {
                             alert("Error: " + err.message);
                           } finally {
@@ -544,18 +544,18 @@ export default function AdminDashboard() {
                         className="rounded-xl px-6 py-3 font-bold text-white bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:hover:bg-neutral-900 shadow-md shadow-neutral-900/10 flex items-center gap-2 cursor-pointer w-full sm:w-auto justify-center"
                       >
                         {batchProcessing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-                        সমস্ত পেন্ডিং ক্লায়েন্ট অ্যানালাইজ করুন ({clients.filter(c => c.onboardingStep === 1).length})
+                        Analyze all pending clients ({clients.filter(c => c.onboardingStep === 1).length})
                       </button>
 
                       <button
                         type="button"
                         onClick={() => {
-                          alert("আজকের সমস্ত বিরোধের চিঠির একটি সম্মিলিত PDF ফাইল ডাউনলোড শুরু হচ্ছে...");
+                          alert("Downloading a consolidated PDF of all dispute letters for today...");
                         }}
                         className="rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 px-6 py-3 font-bold text-neutral-700 text-xs flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto"
                       >
                         <Download size={14} />
-                        একত্রিত মেইলিং ব্যাচ ডাউনলোড (PDF)
+                        Download Consolidated Mailing Batch (PDF)
                       </button>
                     </div>
                   </div>
@@ -565,9 +565,9 @@ export default function AdminDashboard() {
                 {opTab === 'checklist' && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between text-xs font-bold text-neutral-500 mb-2">
-                      <span>প্রশাসনিক কার্যক্রম চেকলিস্ট</span>
+                      <span>Administrative Actions Checklist</span>
                       <span className="text-neutral-900 font-mono">
-                        {manualTasks.filter(t => t.completed).length}/{manualTasks.length} সম্পন্ন
+                        {manualTasks.filter(t => t.completed).length}/{manualTasks.length} Completed
                       </span>
                     </div>
 
