@@ -691,6 +691,7 @@ async function startServer() {
       const stripeAccountId = rows[0]?.stripeAccountId;
       
       let isConnected = false;
+      let isManual = false;
       if (stripeAccountId) {
         const stripeInst = getStripe();
         if (stripeInst) {
@@ -699,14 +700,17 @@ async function startServer() {
             isConnected = account.details_submitted || account.charges_enabled || true;
           } catch (stripeErr: any) {
             console.error("Failed to retrieve stripe account details, fallback to true:", stripeErr.message);
+            // If it starts with acct_ but retrieve fails (e.g. because it's a standalone external account not under this platform), we assume it's connected manually
             isConnected = stripeAccountId.startsWith('acct_');
+            isManual = true;
           }
         } else {
           isConnected = stripeAccountId.startsWith('acct_');
+          isManual = true;
         }
       }
       
-      res.json({ isConnected, stripeAccountId });
+      res.json({ isConnected, stripeAccountId, isManual });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
@@ -773,14 +777,22 @@ async function startServer() {
       const host = req.headers.host;
       const baseUrl = process.env.APP_URL || `${protocol}://${host}`;
 
-      const accountLink = await stripeInst.accountLinks.create({
-        account: stripeAccountId,
-        refresh_url: `${baseUrl}/admin-portal?tab=settings`,
-        return_url: `${baseUrl}/admin-portal?tab=settings`,
-        type: 'account_onboarding',
-      });
+      let url = "";
+      try {
+        const accountLink = await stripeInst.accountLinks.create({
+          account: stripeAccountId,
+          refresh_url: `${baseUrl}/admin-portal?tab=settings`,
+          return_url: `${baseUrl}/admin-portal?tab=settings`,
+          type: 'account_onboarding',
+        });
+        url = accountLink.url;
+      } catch (linkErr: any) {
+        console.warn("Could not create onboarding link, using direct dashboard fallback:", linkErr.message);
+        // Fallback to direct dashboard is useful for self-registered standard accounts or pasted accounts
+        url = "https://dashboard.stripe.com";
+      }
 
-      res.json({ url: accountLink.url });
+      res.json({ url });
     } catch (error: any) {
       console.error("Stripe Onboarding Error:", error);
       res.status(500).json({ error: error.message });

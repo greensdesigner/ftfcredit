@@ -8,7 +8,7 @@ import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
 // Initialize Stripe with public key from env
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
+const stripePromise = loadStripe((import.meta as any).env?.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
 
 function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, planName }: any) {
   const stripe = useStripe();
@@ -39,7 +39,7 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
 
       const { setupIntent, error: confirmError } = await stripe.confirmCardSetup(clientSecret, {
         payment_method: {
-          card: cardElement,
+          card: cardElement as any,
         },
       });
 
@@ -120,7 +120,7 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
 }
 
 export default function BillingPage() {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, refreshProfile } = useAuth();
   const [currentPlan, setCurrentPlan] = useState(user?.plan_name || 'Credit Repair Subscription');
   const [amount, setAmount] = useState(user?.sub_amount || 149);
   const [paymentMethod, setPaymentMethod] = useState('Chase •••• 1234 (ACH)');

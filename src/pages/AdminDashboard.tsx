@@ -781,7 +781,7 @@ export default function AdminDashboard() {
 }
 
 function StripeConnectSection({ user }: { user: any }) {
-  const [connectStatus, setConnectStatus] = useState<{ isConnected: boolean; stripeAccountId: string | null } | null>(null);
+  const [connectStatus, setConnectStatus] = useState<{ isConnected: boolean; stripeAccountId: string | null; isManual?: boolean } | null>(null);
   const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
@@ -794,6 +794,12 @@ function StripeConnectSection({ user }: { user: any }) {
   }, [user]);
 
   const handleConnect = async () => {
+    if (connectStatus?.isManual) {
+      // If it is a manual standalone account, direct them to their Stripe Dashboard
+      window.open("https://dashboard.stripe.com", "_blank");
+      return;
+    }
+
     setConnecting(true);
     try {
       const response = await fetch('/api/admin/stripe/onboard', {
@@ -833,7 +839,7 @@ function StripeConnectSection({ user }: { user: any }) {
         {connectStatus?.isConnected ? (
           <div className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl border border-emerald-100 text-xs font-bold">
             <CheckCircle2 size={16} />
-            STRIPE CONNECTED
+            STRIPE CONNECTED {connectStatus?.isManual && "(MANUAL)"}
           </div>
         ) : (
           <div className="flex items-center gap-2 bg-amber-50 text-amber-600 px-4 py-2 rounded-xl border border-amber-100 text-xs font-bold">
@@ -863,16 +869,46 @@ function StripeConnectSection({ user }: { user: any }) {
             onClick={handleConnect}
             disabled={connecting}
             className={cn(
-              "rounded-xl px-6 py-3 text-sm font-bold transition-all flex items-center gap-2",
+              "rounded-xl px-6 py-3 text-sm font-bold transition-all flex items-center gap-2 cursor-pointer",
               connectStatus?.isConnected
                 ? "bg-neutral-100 text-neutral-900 hover:bg-neutral-200"
                 : "bg-neutral-900 text-white hover:bg-neutral-800 shadow-lg shadow-neutral-900/10"
             )}
           >
             {connecting ? <Loader2 className="animate-spin" size={18} /> : null}
-            {connectStatus?.isConnected ? "Manage Stripe Account" : "Automatic Connect (Recommended)"}
+            {connectStatus?.isConnected 
+              ? (connectStatus?.isManual ? "Go to Stripe Dashboard" : "Manage Stripe Account") 
+              : "Automatic Connect (Recommended)"}
             {!connecting && <ArrowUpRight size={18} />}
           </button>
+
+          {connectStatus?.isConnected && (
+            <button
+              onClick={async () => {
+                if (window.confirm("Are you sure you want to disconnect this Stripe account? This will stop receiving client payments.")) {
+                  setConnecting(true);
+                  try {
+                    const res = await fetch('/api/admin/update-settings', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ uid: user.uid, updates: { stripeAccountId: "" } }),
+                    });
+                    if (res.ok) {
+                      alert("Stripe Account disconnected successfully!");
+                      window.location.reload();
+                    }
+                  } catch (e: any) {
+                    alert("Failed to disconnect: " + e.message);
+                  } finally {
+                    setConnecting(false);
+                  }
+                }
+              }}
+              className="text-xs text-red-500 font-bold hover:text-red-700 hover:underline transition-all text-center md:text-right cursor-pointer"
+            >
+              Disconnect Stripe Account
+            </button>
+          )}
           
           {!connectStatus?.isConnected && (
             <div className="flex items-center gap-2">
@@ -899,7 +935,7 @@ function StripeConnectSection({ user }: { user: any }) {
                     }
                   } catch (e) {} finally { setConnecting(false); }
                 }}
-                className="bg-neutral-200 text-neutral-700 px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-neutral-300"
+                className="bg-neutral-200 text-neutral-700 px-3 py-2 rounded-lg text-[10px] font-bold hover:bg-neutral-300 cursor-pointer"
               >
                 SAVE
               </button>
