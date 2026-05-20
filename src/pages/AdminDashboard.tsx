@@ -757,6 +757,82 @@ export default function AdminDashboard() {
                   <p className="text-[10px] text-neutral-400 mt-2 font-bold uppercase tracking-wider">Updates browser tab and dashboards instantly</p>
                 </div>
 
+                {/* Logo Upload Section */}
+                <div className="p-6 bg-neutral-50 rounded-2xl border border-neutral-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-sm font-bold text-neutral-700">Application Logo</label>
+                    {updatingId === 'systemLogo' && <span className="text-[10px] text-emerald-500 font-bold animate-pulse">SAVING...</span>}
+                  </div>
+                  
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
+                    {/* Logo Preview Container */}
+                    <div className="size-20 rounded-2xl bg-white border border-neutral-200 flex items-center justify-center overflow-hidden shrink-0 relative group shadow-inner">
+                      {systemSettings?.systemLogo ? (
+                        <img 
+                          src={systemSettings.systemLogo} 
+                          alt="App Logo Preview" 
+                          className="w-full h-full object-contain p-2" 
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="text-center p-2">
+                          <span className="text-[10px] font-bold text-neutral-400 capitalize">No Logo</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex-1 space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        {/* Hidden File Input */}
+                        <label className="cursor-pointer bg-neutral-900 border border-transparent rounded-xl px-4 py-2.5 text-xs font-bold text-white hover:bg-neutral-800 transition-all shadow-sm shrink-0 flex items-center gap-1.5">
+                          <span>Choose Logo Image File</span>
+                          <input 
+                            type="file" 
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                if (file.size > 2 * 1024 * 1024) {
+                                  alert("Image size must be less than 2MB");
+                                  return;
+                                }
+                                const reader = new FileReader();
+                                reader.onloadend = async () => {
+                                  const base64String = reader.result as string;
+                                  setUpdatingId('systemLogo');
+                                  await handleUpdateSettings({ systemLogo: base64String });
+                                  setUpdatingId(null);
+                                };
+                                reader.readAsDataURL(file);
+                              }
+                            }}
+                          />
+                        </label>
+
+                        {systemSettings?.systemLogo && (
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (confirm("Are you sure you want to remove the logo?")) {
+                                setUpdatingId('systemLogo');
+                                await handleUpdateSettings({ systemLogo: null });
+                                setUpdatingId(null);
+                              }
+                            }}
+                            className="bg-white border border-neutral-200 hover:border-red-200 hover:text-red-600 rounded-xl px-4 py-2.5 text-xs font-bold text-neutral-700 transition-all shadow-sm shrink-0"
+                          >
+                            Remove Logo
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
+                        Supports PNG, JPG, or SVG up to 2MB. Logo updates will be applied instantly.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="p-8 bg-neutral-50 rounded-[32px] border border-neutral-100 mt-8">
                   <h4 className="text-lg font-bold mb-6 font-display">Agency Information</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

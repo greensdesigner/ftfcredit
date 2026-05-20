@@ -37,6 +37,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       ];
 
   const [systemName, setSystemName] = useState('FTF Consulting');
+  const [systemLogo, setSystemLogo] = useState<string | null>(null);
 
   React.useEffect(() => {
     const loadBranding = async () => {
@@ -44,6 +45,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       try {
         const res = await fetch('/api/admin/system-settings');
         const data = await res.json();
+        if (data.systemLogo) {
+          setSystemLogo(data.systemLogo);
+        }
         // If an explicit system name is set, use it. 
         if (data.systemName && data.systemName !== 'FTF Consulting') {
           setSystemName(data.systemName);
@@ -77,10 +81,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="flex h-full flex-col">
           <div className="border-b border-neutral-100 p-6">
             <Link to="/" className="flex items-center gap-2 font-display text-xl font-bold tracking-tight text-neutral-900">
-              <div className="size-8 rounded-lg bg-neutral-900 flex items-center justify-center text-white font-display">
-                {systemName.charAt(0)}
-              </div>
-              <span>{systemName}</span>
+              {systemLogo ? (
+                <img src={systemLogo} alt="Logo" className="h-8 max-w-[48px] object-contain rounded-md" referrerPolicy="no-referrer" />
+              ) : (
+                <div className="size-8 rounded-lg bg-neutral-900 flex items-center justify-center text-white font-display shrink-0">
+                  {systemName.charAt(0)}
+                </div>
+              )}
+              <span className="truncate">{systemName}</span>
             </Link>
           </div>
           <nav className="flex-1 space-y-1 p-4">
@@ -121,8 +129,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <aside className="w-64 h-full bg-white animate-in slide-in-from-left duration-300" onClick={(e) => e.stopPropagation()}>
             <div className="flex h-full flex-col">
               <div className="flex items-center justify-between border-b border-neutral-100 p-6">
-                <span className="font-display text-xl font-bold text-neutral-900">{systemName}</span>
-                <button onClick={() => setSidebarOpen(false)} className="text-neutral-500">
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  {systemLogo ? (
+                    <img src={systemLogo} alt="Logo" className="h-7 max-w-[40px] object-contain rounded-md" referrerPolicy="no-referrer" />
+                  ) : (
+                    <div className="size-8 rounded-lg bg-neutral-900 flex items-center justify-center text-white font-display shrink-0">
+                      {systemName.charAt(0)}
+                    </div>
+                  )}
+                  <span className="font-display text-xl font-bold text-neutral-900 truncate">{systemName}</span>
+                </div>
+                <button onClick={() => setSidebarOpen(false)} className="text-neutral-500 shrink-0">
                   <X />
                 </button>
               </div>

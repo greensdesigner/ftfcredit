@@ -191,6 +191,7 @@ async function startServer() {
               maintenanceMode BOOLEAN DEFAULT FALSE,
               emailAlerts BOOLEAN DEFAULT TRUE,
               systemName VARCHAR(255) DEFAULT 'FTF Consulting',
+              systemLogo LONGTEXT,
               UNIQUE (id)
             )
           `);
@@ -201,6 +202,7 @@ async function startServer() {
           try { await pool.query("ALTER TABLE system_settings ADD COLUMN maintenanceMode BOOLEAN DEFAULT FALSE"); } catch (e) {}
           try { await pool.query("ALTER TABLE system_settings ADD COLUMN emailAlerts BOOLEAN DEFAULT TRUE"); } catch (e) {}
           try { await pool.query("ALTER TABLE system_settings ADD COLUMN systemName VARCHAR(255) DEFAULT 'FTF Consulting'"); } catch (e) {}
+          try { await pool.query("ALTER TABLE system_settings ADD COLUMN systemLogo LONGTEXT"); } catch (e) {}
 
           // Initialize system settings if not exists
           const [settings]: any = await pool.query("SELECT * FROM system_settings WHERE id = 1");
@@ -507,11 +509,11 @@ async function startServer() {
 
   app.post("/api/admin/system-settings/update", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured" });
-    const { maintenanceMode, emailAlerts, systemName } = req.body;
+    const { maintenanceMode, emailAlerts, systemName, systemLogo } = req.body;
     try {
       await pool.query(
-        "UPDATE system_settings SET maintenanceMode = ?, emailAlerts = ?, systemName = ? WHERE id = 1",
-        [maintenanceMode === true, emailAlerts === true, systemName || 'FTF Consulting']
+        "UPDATE system_settings SET maintenanceMode = ?, emailAlerts = ?, systemName = ?, systemLogo = ? WHERE id = 1",
+        [maintenanceMode === true, emailAlerts === true, systemName || 'FTF Consulting', systemLogo || null]
       );
       res.json({ status: "success", message: "Settings updated successfully" });
     } catch (error: any) {
