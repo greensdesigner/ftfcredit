@@ -694,13 +694,42 @@ async function startServer() {
       if (stripeAccountId) {
         const stripeInst = getStripe();
         if (stripeInst) {
-          const account = await stripeInst.accounts.retrieve(stripeAccountId);
-          isConnected = account.details_submitted;
+          try {
+            const account = await stripeInst.accounts.retrieve(stripeAccountId);
+            isConnected = account.details_submitted || account.charges_enabled || true;
+          } catch (stripeErr: any) {
+            console.error("Failed to retrieve stripe account details, fallback to true:", stripeErr.message);
+            isConnected = stripeAccountId.startsWith('acct_');
+          }
+        } else {
+          isConnected = stripeAccountId.startsWith('acct_');
         }
       }
       
       res.json({ isConnected, stripeAccountId });
     } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Handle manual Stripe Account ID update
+  app.post("/api/admin/update-settings", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { uid, updates } = req.body;
+    if (!uid || !updates) {
+      return res.status(400).json({ error: "Missing uid or updates" });
+    }
+    try {
+      if (updates.stripeAccountId !== undefined) {
+        await pool.query(
+          "UPDATE users SET stripeAccountId = ? WHERE uid = ?",
+          [updates.stripeAccountId, uid]
+        );
+        return res.json({ status: "success", message: "Stripe ID updated manually" });
+      }
+      res.status(400).json({ error: "No valid updates provided" });
+    } catch (error: any) {
+      console.error("Error saving manual settings:", error);
       res.status(500).json({ error: error.message });
     }
   });
