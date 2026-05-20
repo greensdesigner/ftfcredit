@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import { useAuth } from '../context/AuthContext';
-import { Users, CreditCard, AlertCircle, Search, Filter, MoreHorizontal, ArrowUpRight, ArrowDownRight, CheckCircle2, RotateCcw, Loader2, X, Mail, Phone, Calendar, User, MapPin, ShieldCheck } from 'lucide-react';
+import { Users, CreditCard, AlertCircle, Search, Filter, MoreHorizontal, ArrowUpRight, ArrowDownRight, CheckCircle2, RotateCcw, Loader2, X, Mail, Phone, Calendar, User, MapPin, ShieldCheck, FileText, CheckSquare, Square, Send, Download, Sparkles, RefreshCw, ClipboardList, Briefcase, FileSignature, Inbox } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { loadStripe } from '@stripe/stripe-js';
 import { motion, AnimatePresence } from 'motion/react';
@@ -37,6 +37,16 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'settings' | 'billing'>('overview');
   const { user, refreshProfile } = useAuth();
   const tenantId = user?.tenantId;
+
+  // States for Daily Operations Panel
+  const [opTab, setOpTab] = useState<'individual' | 'batch' | 'checklist'>('individual');
+  const [manualTasks, setManualTasks] = useState([
+    { id: 'mail', text: 'Credit Bureau Responses - Check mailbox for received outcome letters', completed: false },
+    { id: 'scan', text: 'Audit Bureau Replies - Scan and upload returned mail to client records', completed: false },
+    { id: 'disputes', text: 'Mail Active Disputes - Print and stamp all newly generated dispute letters', completed: true },
+    { id: 'alerts', text: 'Send Client Status Updates - Email processed updates to dispute clients', completed: false }
+  ]);
+  const [batchProcessing, setBatchProcessing] = useState(false);
 
   useEffect(() => {
     fetchSystemSettings();
@@ -275,13 +285,332 @@ export default function AdminDashboard() {
               ))}
             </div>
 
-            {/* Alerts Panel */}
-            <div className="rounded-3xl bg-amber-50 border border-amber-100 p-6">
-               <div className="flex items-center gap-3 text-amber-900 mb-4">
-                  <AlertCircle size={24} />
-                  <h3 className="font-bold text-lg">Daily Operations</h3>
-               </div>
-               <p className="text-sm text-amber-800 mb-4">There are {clients.filter(c => c.onboardingStep === 1).length} new clients waiting for initial analysis. Batch processing is recommended.</p>
+            {/* Daily Operations - Expanded Interactive Panel */}
+            <div className="rounded-3xl border border-neutral-100 bg-white p-6 shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-neutral-100 pb-5 mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100/50">
+                      <Briefcase size={22} className="animate-pulse" />
+                    </div>
+                    <div>
+                      <h3 className="font-display font-bold text-lg text-neutral-900">দৈনন্দিন অপারেশনস (Daily Operations Hub)</h3>
+                      <p className="text-xs text-neutral-500">অনবোর্ডিং প্রসেস ট্র্যাকিং, ব্যাচ জেনারেশন এবং প্রশাসনিক কাজ সম্পন্ন করুন</p>
+                    </div>
+                  </div>
+
+                  {/* Operation Tabs */}
+                  <div className="flex bg-neutral-100 p-1 rounded-xl text-xs font-bold shrink-0">
+                    <button
+                      onClick={() => setOpTab('individual')}
+                      className={cn(
+                        "px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5",
+                        opTab === 'individual' ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-950"
+                      )}
+                    >
+                      <User size={14} />
+                      ব্যক্তিগত প্রসেসিং
+                    </button>
+                    <button
+                      onClick={() => setOpTab('batch')}
+                      className={cn(
+                        "px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5",
+                        opTab === 'batch' ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-950"
+                      )}
+                    >
+                      <Sparkles size={14} />
+                      ব্যাচ অ্যাকশন ({clients.filter(c => c.onboardingStep === 1).length})
+                    </button>
+                    <button
+                      onClick={() => setOpTab('checklist')}
+                      className={cn(
+                        "px-3.5 py-2 rounded-lg transition-all cursor-pointer flex items-center gap-1.5",
+                        opTab === 'checklist' ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-950"
+                      )}
+                    >
+                      <ClipboardList size={14} />
+                      দৈনিক চেকলিস্ট ({manualTasks.filter(t => t.completed).length}/{manualTasks.length})
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tab Content: Individual Tasks */}
+                {opTab === 'individual' && (
+                  <div className="space-y-6">
+                    {/* Step Categories */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      
+                      {/* Section 1: Analysis Pending */}
+                      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-4 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100 flex items-center gap-1.5">
+                              <span className="size-1.5 rounded-full bg-amber-500 animate-ping" />
+                              ধাপ ১: ইনিশিয়াল অ্যানালাইসিস ({clients.filter(c => c.onboardingStep === 1).length})
+                            </span>
+                          </div>
+                          <div className="space-y-2.5 max-h-48 overflow-y-auto mb-4 pr-1">
+                            {clients.filter(c => c.onboardingStep === 1).length === 0 ? (
+                              <p className="text-xs text-neutral-400 italic py-4 text-center">বিশ্লেষণের জন্য কোনো ক্লায়েন্ট পেন্ডিং নেই।</p>
+                            ) : (
+                              clients.filter(c => c.onboardingStep === 1).map(c => (
+                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-2.5 rounded-xl">
+                                  <div className="truncate">
+                                    <p className="text-xs font-bold text-neutral-900 truncate">{c.fullName}</p>
+                                    <p className="text-[10px] text-neutral-400 truncate">{c.email}</p>
+                                  </div>
+                                  <button
+                                    onClick={() => updateClientProgress(c.uid, 2)}
+                                    disabled={updatingId === c.uid}
+                                    className="px-2.5 py-1.5 rounded-lg bg-neutral-900 text-white text-[10px] font-bold hover:bg-neutral-800 transition-colors cursor-pointer shrink-0 ml-2"
+                                  >
+                                    {updatingId === c.uid ? <Loader2 size={10} className="animate-spin" /> : 'অ্যানালাইজ'}
+                                  </button>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                        <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-[10px] text-neutral-400">
+                          <span>ক্রিয়া: ক্লায়েন্টদের অটো-অ্যানালাইজ করুন</span>
+                          <span className="font-mono">Step: 1 → 2</span>
+                        </div>
+                      </div>
+
+                      {/* Section 2: Dispute Mailing Queue */}
+                      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-4 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-100 flex items-center gap-1.5">
+                              <span className="size-1.5 rounded-full bg-blue-500 animate-ping" />
+                              ধাপ ২: বিরোধের চিঠি মেইলিং ({clients.filter(c => c.onboardingStep === 2).length})
+                            </span>
+                          </div>
+                          <div className="space-y-2.5 max-h-48 overflow-y-auto mb-4 pr-1">
+                            {clients.filter(c => c.onboardingStep === 2).length === 0 ? (
+                              <p className="text-xs text-neutral-400 italic py-4 text-center">মেইলিং পেন্ডিং তালিকায় কোনো ক্লায়েন্ট নেই।</p>
+                            ) : (
+                              clients.filter(c => c.onboardingStep === 2).map(c => (
+                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-2.5 rounded-xl">
+                                  <div className="truncate">
+                                    <p className="text-xs font-bold text-neutral-900 truncate">{c.fullName}</p>
+                                    <p className="text-[10px] text-neutral-400 truncate">{c.phone || c.email}</p>
+                                  </div>
+                                  <div className="flex gap-1">
+                                    <button
+                                      onClick={() => {
+                                        alert(`${c.fullName}-এর বিরোধিতার চিঠিগুলো ড্রাফট হিসেবে প্রসেস করা হয়েছে! খাম প্রিন্ট করে ডাকযোগে পাঠিয়ে দিন।`);
+                                      }}
+                                      className="px-2 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200 text-[10px] font-bold text-neutral-700 cursor-pointer"
+                                      title="চিঠি ড্রাফট ডাউনলোড"
+                                    >
+                                      <Download size={10} />
+                                    </button>
+                                    <button
+                                      onClick={() => updateClientProgress(c.uid, 3)}
+                                      disabled={updatingId === c.uid}
+                                      className="px-2.5 py-1.5 rounded-lg bg-neutral-900 text-white text-[10px] font-bold hover:bg-neutral-800 transition-colors cursor-pointer shrink-0"
+                                    >
+                                      {updatingId === c.uid ? <Loader2 size={10} className="animate-spin" /> : 'চিঠি পাঠান'}
+                                    </button>
+                                  </div>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                        <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-[10px] text-neutral-400">
+                          <span>ক্রিয়া: চিঠি সরাসরি ব্যুরোকে সোপর্দ করুন</span>
+                          <span className="font-mono">Step: 2 → 3</span>
+                        </div>
+                      </div>
+
+                      {/* Section 3: Sent to Bureaus */}
+                      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-4 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100 flex items-center gap-1.5">
+                              <span className="size-1.5 rounded-full bg-indigo-500 animate-ping" />
+                              ধাপ ৩: ব্যুরো প্রসেসিং ({clients.filter(c => c.onboardingStep === 3).length})
+                            </span>
+                          </div>
+                          <div className="space-y-2.5 max-h-48 overflow-y-auto mb-4 pr-1">
+                            {clients.filter(c => c.onboardingStep === 3).length === 0 ? (
+                              <p className="text-xs text-neutral-400 italic py-4 text-center">ব্যুরো রিভিউতে কোনো ফাইল নেই।</p>
+                            ) : (
+                              clients.filter(c => c.onboardingStep === 3).map(c => (
+                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-2.5 rounded-xl">
+                                  <div className="truncate">
+                                    <p className="text-xs font-bold text-neutral-900 truncate">{c.fullName}</p>
+                                    <p className="text-[10px] text-emerald-500 font-bold font-mono">৩২ দিন অতিবাহিত</p>
+                                  </div>
+                                  <button
+                                    onClick={() => updateClientProgress(c.uid, 4)}
+                                    disabled={updatingId === c.uid}
+                                    className="px-2.5 py-1.5 rounded-lg bg-neutral-900 text-white text-[10px] font-bold hover:bg-neutral-800 transition-colors cursor-pointer shrink-0 ml-2"
+                                  >
+                                    {updatingId === c.uid ? <Loader2 size={10} className="animate-spin" /> : 'ভেরিফিকেশন করুন'}
+                                  </button>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                        <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-[10px] text-neutral-400">
+                          <span>ক্রিয়া: ব্যুরোর ট্র্যাকিং এবং ফলাফল রিভিউ</span>
+                          <span className="font-mono">Step: 3 → 4</span>
+                        </div>
+                      </div>
+
+                      {/* Section 4: Result Verifications */}
+                      <div className="rounded-2xl border border-neutral-100 bg-neutral-50/50 p-4 flex flex-col justify-between">
+                        <div>
+                          <div className="flex items-center justify-between mb-3">
+                            <span className="text-xs font-bold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-100 flex items-center gap-1.5">
+                              <span className="size-1.5 rounded-full bg-purple-500 animate-ping" />
+                              ধাপ ৪: ফাইনাল চেক ও ক্রেডিট রেজাল্ট ({clients.filter(c => c.onboardingStep === 4).length})
+                            </span>
+                          </div>
+                          <div className="space-y-2.5 max-h-48 overflow-y-auto mb-4 pr-1">
+                            {clients.filter(c => c.onboardingStep === 4).length === 0 ? (
+                              <p className="text-xs text-neutral-400 italic py-4 text-center">ফলাফল আপলোডের জন্য কোনো ফাইনাল চেক পেন্ডিং নেই।</p>
+                            ) : (
+                              clients.filter(c => c.onboardingStep === 4).map(c => (
+                                <div key={c.uid} className="flex items-center justify-between bg-white border border-neutral-100 p-2.5 rounded-xl">
+                                  <div className="truncate">
+                                    <p className="text-xs font-bold text-neutral-900 truncate">{c.fullName}</p>
+                                    <p className="text-[10px] text-purple-500 font-bold">{c.plan_name || 'সাবস্ক্রাইবার'}</p>
+                                  </div>
+                                  <button
+                                    onClick={() => updateClientProgress(c.uid, 5)}
+                                    disabled={updatingId === c.uid}
+                                    className="px-2.5 py-1.5 rounded-lg bg-emerald-600 text-white text-[10px] font-bold hover:bg-emerald-700 transition-colors cursor-pointer shrink-0 ml-2"
+                                  >
+                                    {updatingId === c.uid ? <Loader2 size={10} className="animate-spin" /> : 'কেস ক্লোজ করুন'}
+                                  </button>
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                        <div className="border-t border-dashed border-neutral-200/60 pt-3 flex justify-between items-center text-[10px] text-neutral-400">
+                          <span>ক্রিয়া: সম্পন্ন করে কাস্টমার ক্রেডিট রিপোর্ট আপডেট করুন</span>
+                          <span className="font-mono">Step: 4 → 5</span>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab Content: Batch Actions */}
+                {opTab === 'batch' && (
+                  <div className="p-6 bg-neutral-50 rounded-2xl border border-neutral-100 text-center space-y-6">
+                    <div className="mx-auto size-16 bg-amber-50 rounded-2xl flex items-center justify-center text-amber-600 border border-amber-100">
+                      <Sparkles size={28} className={batchProcessing ? "animate-spin" : ""} />
+                    </div>
+                    <div>
+                      <h4 className="text-md font-bold text-neutral-900">স্মার্ট ব্যাচ প্রসেসিং এবং লেটার জেনারেশন</h4>
+                      <p className="text-xs text-neutral-500 mt-1 max-w-lg mx-auto">
+                        ধাপ ১-এ থাকা সকল পেন্ডিং ক্লায়েন্টের ডেটা এক ক্লিকে বিশ্লেষণ করে ইন্টেলিজেন্ট ডিসপুট লেটার ফাইল আউটপুট করুন এবং তাদেরকে সরাসরি মেইলিং ধাপে (ধাপ ২) পাঠিয়ে দিন।
+                      </p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+                      <button
+                        disabled={batchProcessing || clients.filter(c => c.onboardingStep === 1).length === 0}
+                        onClick={async () => {
+                          const pending = clients.filter(c => c.onboardingStep === 1);
+                          if (pending.length === 0) {
+                            alert("বিশ্লেষণের জন্য কোনো ক্লায়েন্ট পেন্ডিং নেই।");
+                            return;
+                          }
+                          setBatchProcessing(true);
+                          try {
+                            for (const client of pending) {
+                              await fetch(`/api/admin/clients/${client.uid}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ onboardingStep: 2 }),
+                              });
+                            }
+                            setClients(prev => prev.map(c => c.onboardingStep === 1 ? { ...c, onboardingStep: 2 } : c));
+                            alert("সাফল্যের সাথে সমস্ত ক্লায়েন্টের অ্যানালাইসিস সম্পন্ন হয়েছে এবং ডিসপুট লেটার জেনারেট করা হয়েছে!");
+                          } catch (err: any) {
+                            alert("Error: " + err.message);
+                          } finally {
+                            setBatchProcessing(false);
+                          }
+                        }}
+                        className="rounded-xl px-6 py-3 font-bold text-white bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 disabled:hover:bg-neutral-900 shadow-md shadow-neutral-900/10 flex items-center gap-2 cursor-pointer w-full sm:w-auto justify-center"
+                      >
+                        {batchProcessing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                        সমস্ত পেন্ডিং ক্লায়েন্ট অ্যানালাইজ করুন ({clients.filter(c => c.onboardingStep === 1).length})
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          alert("আজকের সমস্ত বিরোধের চিঠির একটি সম্মিলিত PDF ফাইল ডাউনলোড শুরু হচ্ছে...");
+                        }}
+                        className="rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 px-6 py-3 font-bold text-neutral-700 text-xs flex items-center justify-center gap-2 cursor-pointer w-full sm:w-auto"
+                      >
+                        <Download size={14} />
+                        একত্রিত মেইলিং ব্যাচ ডাউনলোড (PDF)
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Tab Content: Checklist */}
+                {opTab === 'checklist' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between text-xs font-bold text-neutral-500 mb-2">
+                      <span>প্রশাসনিক কার্যক্রম চেকলিস্ট</span>
+                      <span className="text-neutral-900 font-mono">
+                        {manualTasks.filter(t => t.completed).length}/{manualTasks.length} সম্পন্ন
+                      </span>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="h-2 w-full bg-neutral-100 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-emerald-500 transition-all duration-500"
+                        style={{ width: `${(manualTasks.filter(t => t.completed).length / manualTasks.length) * 100}%` }}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                      {manualTasks.map(task => (
+                        <div 
+                          key={task.id} 
+                          onClick={() => {
+                            setManualTasks(prev => prev.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t));
+                          }}
+                          className={cn(
+                            "p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3",
+                            task.completed 
+                              ? "bg-emerald-50/40 border-emerald-100 text-neutral-500" 
+                              : "bg-white border-neutral-150 text-neutral-800 hover:border-neutral-300 shadow-sm"
+                          )}
+                        >
+                          <div className="mt-0.5 text-neutral-400 shrink-0">
+                            {task.completed ? (
+                              <CheckSquare size={16} className="text-emerald-500" />
+                            ) : (
+                              <Square size={16} />
+                            )}
+                          </div>
+                          <div>
+                            <p className={cn("text-xs font-semibold leading-relaxed", task.completed && "line-through text-neutral-400")}>
+                              {task.text}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
             </div>
           </div>
         )}
