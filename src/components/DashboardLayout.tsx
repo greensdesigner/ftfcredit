@@ -80,7 +80,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className="hidden w-64 border-r border-neutral-200 bg-white lg:block">
         <div className="flex h-full flex-col">
           <div className="border-b border-neutral-100 p-6">
-            <Link to="/" className="flex items-center gap-2 font-display text-xl font-bold tracking-tight text-neutral-900">
+            <Link to={(user?.role === UserRole.ADMIN || isAdminAuthorized) ? '/admin-portal?tab=overview' : '/dashboard'} className="flex items-center gap-2 font-display text-xl font-bold tracking-tight text-neutral-900">
               {systemLogo ? (
                 <img src={systemLogo} alt="Logo" className="h-8 max-w-[48px] object-contain rounded-md" referrerPolicy="no-referrer" />
               ) : (
