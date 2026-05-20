@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
+import AdminInbox from '../components/AdminInbox';
 import { useAuth } from '../context/AuthContext';
 import { Users, CreditCard, AlertCircle, Search, Filter, MoreHorizontal, ArrowUpRight, ArrowDownRight, CheckCircle2, RotateCcw, Loader2, X, Mail, Phone, Calendar, User, MapPin, ShieldCheck, FileText, CheckSquare, Square, Send, Download, Sparkles, RefreshCw, ClipboardList, Briefcase, FileSignature, Inbox } from 'lucide-react';
 import { cn } from '../lib/utils';
@@ -34,7 +35,7 @@ export default function AdminDashboard() {
   const [systemSettings, setSystemSettings] = useState<any>(null);
   const [isPaying, setIsPaying] = useState(false);
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'settings' | 'billing'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'settings' | 'billing' | 'inbox'>('overview');
   const { user, refreshProfile } = useAuth();
   const tenantId = user?.tenantId;
 
@@ -133,7 +134,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab === 'clients' || tab === 'settings' || tab === 'overview' || tab === 'billing') {
+    if (tab === 'clients' || tab === 'settings' || tab === 'overview' || tab === 'billing' || tab === 'inbox') {
       setActiveTab(tab as any);
     }
   }, [searchParams]);
@@ -983,6 +984,10 @@ export default function AdminDashboard() {
                </div>
             </div>
           </div>
+        )}
+
+        {activeTab === 'inbox' && (
+          <AdminInbox />
         )}
 
         {/* Client Detail Modal */}

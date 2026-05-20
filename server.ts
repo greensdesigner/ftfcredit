@@ -286,6 +286,19 @@ async function startServer() {
             )
           `);
 
+          // Messages table for chat feature
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS messages (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              senderId VARCHAR(128) NOT NULL,
+              receiverId VARCHAR(128) NOT NULL,
+              message TEXT NOT NULL,
+              isRead BOOLEAN DEFAULT FALSE,
+              tenantId VARCHAR(128),
+              createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+          `);
+
           console.log("✅ All database tables verified/created successfully.");
         } catch (dbErr: any) {
           console.error("❌ Error initializing tables:", dbErr.message);
@@ -984,6 +997,139 @@ async function startServer() {
       res.json({ status: "success" });
     } catch (error: any) {
       console.error("Subscription Error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // --- MESSAGES / CHAT API SYSTEM ---
+
+  // 1. Get messages between client and administrators
+  app.get("/api/messages", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { tenantId, clientUid } = req.query;
+
+    if (!tenantId || !clientUid) {
+      return res.status(400).json({ error: "tenantId and clientUid are required query parameters" });
+    }
+
+    try {
+      const [messages]: any = await pool.query(`
+        SELECT m.*, u.fullName as senderName, u.avatarUrl as senderAvatar, u.role as senderRole
+        FROM messages m
+        LEFT JOIN users u ON m.senderId = u.uid
+        WHERE m.tenantId = ? AND (
+          (m.senderId = ? AND (m.receiverId = 'admin' OR m.receiverId IN (SELECT uid FROM users WHERE role IN ('admin', 'super_admin'))))
+          OR
+          (m.receiverId = ? AND (m.senderId = 'admin' OR m.senderId IN (SELECT uid FROM users WHERE role IN ('admin', 'super_admin'))))
+        )
+        ORDER BY m.id ASC
+      `, [tenantId, clientUid, clientUid]);
+
+      res.json(messages);
+    } catch (error: any) {
+      console.error("Fetch Messages Error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // 2. Get client contact list for Admin Inbox
+  app.get("/api/messages/contacts", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { tenantId } = req.query;
+
+    if (!tenantId) {
+      return res.status(400).json({ error: "tenantId is required" });
+    }
+
+    try {
+      const [contacts]: any = await pool.query(`
+        SELECT 
+          u.uid, u.fullName, u.email, u.phone, u.avatarUrl,
+          (
+            SELECT message 
+            FROM messages 
+            WHERE tenantId = ? AND (senderId = u.uid OR receiverId = u.uid) 
+            ORDER BY id DESC LIMIT 1
+          ) as lastMessage,
+          (
+            SELECT createdAt 
+            FROM messages 
+            WHERE tenantId = ? AND (senderId = u.uid OR receiverId = u.uid) 
+            ORDER BY id DESC LIMIT 1
+          ) as lastMessageAt,
+          (
+            SELECT COUNT(*) 
+            FROM messages 
+            WHERE tenantId = ? AND senderId = u.uid AND isRead = FALSE
+          ) as unreadCount
+        FROM users u
+        WHERE u.tenantId = ? AND u.role = 'client'
+        ORDER BY lastMessageAt DESC, u.fullName ASC
+      `, [tenantId, tenantId, tenantId, tenantId]);
+
+      res.json(contacts);
+    } catch (error: any) {
+      console.error("Fetch Contacts Error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // 3. Send a new message
+  app.post("/api/messages", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { senderId, receiverId, message, tenantId } = req.body;
+
+    if (!senderId || !receiverId || !message || !tenantId) {
+      return res.status(400).json({ error: "Missing required fields: senderId, receiverId, message, tenantId" });
+    }
+
+    try {
+      const [result]: any = await pool.query(
+        "INSERT INTO messages (senderId, receiverId, message, tenantId, isRead) VALUES (?, ?, ?, ?, FALSE)",
+        [senderId, receiverId, message, tenantId]
+      );
+
+      res.json({
+        id: result.insertId,
+        senderId,
+        receiverId,
+        message,
+        tenantId,
+        isRead: false,
+        createdAt: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error("Send Message Error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // 4. Mark messages as read
+  app.post("/api/messages/read", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { tenantId, clientUid, readerRole } = req.body;
+
+    if (!tenantId || !clientUid) {
+      return res.status(400).json({ error: "Missing required fields: tenantId, clientUid" });
+    }
+
+    try {
+      if (readerRole === 'admin') {
+        // Admin reads messages sent by the client
+        await pool.query(
+          "UPDATE messages SET isRead = TRUE WHERE tenantId = ? AND senderId = ? AND isRead = FALSE",
+          [tenantId, clientUid]
+        );
+      } else {
+        // Client reads messages sent by the admin team
+        await pool.query(
+          "UPDATE messages SET isRead = TRUE WHERE tenantId = ? AND receiverId = ? AND senderId != ? AND isRead = FALSE",
+          [tenantId, clientUid, clientUid]
+        );
+      }
+      res.json({ success: true });
+    } catch (error: any) {
+      console.error("Mark Read Error:", error.message);
       res.status(500).json({ error: error.message });
     }
   });
