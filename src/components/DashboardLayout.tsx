@@ -168,13 +168,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
              <h2 className="text-sm font-medium text-neutral-500">Welcome back, {user?.fullName}</h2>
           </div>
           <div className="flex items-center gap-4">
-            <button className="relative rounded-full p-2 text-neutral-500 hover:bg-neutral-50">
-              <Bell size={20} />
-              <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500"></span>
-            </button>
-            <div className="h-8 w-8 rounded-full bg-neutral-900 flex items-center justify-center text-white text-xs font-bold uppercase truncate">
-              {user?.fullName?.charAt(0) || '?'}
-            </div>
+            {/* Icons removed per user request */}
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-6 lg:p-10">
