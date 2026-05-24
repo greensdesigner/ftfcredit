@@ -330,7 +330,7 @@ export default function AdminMarketing() {
   // Convert messy description or keywords into a beautiful structured social copywriting
   const handleOptimizeContent = async () => {
     if (!postDraftContent.trim()) {
-      alert("অপ্টিমাইজ করার জন্য অনুগ্রহ করে ড্রাফট বক্সে কিছু লিখুন বা এলোমেলো তথ্য দিন।");
+      alert("Please key in some draft text or keywords in the box to optimize.");
       return;
     }
 
@@ -350,11 +350,11 @@ export default function AdminMarketing() {
       if (res.ok && data.optimizedContent) {
         setPostDraftContent(data.optimizedContent);
       } else {
-        setOptimizeError(data.error || "কনটেন্ট অপ্টিমাইজ করতে ব্যর্থ হয়েছে।");
+        setOptimizeError(data.error || "Failed to optimize post content.");
       }
     } catch (err: any) {
       console.error("Content optimization error:", err);
-      setOptimizeError(err.message || "নেটওয়ার্ক সংক্রান্ত কোনো সমস্যা দেখা দিয়েছে।");
+      setOptimizeError(err.message || "A network connectivity issue occurred.");
     } finally {
       setOptimizingContent(false);
     }
@@ -618,42 +618,42 @@ export default function AdminMarketing() {
                 <div className="flex items-center gap-2.5">
                   <span className="size-10 bg-emerald-100 border border-emerald-250 text-emerald-800 rounded-2xl flex items-center justify-center font-display text-lg font-black animate-bounce mt-1">✓</span>
                   <div>
-                    <h3 className="font-display text-base md:text-lg font-black text-emerald-950 uppercase">পোস্ট গেটওয়ে সফলভাবে তৈরি হয়েছে! (Branding Post Created)</h3>
-                    <p className="text-xs text-emerald-800 font-semibold mt-0.5">আপনার অর্গানিক সোশ্যাল ক্যাম্পেইন রেডি। কোনো টোকেন জেনারেট ছাড়া সরাসরি পোস্ট করুন।</p>
+                    <h3 className="font-display text-base md:text-lg font-black text-emerald-950 uppercase">Post Gateway Successfully Created! (Branding Post Created)</h3>
+                    <p className="text-xs text-emerald-800 font-semibold mt-0.5">Your organic social campaign is ready. Publish directly on your page without creating an insecure token.</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setLastCreatedPost(null)}
                   className="px-3 py-1.5 text-xs font-black text-emerald-900 bg-emerald-100 hover:bg-emerald-200 rounded-xl"
                 >
-                  Dismiss / বন্ধ করুন
+                  Dismiss
                 </button>
               </div>
 
               <div className="bg-white p-4 rounded-2xl border border-emerald-100 space-y-3">
                 <span className="text-[10px] font-black uppercase text-emerald-800 tracking-wider bg-emerald-100/60 border border-emerald-250 px-2.5 py-0.5 rounded-full w-fit">
-                  কপি করা ক্যাপশন টেক্সট (Auto-Copied Caption)
+                  Optimized Caption Text (Auto-Copied Caption)
                 </span>
                 <p className="text-xs text-neutral-800 leading-relaxed font-semibold italic">"{lastCreatedPost.content}"</p>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(lastCreatedPost.content);
-                    alert("পোস্টের টেক্সট কপি করা হয়েছে!");
+                    alert("Post text successfully copied to clipboard!");
                   }}
                   className="text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-120 px-3 py-2 rounded-xl flex items-center gap-1"
                 >
-                  <FileText size={12} /> ম্যানুয়ালি কপি করুন (Copy Manually)
+                  <FileText size={12} /> Copy Manually
                 </button>
               </div>
 
               <div className="space-y-3">
                 <div className="p-4 bg-emerald-100/40 border border-emerald-200 rounded-2xl space-y-2">
                   <h4 className="font-bold text-xs text-emerald-950 flex items-center gap-1">
-                    🟢 সহজ সংযোগ সমাধান নির্দেশাবলী (Easy Quick-Post Guide)
+                    🟢 Easy Connector & Placement Instructions (Easy Quick-Post Guide)
                   </h4>
                   <ul className="list-disc pl-4 text-[11.5px] text-emerald-950 space-y-1 font-medium leading-relaxed">
-                    <li>যেহেতু আপনি কোনো অনিরাপদ স্থায়ি পাসওয়ার্ড বা এপিআই টোকেন প্রদান ছাড়াই **শুধুমাত্র ফেসবুক পেজ আইডি** দিয়ে কানেক্ট করেছেন, তাই মেটার নতুন সিকিউরিটি পলিসি অনুযায়ী আপনার পোস্টের টেক্সটটি কপি করে দেওয়া হয়েছে।</li>
-                    <li>নিচের এক-ক্লিক ডাইরেক্ট অটো-পাবলিশ বাটনে চাপ দিয়ে ফেসবুক পেজটি ওপেন করুন এবং সরাসরি পোস্ট বক্সে পেস্ট (**Ctrl+V** বা **Tap & Paste**) করে পাবলিশ লেখাটিতে ক্লিক করুন!</li>
+                    <li>Since you have connected with **only your Facebook Page ID** (without providing insecure permanent access tokens or passwords), your formatted direct-post caption has been securely copied to your clipboard.</li>
+                    <li>Click the "Direct Publish Gateway" button below. Paste (**Ctrl+V** or Tap & Hold and Paste) the text directly into the page's post box, and click publish!</li>
                   </ul>
                 </div>
 
@@ -664,7 +664,7 @@ export default function AdminMarketing() {
                     rel="noreferrer"
                     className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-750 text-white font-black text-xs px-6 py-4 rounded-2xl transition-all shadow-sm"
                   >
-                    <Facebook size={16} /> ১-ক্লিক অটো-পাবলিশ গেটওয়ে (Publish to Page)
+                    <Facebook size={16} /> 1-Click Direct Publish Gateway (Page Feed)
                   </a>
                   
                   <a
@@ -673,7 +673,7 @@ export default function AdminMarketing() {
                     rel="noreferrer"
                     className="inline-flex items-center justify-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white font-black text-xs px-6 py-4 rounded-2xl transition-all shadow-sm"
                   >
-                    ⚡ ফেসবুক ফিড পপআপ রাইটার (Feed Composer Popup)
+                    ⚡ Facebook Share Composer Popup
                   </a>
                 </div>
               </div>
@@ -754,14 +754,14 @@ export default function AdminMarketing() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Sparkles className="text-violet-600 size-4.5 animate-pulse" />
-                    <span className="text-xs font-extrabold text-violet-950">এআই রাইটিং অ্যাসিস্ট্যান্ট (AI Copywriter)</span>
+                    <span className="text-xs font-extrabold text-violet-950">AI Writing Assistant (AI Copywriter)</span>
                   </div>
                   <span className="text-[9px] uppercase font-bold bg-violet-100 text-violet-700 px-2.5 py-0.5 rounded-full">
                     Gemini 3.5 Active
                   </span>
                 </div>
                 <p className="text-[11px] text-violet-850/95 font-medium leading-relaxed">
-                  আপনার কিওয়ার্ড, রাফ ড্রাফট বা এলোমেলো লেখাগুলোকে এক ক্লিকে দৃষ্টিনন্দন সোশ্যাল মিডিয়া পোস্টে রূপান্তর করুন। সঠিক ইমোজি, হুক এবং হ্যাশট্যাগ যুক্ত হবে স্বয়ংক্রিয়ভাবে!
+                  Beautify your keywords, rough drafts, or random thoughts into highly elegant social media posts. The perfect emojis, formatting, and tags are automatically formatted!
                 </p>
                 <div className="flex flex-col gap-2">
                   <button
@@ -773,12 +773,12 @@ export default function AdminMarketing() {
                     {optimizingContent ? (
                       <>
                         <Loader2 size={13} className="animate-spin" />
-                        <span>লেখা গোছানো হচ্ছে...</span>
+                        <span>Beautifying...</span>
                       </>
                     ) : (
                       <>
                         <Sparkles size={13} className="text-violet-200" />
-                        <span>⚡ এআই দিয়ে পোস্টটি আকর্ষণীয় ও গোছানো করুন</span>
+                        <span>⚡ Beautify & Structure Content with AI</span>
                       </>
                     )}
                   </button>
@@ -1025,10 +1025,10 @@ export default function AdminMarketing() {
                 <Activity size={12} /> Status Monitor
               </span>
               <h3 className="font-display text-base font-bold text-neutral-900 mt-2">
-                {productionMode ? "🔴 Direct Live Production Mode Active (রিয়েল লাইভ পোস্টিং)" : "🟢 Sandbox Simulation Mode Active (ডেমো সিমুলেশন)"}
+                {productionMode ? "🔴 Direct Live Production Mode Active" : "🟢 Sandbox Simulation Mode Active"}
               </h3>
               <p className="text-xs text-neutral-500 leading-normal max-w-2xl">
-                যদি **Direct Live Production Mode** চালু থাকে, তাহলে "Publish Organically Now" বাটনে ক্লিক করলে পোস্টটি সরাসরি ফেসবুক পেজ, ইন্সটাগ্রাম পেজ এবং টিক টক-এ পোস্ট হবে। অন্যথায় এটি ডেমো মোডে ডেটাবেজে সংরক্ষিত হবে।
+                If **Direct Live Production Mode** is active, clicking "Publish Organically Now" will dispatch the post directly to your Facebook Page, Instagram Business profile, or TikTok account. Otherwise, it compiles safely into your sandbox mock logs.
               </p>
             </div>
             
@@ -1045,7 +1045,7 @@ export default function AdminMarketing() {
               {productionMode ? "Switch to Sandbox Mode" : "Switch to Direct Live Mode"}
             </button>
           </div>
-
+ 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Forms configuration column */}
             <form onSubmit={handleSaveConnectors} className="lg:col-span-2 space-y-6">
@@ -1066,11 +1066,11 @@ export default function AdminMarketing() {
                       className="h-4 w-4 text-violet-600 focus:ring-violet-500 rounded border-neutral-200 cursor-pointer"
                     />
                     <label htmlFor="quickConnectToggle" className="text-xs font-semibold text-violet-950 cursor-pointer select-none">
-                      ⚡ শুধুমাত্র আইডি দিয়ে কানেক্ট (টোকেন ছাড়া)
+                      ⚡ Quick Connect with ID Only (Token-free)
                     </label>
                   </div>
                 </div>
-
+ 
                 {loadingConnectors ? (
                   <div className="flex flex-col items-center justify-center py-12 gap-3">
                     <Loader2 className="animate-spin text-neutral-400" size={32} />
@@ -1082,9 +1082,9 @@ export default function AdminMarketing() {
                       <div className="bg-emerald-50/60 border border-emerald-100/50 p-4 rounded-2xl flex items-start gap-2.5">
                         <span className="text-emerald-700 mt-0.5">⚡</span>
                         <div className="space-y-0.5">
-                          <h4 className="font-bold text-xs text-emerald-950">পেইজ আইডি সংযোগ সক্রিয়</h4>
+                          <h4 className="font-bold text-xs text-emerald-950">Page ID Direct Connector Active</h4>
                           <p className="text-[11px] text-emerald-800 leading-normal">
-                            কোনো জটিল স্থায়ী এপিআই টোকেন লাগবে না! শুধু সোশ্যাল পেইজ আইডি বসিয়ে সেভ করুন। আমাদের অ্যান্ড-টু-অ্যান্ড স্মার্ট ডাইরেক্ট গেটওয়ে আপনার প্রতিটি অর্গানিক পোস্ট সরাসরি পাবলিশ করার কাজটি স্বয়ংক্রিয়ভাবে হ্যান্ডেল করবে।
+                            No complex permanent API access tokens required! Simply configure your social Page IDs and save. Our smart direct gateway handles direct posting tasks automatically.
                           </p>
                         </div>
                       </div>
@@ -1196,7 +1196,7 @@ export default function AdminMarketing() {
                         <Loader2 size={14} className="animate-spin" /> Synchronizing...
                       </span>
                     ) : (
-                      "Save Integration Config"
+                      "Save Integration Keys"
                     )}
                   </button>
                 </div>
@@ -1207,33 +1207,33 @@ export default function AdminMarketing() {
             <div className="rounded-[32px] border border-neutral-100 bg-white p-8 shadow-sm space-y-6 text-left">
               <h3 className="font-display text-base font-bold text-neutral-950 flex items-center gap-1.5">
                 <Plus size={18} className="text-violet-600" />
-                Setup Steps / নির্দেশাবলী
+                Setup Steps & Directives
               </h3>
               
               <div className="space-y-4 text-xs text-neutral-600 leading-relaxed">
                 <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-105 space-y-2">
-                  <h4 className="font-bold text-blue-950 text-xs">📘 Facebook Integration (ফেসবুক পেজ)</h4>
+                  <h4 className="font-bold text-blue-950 text-xs">📘 Facebook Integration (Facebook Page)</h4>
                   <ul className="list-decimal pl-4 space-y-1 text-[11px] text-blue-900">
-                    <li>Meta Developer Console থেকে একটি App তৈরি করে পেজ পারমিশন নির্বাচন করুন।</li>
-                    <li>Graph API Explorer ব্যবহার করে স্থায়ী (Permanent) **Page Access Token** জ্যাম করুন।</li>
-                    <li>আপনার নির্দিষ্ট ফেসবুক পেজের **Page ID** সংগ্রহ করে বসান।</li>
+                    <li>Create an App inside the Meta Developer Console and configure Page permissions.</li>
+                    <li>Acquire a permanent, never-expiring **Page Access Token** using Meta's Graph API Explorer tool.</li>
+                    <li>Retrieve and save your Facebook **Page ID** into the connector configuration.</li>
                   </ul>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-pink-50/50 border border-pink-105 space-y-2">
-                  <h4 className="font-bold text-pink-950 text-xs">📙 Instagram Business (ইন্সটাগ্রাম পেজ)</h4>
+                  <h4 className="font-bold text-pink-950 text-xs">📙 Instagram Business (Instagram Profile)</h4>
                   <ul className="list-decimal pl-4 space-y-1 text-[11px] text-pink-900">
-                    <li>ইন্সটাগ্রাম পেজের জন্য অবশ্যই Professional Business Account থাকতে হবে।</li>
-                    <li>ইন্সটাগ্রাম অ্যাকাউন্টটিকে আপনার ফেসবুক পেজের সাথে লিঙ্ক (Link) করুন।</li>
-                    <li>Meta Graph API থেকে **Instagram Business ID** সংগ্রহ করে বসান।</li>
+                    <li>Ensure your Instagram profile is converted to a Professional Business Account.</li>
+                    <li>Link your Instagram Business Account directly with your connected Facebook Page.</li>
+                    <li>Retrieve and input your **Instagram Business ID** from your Meta Graph setup.</li>
                   </ul>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-2">
-                  <h4 className="font-bold text-neutral-900 text-xs">⬛ TikTok Content API (টিকটক)</h4>
+                  <h4 className="font-bold text-neutral-900 text-xs">⬛ TikTok Content API (TikTok Profile)</h4>
                   <ul className="list-decimal pl-4 space-y-1 text-[11px] text-neutral-700">
-                    <li>TikTok For Developers পোর্টালে রেজিস্টার করুন।</li>
-                    <li>"Direct Content Posting" অনুমোদন পেয়ে ক্লায়েন্ট বা ক্রিয়েটর টোকেন জেনারেট করে যুক্ত করুন।</li>
+                    <li>Register a developer profile on the official TikTok For Developers portal.</li>
+                    <li>Gain approvals for "Direct Content Posting" and generate client/creator tokens to integrate.</li>
                   </ul>
                 </div>
 

@@ -2005,10 +2005,10 @@ ${textElements}
         // Fallback rule-based layout optimizer in Bengali / English
         const optimized = `✨ ${prompt.split('\n').filter(Boolean).map(line => `🔥 ${line.trim()}`).join('\n\n')}
 
-📌 সেরা সার্ভিসের নিশ্চয়তা !
-📞 আজই যোগাযোগ করুন আমাদের সাথে বা ইনবক্স করুন।
+📌 Guaranteed Premium Social Service!
+📞 Direct message us or contact support today to get started.
 
-#SmartMarketing #GrowthMindset #BangladeshBusiness #DirectConnect`;
+#SmartMarketing #GrowthMindset #BusinessScalability #DirectConnect`;
         return res.json({ status: "success", optimizedContent: optimized });
       } catch (fallbackError: any) {
         return res.status(400).json({ error: "Could not optimize text." });
@@ -2051,7 +2051,7 @@ ${textElements}
       console.warn("⚠️ Gemini content optimization failed. Activating fallback...", error.message || error);
       const fallback = `✨ ${prompt.split('\n').filter(Boolean).map(line => `🌟 ${line.trim()}`).join('\n\n')}
 
-🚀 বিস্তারিত জানতে আমাদের পেইজে মেসেজ দিন অথবা কমেন্ট করুন!
+🚀 Learn more by sliding into our inbox or drop a comment below!
 #SocialPosting #AIHelper #OrganicConnect`;
       res.json({ status: "success", optimizedContent: fallback });
     }
