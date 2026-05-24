@@ -396,25 +396,25 @@ export default function AdminMarketing() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500 text-left">
       {/* Header Banner */}
-      <div className="p-8 rounded-[32px] bg-gradient-to-r from-violet-700 to-indigo-900 text-white relative overflow-hidden shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-violet-650/30">
+      <div className="p-10 rounded-[32px] bg-gradient-to-r from-violet-700 to-indigo-900 text-white relative overflow-hidden shadow-lg flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 border border-violet-650/40">
         <div className="absolute right-0 top-0 p-12 opacity-[0.06] pointer-events-none">
           <Megaphone size={190} />
         </div>
-        <div className="space-y-2 z-10">
-          <h2 className="font-display text-3xl font-bold tracking-tight flex items-center gap-2.5">
-            <Megaphone size={30} className="text-violet-200" />
+        <div className="space-y-3 z-10">
+          <h2 className="font-display text-3xl md:text-4xl font-extrabold tracking-tight flex items-center gap-3">
+            <Megaphone size={36} className="text-violet-200 shrink-0" />
             Meta ADS & Social Center
           </h2>
-          <p className="text-sm text-violet-200 max-w-xl">
+          <p className="text-sm md:text-base font-medium text-violet-100 max-w-2xl leading-relaxed">
             Simulate campaign reach organically, design and post directly to social pages, or launch targeted Paid Ads boosters using system Stripe credit integration.
           </p>
         </div>
-        <div className="flex gap-2 shrink-0 z-10">
+        <div className="flex flex-wrap gap-2.5 shrink-0 z-10">
           <button 
             onClick={() => setSubTab('paid')}
             className={cn(
-              "px-5 py-2.5 text-xs font-bold rounded-2xl transition-all shadow-sm",
-              subTab === 'paid' ? "bg-white text-violet-900" : "bg-violet-800/40 text-violet-100 hover:bg-violet-700/60"
+              "px-6 py-3.5 text-sm font-extrabold rounded-2xl transition-all shadow-md hover:scale-[1.02]",
+              subTab === 'paid' ? "bg-white text-violet-900" : "bg-violet-800/50 text-violet-100 hover:bg-violet-750"
             )}
           >
             Paid Campaigns
@@ -422,8 +422,8 @@ export default function AdminMarketing() {
           <button 
             onClick={() => setSubTab('organic')}
             className={cn(
-              "px-5 py-2.5 text-xs font-bold rounded-2xl transition-all shadow-sm",
-              subTab === 'organic' ? "bg-white text-violet-900" : "bg-violet-800/40 text-violet-100 hover:bg-violet-700/60"
+              "px-6 py-3.5 text-sm font-extrabold rounded-2xl transition-all shadow-md hover:scale-[1.02]",
+              subTab === 'organic' ? "bg-white text-violet-900" : "bg-violet-800/50 text-violet-100 hover:bg-violet-750"
             )}
           >
             Organic Social Posting
@@ -431,8 +431,8 @@ export default function AdminMarketing() {
           <button 
             onClick={() => setSubTab('history')}
             className={cn(
-              "px-5 py-2.5 text-xs font-bold rounded-2xl transition-all shadow-sm",
-              subTab === 'history' ? "bg-white text-violet-900" : "bg-violet-800/40 text-violet-100 hover:bg-violet-700/60"
+              "px-6 py-3.5 text-sm font-extrabold rounded-2xl transition-all shadow-md hover:scale-[1.02]",
+              subTab === 'history' ? "bg-white text-violet-900" : "bg-violet-800/50 text-violet-100 hover:bg-violet-750"
             )}
           >
             History & Billing
@@ -440,8 +440,8 @@ export default function AdminMarketing() {
           <button 
             onClick={() => setSubTab('connectors')}
             className={cn(
-              "px-5 py-2.5 text-xs font-bold rounded-2xl transition-all shadow-sm",
-              subTab === 'connectors' ? "bg-white text-violet-900" : "bg-violet-800/40 text-violet-100 hover:bg-violet-700/60"
+              "px-6 py-3.5 text-sm font-extrabold rounded-2xl transition-all shadow-md hover:scale-[1.02]",
+              subTab === 'connectors' ? "bg-white text-violet-900" : "bg-violet-800/50 text-violet-100 hover:bg-violet-750"
             )}
           >
             Social Connectors
@@ -454,14 +454,14 @@ export default function AdminMarketing() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Form and Simulator */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="rounded-[32px] border border-neutral-100 bg-white p-8 shadow-sm">
-              <h3 className="font-display text-xl font-bold text-neutral-950 mb-6 flex items-center gap-2">
-                <Sparkles size={20} className="text-neutral-500" />
+            <div className="rounded-[32px] border border-neutral-150 bg-white p-10 shadow-md">
+              <h3 className="font-display text-2xl font-black text-neutral-950 mb-6 pb-2 border-b border-neutral-100 flex items-center gap-3">
+                <Sparkles size={24} className="text-violet-600" />
                 Select Facebook + Instagram Paid Ad Plan
               </h3>
 
               {/* Plans Roster */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
                 {(Object.keys(plans) as Array<keyof typeof plans>).map((key) => {
                   const plan = plans[key];
                   const isSelected = selectedPlan === key;
@@ -470,28 +470,28 @@ export default function AdminMarketing() {
                       key={key}
                       onClick={() => setSelectedPlan(key)}
                       className={cn(
-                        "p-5 rounded-2xl text-left border transition-all relative flex flex-col justify-between h-[180px]",
+                        "p-6 rounded-2xl text-left border transition-all relative flex flex-col justify-between min-h-[220px]",
                         isSelected 
-                          ? "border-violet-600 bg-violet-600 text-white shadow-md scale-[1.02]" 
-                          : "border-neutral-200 bg-white hover:border-violet-350 hover:bg-violet-50/20 text-neutral-850"
+                          ? "border-violet-600 bg-violet-600 text-white shadow-lg scale-[1.02]" 
+                          : "border-neutral-200 bg-white hover:border-violet-350 hover:bg-violet-50/30 text-neutral-850"
                       )}
                     >
                       <div>
                         <div className="flex justify-between items-start">
-                          <span className={cn("text-xxs font-black tracking-widest uppercase py-1 px-2.5 rounded-full", isSelected ? 'bg-violet-500 text-violet-100' : 'bg-neutral-50 text-neutral-500')}>
+                          <span className={cn("text-xs font-black tracking-widest uppercase py-1 px-3 rounded-full", isSelected ? 'bg-violet-500 text-violet-100' : 'bg-neutral-100 text-neutral-600')}>
                             {key}
                           </span>
-                          {isSelected && <CheckCircle2 size={16} className="text-white" />}
+                          {isSelected && <CheckCircle2 size={18} className="text-white" />}
                         </div>
-                        <h4 className="font-bold text-sm mt-3 line-clamp-1">{plan.name}</h4>
-                        <p className={cn("text-3xs mt-1 leading-normal line-clamp-3", isSelected ? "text-violet-105" : "text-neutral-500")}>
+                        <h4 className="font-black text-base md:text-lg mt-4 line-clamp-1">{plan.name}</h4>
+                        <p className={cn("text-xs md:text-sm mt-1.5 leading-relaxed line-clamp-3 font-medium", isSelected ? "text-violet-100" : "text-neutral-500")}>
                           {plan.desc}
                         </p>
                       </div>
 
-                      <div className="flex items-baseline gap-1 mt-4">
-                        <span className="font-display text-2xl font-black">${plan.price}</span>
-                        <span className={cn("text-[10px] font-semibold", isSelected ? "text-violet-105" : "text-neutral-500")}>
+                      <div className="flex items-baseline gap-1 mt-4 border-t pt-3 border-violet-500/20">
+                        <span className="font-display text-3xl font-black">${plan.price}</span>
+                        <span className={cn("text-xs font-semibold", isSelected ? "text-violet-100" : "text-neutral-500")}>
                           / {plan.days} Days
                         </span>
                       </div>
@@ -504,40 +504,40 @@ export default function AdminMarketing() {
               <div className="space-y-4">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <label className="block text-xs font-black uppercase tracking-wider text-neutral-600">
+                    <label className="block text-sm font-black uppercase tracking-wider text-neutral-800">
                       META AUDIENCE TARGETING KEYWORDS
                     </label>
-                    <span className="text-[10px] text-neutral-400 font-bold">Separated by comma</span>
+                    <span className="text-xs text-neutral-500 font-bold">Separated by comma</span>
                   </div>
                   <textarea
                     rows={2}
                     value={campaignKeywords}
                     onChange={(e) => setCampaignKeywords(e.target.value)}
                     placeholder="e.g. credit repair, legal assistance, home loan, finance help"
-                    className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 focus:bg-white transition-all text-neutral-850 placeholder:text-neutral-400"
+                    className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-4 py-3 text-sm font-semibold focus:outline-none focus:border-neutral-950 focus:bg-white transition-all text-neutral-850 placeholder:text-neutral-400"
                   />
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col sm:flex-row items-center gap-3">
                   <button
                     onClick={handleSimulateReach}
                     disabled={calculatingReach}
-                    className="px-5 py-3 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-850 text-xs font-bold transition-all flex items-center gap-2"
+                    className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-900 text-sm font-extrabold transition-all flex items-center justify-center gap-2"
                   >
                     {calculatingReach ? (
-                      <Loader2 size={14} className="animate-spin" />
+                      <Loader2 size={16} className="animate-spin" />
                     ) : (
-                      <RefreshCw size={14} />
+                      <RefreshCw size={16} />
                     )}
                     Optimize Keyword Reach
                   </button>
                   <button
                     onClick={handleInitiatePaidCampaign}
-                    className="flex-1 py-3 px-5 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-700 hover:from-violet-500 hover:to-indigo-650 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                    className="flex-1 w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-700 hover:from-violet-500 hover:to-indigo-650 text-white text-sm font-black transition-all flex items-center justify-center gap-2.5 shadow-md hover:shadow-lg"
                   >
-                    <CreditCard size={14} />
+                    <CreditCard size={16} />
                     Pay and Activate Campaign (${plans[selectedPlan].price}.00)
-                    <ArrowRight size={14} />
+                    <ArrowRight size={16} />
                   </button>
                 </div>
               </div>
@@ -547,60 +547,60 @@ export default function AdminMarketing() {
 
           {/* SIMULATOR ANALYTICS SIDE PANEL */}
           <div className="space-y-6">
-            <div className="rounded-[32px] border border-neutral-100 bg-white p-8 shadow-sm text-center relative overflow-hidden min-h-[400px] flex flex-col justify-between">
+            <div className="rounded-[32px] border border-neutral-150 bg-white p-10 shadow-md text-center relative overflow-hidden min-h-[420px] flex flex-col justify-between">
               <div className="absolute top-0 left-0 p-4 opacity-[0.05]">
                 <Activity size={100} />
               </div>
 
               <div>
-                <span className="inline-block py-1 px-3 bg-indigo-50 border border-indigo-100/50 rounded-full text-[10px] font-black text-indigo-600 tracking-wider uppercase mb-5">
+                <span className="inline-block py-1.5 px-4.5 bg-indigo-50 border border-indigo-150 rounded-full text-xs font-black text-indigo-700 tracking-wider uppercase mb-6">
                   AUDIENCE REACH OPTIMIZER
                 </span>
 
                 <div className="py-8">
-                  <p className="text-3xs font-black uppercase text-neutral-400 tracking-widest leading-none mb-2">Simulated Reach (Meta Graph)</p>
+                  <p className="text-xs font-black uppercase text-neutral-400 tracking-widest leading-none mb-3">Simulated Reach (Meta Graph)</p>
                   {calculatingReach ? (
                     <div className="h-16 flex items-center justify-center">
-                      <Loader2 size={32} className="animate-spin text-neutral-300" />
+                      <Loader2 size={36} className="animate-spin text-neutral-300" />
                     </div>
                   ) : (
-                    <h3 className="font-display text-5xl font-black text-neutral-900 tracking-tight leading-none">
+                    <h3 className="font-display text-6xl font-black text-neutral-900 tracking-tight leading-none">
                       {reachStats?.estimatedReach.toLocaleString() || '0'}
-                      <span className="text-lg font-bold text-neutral-400 ml-1">views</span>
+                      <span className="text-xl font-bold text-neutral-400 ml-1.5">views</span>
                     </h3>
                   )}
-                  <p className="text-[11px] text-neutral-400 mt-2 font-medium max-w-xxs mx-auto leading-relaxed">
+                  <p className="text-xs md:text-sm font-semibold text-neutral-500 mt-4 leading-relaxed max-w-[240px] mx-auto">
                     Based on keyword targeting weight, regional density, and budget allocation.
                   </p>
                 </div>
 
                 {/* Meter gauge */}
-                <div className="h-2 bg-neutral-100 rounded-full overflow-hidden mb-6">
+                <div className="h-3 bg-neutral-100 rounded-full overflow-hidden mb-8">
                   <div 
                     className="h-full bg-indigo-600 transition-all duration-700" 
                     style={{ width: `${reachStats?.targetingScore || 0}%` }}
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 divide-x divide-neutral-100">
+                <div className="grid grid-cols-2 gap-4 divide-x divide-neutral-150">
                   <div className="text-left pr-2">
-                    <span className="text-[10px] font-bold text-neutral-400 uppercase leading-none block">TARGETING ACCURACY</span>
-                    <span className="font-display text-lg font-black text-neutral-900 mt-1 block">
+                    <span className="text-xs font-black text-neutral-400 uppercase leading-none block tracking-wide">TARGETING ACCURACY</span>
+                    <span className="font-display text-xl md:text-2xl font-black text-neutral-900 mt-2 block">
                       {reachStats?.targetingScore || 0}%
                     </span>
                   </div>
                   <div className="text-left pl-4">
-                    <span className="text-[10px] font-bold text-neutral-400 uppercase leading-none block">ACTIVE KEYWORDS</span>
-                    <span className="font-display text-lg font-black text-neutral-900 mt-1 block">
+                    <span className="text-xs font-black text-neutral-400 uppercase leading-none block tracking-wide">ACTIVE KEYWORDS</span>
+                    <span className="font-display text-xl md:text-2xl font-black text-neutral-900 mt-2 block">
                       {reachStats?.keywordsCount || 0} Listed
                     </span>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 border-t border-neutral-100/80 pt-4 text-left">
-                <div className="flex gap-2 items-start text-[11px] text-neutral-400 font-medium">
-                  <span className="text-emerald-500 font-bold uppercase tracking-tight">System Notice:</span>
+              <div className="mt-8 border-t border-neutral-150 pt-5 text-left">
+                <div className="flex flex-col gap-1 text-xs md:text-sm text-neutral-500 font-semibold leading-relaxed">
+                  <span className="text-emerald-600 font-black uppercase tracking-wider block">System Notice:</span>
                   <span>Payments are wired securely through our unified balance API linked with the agency Stripe account.</span>
                 </div>
               </div>
@@ -613,65 +613,65 @@ export default function AdminMarketing() {
       {subTab === 'organic' && (
         <div className="space-y-6 animate-in fade-in duration-300">
           {lastCreatedPost && (
-            <div className="rounded-[32px] border-2 border-emerald-500 bg-emerald-50/60 p-6 md:p-8 text-left space-y-6 shadow-sm">
-              <div className="flex items-center justify-between border-b border-emerald-150 pb-4">
-                <div className="flex items-center gap-2.5">
-                  <span className="size-10 bg-emerald-100 border border-emerald-250 text-emerald-800 rounded-2xl flex items-center justify-center font-display text-lg font-black animate-bounce mt-1">✓</span>
+            <div className="rounded-[32px] border-4 border-emerald-500 bg-emerald-50/70 p-8 md:p-10 text-left space-y-6 shadow-md">
+              <div className="flex items-center justify-between border-b border-emerald-200 pb-4">
+                <div className="flex items-center gap-3">
+                  <span className="size-12 bg-emerald-100 border border-emerald-300 text-emerald-800 rounded-2xl flex items-center justify-center font-display text-xl font-black animate-bounce mt-1">✓</span>
                   <div>
-                    <h3 className="font-display text-base md:text-lg font-black text-emerald-950 uppercase">Post Gateway Successfully Created! (Branding Post Created)</h3>
-                    <p className="text-xs text-emerald-800 font-semibold mt-0.5">Your organic social campaign is ready. Publish directly on your page without creating an insecure token.</p>
+                    <h3 className="font-display text-lg md:text-xl font-black text-emerald-950 uppercase">Post Gateway Successfully Created! (Branding Post Created)</h3>
+                    <p className="text-sm text-emerald-900 font-bold mt-1">Your organic social campaign is ready. Publish directly on your page without creating an insecure token.</p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setLastCreatedPost(null)}
-                  className="px-3 py-1.5 text-xs font-black text-emerald-900 bg-emerald-100 hover:bg-emerald-200 rounded-xl"
+                  className="px-4.5 py-2 text-sm font-black text-emerald-950 bg-emerald-200/80 hover:bg-emerald-250 rounded-xl transition-all"
                 >
                   Dismiss
                 </button>
               </div>
 
-              <div className="bg-white p-4 rounded-2xl border border-emerald-100 space-y-3">
-                <span className="text-[10px] font-black uppercase text-emerald-800 tracking-wider bg-emerald-100/60 border border-emerald-250 px-2.5 py-0.5 rounded-full w-fit">
+              <div className="bg-white p-5 rounded-2xl border border-emerald-200 space-y-4">
+                <span className="text-xs font-black uppercase text-emerald-800 tracking-wider bg-emerald-100/60 border border-emerald-250 px-3 py-1 rounded-full w-fit">
                   Optimized Caption Text (Auto-Copied Caption)
                 </span>
-                <p className="text-xs text-neutral-800 leading-relaxed font-semibold italic">"{lastCreatedPost.content}"</p>
+                <p className="text-sm md:text-base text-neutral-900 leading-relaxed font-bold italic">"{lastCreatedPost.content}"</p>
                 <button
                   onClick={() => {
                     navigator.clipboard.writeText(lastCreatedPost.content);
                     alert("Post text successfully copied to clipboard!");
                   }}
-                  className="text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-120 px-3 py-2 rounded-xl flex items-center gap-1"
+                  className="text-xs md:text-sm font-black text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-all"
                 >
-                  <FileText size={12} /> Copy Manually
+                  <FileText size={14} /> Copy Manually
                 </button>
               </div>
 
-              <div className="space-y-3">
-                <div className="p-4 bg-emerald-100/40 border border-emerald-200 rounded-2xl space-y-2">
-                  <h4 className="font-bold text-xs text-emerald-950 flex items-center gap-1">
+              <div className="space-y-4">
+                <div className="p-5 bg-emerald-100/40 border border-emerald-200 rounded-2xl space-y-3">
+                  <h4 className="font-black text-sm md:text-base text-emerald-950 flex items-center gap-1.5">
                     🟢 Easy Connector & Placement Instructions (Easy Quick-Post Guide)
                   </h4>
-                  <ul className="list-disc pl-4 text-[11.5px] text-emerald-950 space-y-1 font-medium leading-relaxed">
+                  <ul className="list-disc pl-5 text-xs md:text-sm text-emerald-950 space-y-2 font-semibold leading-relaxed">
                     <li>Since you have connected with **only your Facebook Page ID** (without providing insecure permanent access tokens or passwords), your formatted direct-post caption has been securely copied to your clipboard.</li>
                     <li>Click the "Direct Publish Gateway" button below. Paste (**Ctrl+V** or Tap & Hold and Paste) the text directly into the page's post box, and click publish!</li>
                   </ul>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                <div className="flex flex-col sm:flex-row gap-4 pt-2">
                   <a
                     href={`https://www.facebook.com/${lastCreatedPost.facebookPageId || facebookPageId || 'pages'}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-750 text-white font-black text-xs px-6 py-4 rounded-2xl transition-all shadow-sm"
+                    className="inline-flex items-center justify-center gap-2.5 bg-blue-600 hover:bg-blue-755 text-white font-black text-sm px-8 py-4.5 rounded-2xl transition-all shadow-md hover:scale-[1.01]"
                   >
-                    <Facebook size={16} /> 1-Click Direct Publish Gateway (Page Feed)
+                    <Facebook size={18} /> 1-Click Direct Publish Gateway (Page Feed)
                   </a>
                   
                   <a
                     href={`https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent(lastCreatedPost.content)}&u=${encodeURIComponent(window.location.origin)}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center justify-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white font-black text-xs px-6 py-4 rounded-2xl transition-all shadow-sm"
+                    className="inline-flex items-center justify-center gap-2.5 bg-neutral-900 hover:bg-neutral-800 text-white font-black text-sm px-8 py-4.5 rounded-2xl transition-all shadow-md hover:scale-[1.01]"
                   >
                     ⚡ Facebook Share Composer Popup
                   </a>
@@ -682,61 +682,61 @@ export default function AdminMarketing() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Post Designer Form */}
-          <div className="rounded-[32px] border border-neutral-100 bg-white p-8 shadow-sm space-y-6">
-            <h3 className="font-display text-xl font-bold text-neutral-950 flex items-center gap-2">
-              <Globe size={20} className="text-neutral-500" />
+          <div className="rounded-[32px] border border-neutral-150 bg-white p-10 shadow-md space-y-6">
+            <h3 className="font-display text-2xl font-black text-neutral-950 pb-2 border-b border-neutral-100 flex items-center gap-3">
+              <Globe size={24} className="text-violet-650" />
               Design Social Media Post
             </h3>
 
             {/* Platform Selection */}
             <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-neutral-600 mb-2">
+              <label className="block text-sm font-black uppercase tracking-wider text-neutral-800 mb-3">
                 CHOOSE SOCIAL NETWORK PATH
               </label>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-3.5">
                 <button
                   type="button"
                   onClick={() => setSelectedPlatform('facebook')}
                   className={cn(
-                    "p-3 rounded-2xl border font-bold text-xs flex justify-center items-center gap-2 transition-all",
+                    "p-4 rounded-2xl border font-extrabold text-sm flex justify-center items-center gap-2 transition-all shadow-xs",
                     selectedPlatform === 'facebook'
-                      ? "bg-blue-50 border-blue-200 text-blue-700"
-                      : "bg-white border-neutral-105 hover:bg-neutral-50 text-neutral-700"
+                      ? "bg-blue-50 border-blue-200 text-blue-700 font-black ring-2 ring-blue-100"
+                      : "bg-white border-neutral-200 hover:bg-neutral-50 text-neutral-700"
                   )}
                 >
-                  <Facebook size={16} /> Facebook
+                  <Facebook size={18} /> Facebook
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedPlatform('instagram')}
                   className={cn(
-                    "p-3 rounded-2xl border font-bold text-xs flex justify-center items-center gap-2 transition-all",
+                    "p-4 rounded-2xl border font-extrabold text-sm flex justify-center items-center gap-2 transition-all shadow-xs",
                     selectedPlatform === 'instagram'
-                      ? "bg-pink-50 border-pink-200 text-pink-700"
-                      : "bg-white border-neutral-105 hover:bg-neutral-50 text-neutral-700"
+                      ? "bg-pink-50 border-pink-200 text-pink-700 font-black ring-2 ring-pink-100"
+                      : "bg-white border-neutral-200 hover:bg-neutral-50 text-neutral-700"
                   )}
                 >
-                  <Instagram size={16} /> Instagram
+                  <Instagram size={18} /> Instagram
                 </button>
                 <button
                   type="button"
                   onClick={() => setSelectedPlatform('tiktok')}
                   className={cn(
-                    "p-3 rounded-2xl border font-bold text-xs flex justify-center items-center gap-2 transition-all",
+                    "p-4 rounded-2xl border font-extrabold text-sm flex justify-center items-center gap-2 transition-all shadow-xs",
                     selectedPlatform === 'tiktok'
-                      ? "bg-neutral-900 border-neutral-950 text-white"
-                      : "bg-white border-neutral-105 hover:bg-neutral-50 text-neutral-700"
+                      ? "bg-neutral-900 border-neutral-950 text-white font-black ring-2 ring-neutral-200"
+                      : "bg-white border-neutral-200 hover:bg-neutral-50 text-neutral-700"
                   )}
                 >
-                  <Video size={16} /> TikTok
+                  <Video size={18} /> TikTok
                 </button>
               </div>
             </div>
 
             {/* Post Draft Input Form */}
-            <form onSubmit={handleSubmitOrganicPost} className="space-y-4">
+            <form onSubmit={handleSubmitOrganicPost} className="space-y-5">
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-neutral-600 mb-2">
+                <label className="block text-sm font-black uppercase tracking-wider text-neutral-800 mb-2.5">
                   Post Copywriting / Draft Content
                 </label>
                 <textarea
@@ -744,23 +744,23 @@ export default function AdminMarketing() {
                   value={postDraftContent}
                   onChange={(e) => setPostDraftContent(e.target.value)}
                   placeholder="e.g. Raise your credit score with FTF Consulting. Our legal procedures make credit repair fast & flawless!"
-                  className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 focus:bg-white transition-all text-neutral-850 placeholder:text-neutral-400"
+                  className="w-full bg-neutral-50 border border-neutral-205 rounded-2xl px-5 py-4 text-sm md:text-base font-bold focus:outline-none focus:border-neutral-950 focus:bg-white transition-all text-neutral-850 placeholder:text-neutral-400"
                   required
                 />
               </div>
 
               {/* AI Post Content Optimizer */}
-              <div className="bg-violet-50/40 border border-violet-100/50 rounded-3xl p-5 space-y-3 text-left">
+              <div className="bg-violet-50/50 border border-violet-150 rounded-3xl p-6 space-y-4 text-left">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Sparkles className="text-violet-600 size-4.5 animate-pulse" />
-                    <span className="text-xs font-extrabold text-violet-950">AI Writing Assistant (AI Copywriter)</span>
+                  <div className="flex items-center gap-2.5">
+                    <Sparkles className="text-violet-600 size-5 animate-pulse" />
+                    <span className="text-sm md:text-base font-black text-violet-950">AI Writing Assistant (AI Copywriter)</span>
                   </div>
-                  <span className="text-[9px] uppercase font-bold bg-violet-100 text-violet-700 px-2.5 py-0.5 rounded-full">
+                  <span className="text-xs uppercase font-extrabold bg-violet-100 text-violet-700 px-3 py-1 rounded-full">
                     Gemini 3.5 Active
                   </span>
                 </div>
-                <p className="text-[11px] text-violet-850/95 font-medium leading-relaxed">
+                <p className="text-xs md:text-sm font-bold text-violet-950 leading-relaxed">
                   Beautify your keywords, rough drafts, or random thoughts into highly elegant social media posts. The perfect emojis, formatting, and tags are automatically formatted!
                 </p>
                 <div className="flex flex-col gap-2">
@@ -768,23 +768,23 @@ export default function AdminMarketing() {
                     type="button"
                     onClick={handleOptimizeContent}
                     disabled={optimizingContent || !postDraftContent.trim()}
-                    className="w-full sm:w-auto self-start py-3 px-5 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-black transition-all disabled:opacity-45 disabled:hover:bg-violet-600 flex items-center justify-center gap-2 shadow-sm"
+                    className="w-full sm:w-auto self-start py-4 px-6 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white text-sm font-black transition-all disabled:opacity-45 disabled:hover:bg-violet-600 flex items-center justify-center gap-2.5 shadow-md"
                   >
                     {optimizingContent ? (
                       <>
-                        <Loader2 size={13} className="animate-spin" />
-                        <span>Beautifying...</span>
+                        <Loader2 size={14} className="animate-spin" />
+                        <span>Beautifying Draft...</span>
                       </>
                     ) : (
                       <>
-                        <Sparkles size={13} className="text-violet-200" />
+                        <Sparkles size={14} className="text-violet-200" />
                         <span>⚡ Beautify & Structure Content with AI</span>
                       </>
                     )}
                   </button>
                   {optimizeError && (
-                    <div className="text-[11px] text-red-600 bg-red-50 p-2.5 rounded-xl font-semibold flex items-start gap-1">
-                      <AlertCircle size={12} className="shrink-0 mt-0.5" />
+                    <div className="text-xs md:text-sm text-red-700 bg-red-50 p-3 rounded-xl font-bold flex items-start gap-1.5 border border-red-100">
+                      <AlertCircle size={14} className="shrink-0 mt-0.5" />
                       <span>{optimizeError}</span>
                     </div>
                   )}
@@ -793,11 +793,11 @@ export default function AdminMarketing() {
 
               {/* Optional Post Media Preview */}
               <div>
-                <label className="block text-xs font-black uppercase tracking-wider text-neutral-600 mb-2">
+                <label className="block text-sm font-black uppercase tracking-wider text-neutral-800 mb-2.5">
                   Attach Creative Artwork / Banner
                 </label>
                 <div className="flex items-center gap-4">
-                  <label className="cursor-pointer bg-neutral-100 hover:bg-neutral-200 border border-neutral-200/50 rounded-2xl px-5 py-3 text-xs font-bold text-neutral-800 transition-all shadow-sm shrink-0">
+                  <label className="cursor-pointer bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 rounded-2xl px-6 py-4 text-sm font-extrabold text-neutral-900 transition-all shadow-sm shrink-0">
                     <span>Upload Image File</span>
                     <input 
                       type="file" 
@@ -807,36 +807,36 @@ export default function AdminMarketing() {
                     />
                   </label>
                   {postBase64Image ? (
-                    <div className="flex items-center gap-2">
-                      <img src={postBase64Image} alt="Post asset preview" className="size-11 rounded-lg border border-neutral-200 object-cover" />
+                    <div className="flex items-center gap-3">
+                      <img src={postBase64Image} alt="Post asset preview" className="size-14 rounded-xl border-2 border-neutral-200 object-cover" />
                       <button 
                         type="button" 
                         onClick={() => setPostBase64Image(null)}
-                        className="text-xs text-red-500 font-bold hover:underline"
+                        className="text-xs md:text-sm text-red-650 font-black hover:underline"
                       >
                         Remove
                       </button>
                     </div>
                   ) : (
-                    <span className="text-[10px] uppercase font-bold text-neutral-400">No Image Attached (Text-Only Post)</span>
+                    <span className="text-xs uppercase font-extrabold text-neutral-500">No Image Attached (Text-Only Post)</span>
                   )}
                 </div>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-3">
                 <button
                   type="submit"
                   disabled={sendingPost || !postDraftContent.trim()}
-                  className="w-full py-4 rounded-2xl bg-neutral-900 border border-neutral-900 text-white text-xs font-bold hover:bg-neutral-800 disabled:opacity-30 transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                  className="w-full py-4.5 rounded-2xl bg-neutral-900 border border-neutral-900 text-white text-sm font-black hover:bg-neutral-800 disabled:opacity-30 transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
                 >
                   {sendingPost ? (
                     <>
-                      <Loader2 size={16} className="animate-spin" />
+                      <Loader2 size={18} className="animate-spin" />
                       <span>Broadcasting social feeds...</span>
                     </>
                   ) : (
                     <>
-                      <Megaphone size={16} />
+                      <Megaphone size={18} />
                       <span>Publish Organically Now</span>
                     </>
                   )}
@@ -847,31 +847,31 @@ export default function AdminMarketing() {
 
           {/* Social feed simulation preview */}
           <div className="space-y-6">
-            <div className="bg-neutral-50 rounded-[32px] p-6 border border-neutral-100 relative min-h-[450px]">
-              <span className="text-[10px] font-bold tracking-widest text-neutral-400 uppercase mb-4 block">Interactive Live Preview</span>
+            <div className="bg-neutral-50 rounded-[32px] p-8 border border-neutral-150 relative min-h-[450px]">
+              <span className="text-xs font-black tracking-widest text-neutral-500 uppercase mb-4 block">Interactive Live Preview</span>
 
               {/* Feed Card container resembling a smartphone feed */}
-              <div className="bg-white border text-left border-neutral-200/60 rounded-2xl overflow-hidden shadow-sm max-w-sm mx-auto">
+              <div className="bg-white border text-left border-neutral-205 rounded-2xl overflow-hidden shadow-md max-w-sm mx-auto">
                 {/* Channel banner */}
                 <div className="p-4 flex items-center justify-between border-b border-neutral-100">
-                  <div className="flex items-center gap-2.5">
-                    <div className="size-8 rounded-full bg-neutral-900 text-white flex items-center justify-center font-bold text-xs uppercase">
+                  <div className="flex items-center gap-3">
+                    <div className="size-10 rounded-full bg-neutral-950 text-white flex items-center justify-center font-black text-sm uppercase">
                       F
                     </div>
                     <div>
-                      <h4 className="font-bold text-xs text-neutral-900">FTF Agency Branding</h4>
-                      <p className="text-[9px] text-neutral-400 font-semibold uppercase tracking-wider flex items-center gap-1 mt-0.5">
+                      <h4 className="font-extrabold text-sm md:text-base text-neutral-950">FTF Agency Branding</h4>
+                      <p className="text-xs text-neutral-500 font-bold uppercase tracking-wider flex items-center gap-1 mt-0.5">
                         <span>Just now</span>
                         <span>•</span>
-                        <Globe size={9} />
+                        <Globe size={11} className="text-neutral-400" />
                       </p>
                     </div>
                   </div>
                 </div>
 
                 {/* Content draft body */}
-                <div className="p-4">
-                  <p className="text-xs text-neutral-800 leading-normal whitespace-pre-wrap">
+                <div className="p-5 border-b border-neutral-50">
+                  <p className="text-sm md:text-base text-neutral-900 leading-relaxed font-semibold whitespace-pre-wrap">
                     {postDraftContent || 'Write something in the copywriting box to preview how it looks live on social feeds.'}
                   </p>
                 </div>
@@ -884,73 +884,72 @@ export default function AdminMarketing() {
                 )}
 
                 {/* Bottom Sim Action buttons */}
-                <div className="p-3 border-t border-neutral-100 bg-neutral-50/50 flex items-center justify-between font-bold text-[10px] text-neutral-500 uppercase">
-                  <span>👍 Like</span>
-                  <span>💬 Comment</span>
-                  <span>🔄 Share</span>
+                <div className="p-4 border-t border-neutral-100 bg-neutral-50/50 flex items-center justify-around font-extrabold text-xs text-neutral-600 uppercase">
+                  <span className="hover:text-blue-600 cursor-pointer transition-all">👍 Like</span>
+                  <span className="hover:text-blue-600 cursor-pointer transition-all">💬 Comment</span>
+                  <span className="hover:text-blue-600 cursor-pointer transition-all">🔄 Share</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        </div>
+      </div>
       )}
-
-      {/* COMPLETED HISTORY TAB */}
+           {/* COMPLETED HISTORY TAB */}
       {subTab === 'history' && (
         <div className="space-y-6">
           {/* Top level stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="rounded-2xl border border-neutral-100 bg-white p-6 flex justify-between items-center shadow-xs">
-              <div>
-                <p className="text-[10px] font-black uppercase text-neutral-400 tracking-wider">Paid Campaigns Launched</p>
-                <h4 className="font-display text-3xl font-black text-neutral-900 mt-2">{campaigns.length}</h4>
+            <div className="rounded-2xl border border-neutral-150 bg-white p-7 flex justify-between items-center shadow-sm">
+              <div className="space-y-1">
+                <p className="text-xs font-black uppercase text-neutral-500 tracking-wider">Paid Campaigns Launched</p>
+                <h4 className="font-display text-4xl font-black text-neutral-950">{campaigns.length}</h4>
               </div>
-              <div className="size-12 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center">
-                <Layers size={22} />
+              <div className="size-14 rounded-2xl bg-violet-50 text-violet-600 flex items-center justify-center border border-violet-100">
+                <Layers size={26} />
               </div>
             </div>
 
-            <div className="rounded-2xl border border-neutral-100 bg-white p-6 flex justify-between items-center shadow-xs">
-              <div>
-                <p className="text-[10px] font-black uppercase text-neutral-400 tracking-wider">Total Ads Direct Investment</p>
-                <h4 className="font-display text-3xl font-black text-neutral-900 mt-2">
+            <div className="rounded-2xl border border-neutral-150 bg-white p-7 flex justify-between items-center shadow-sm">
+              <div className="space-y-1">
+                <p className="text-xs font-black uppercase text-neutral-500 tracking-wider">Total Ads Direct Investment</p>
+                <h4 className="font-display text-4xl font-black text-neutral-950">
                   ${campaigns.reduce((sum, c) => sum + Number(c.amount), 0).toFixed(2)}
                 </h4>
               </div>
-              <div className="size-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                <DollarSign size={22} />
+              <div className="size-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
+                <DollarSign size={26} />
               </div>
             </div>
 
-            <div className="rounded-2xl border border-neutral-100 bg-white p-6 flex justify-between items-center shadow-xs">
-              <div>
-                <p className="text-[10px] font-black uppercase text-neutral-400 tracking-wider">Audience Reach Accelerated</p>
-                <h4 className="font-display text-3xl font-black text-neutral-900 mt-2">
+            <div className="rounded-2xl border border-neutral-150 bg-white p-7 flex justify-between items-center shadow-sm">
+              <div className="space-y-1">
+                <p className="text-xs font-black uppercase text-neutral-500 tracking-wider">Audience Reach Accelerated</p>
+                <h4 className="font-display text-4xl font-black text-neutral-950">
                   {campaigns.reduce((sum, c) => sum + (c.estimatedReach || 0), 0).toLocaleString()}
                 </h4>
               </div>
-              <div className="size-12 rounded-xl bg-pink-50 text-pink-600 flex items-center justify-center">
-                <Award size={22} />
+              <div className="size-14 rounded-2xl bg-pink-50 text-pink-600 flex items-center justify-center border border-pink-100">
+                <Award size={26} />
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Campaigns table */}
-            <div className="lg:col-span-2 rounded-[32px] border border-neutral-100 bg-white p-8 shadow-sm">
-              <h3 className="font-display text-xl font-bold text-neutral-950 mb-6">Paid Campaigns Overview</h3>
+            <div className="lg:col-span-2 rounded-[32px] border border-neutral-150 bg-white p-10 shadow-md">
+              <h3 className="font-display text-2xl font-black text-neutral-950 mb-6 pb-2 border-b border-neutral-100">Paid Campaigns Overview</h3>
               {loadingCampaigns ? (
                 <div className="flex items-center justify-center py-10">
                   <Loader2 size={24} className="animate-spin text-neutral-300" />
                 </div>
               ) : campaigns.length === 0 ? (
-                <p className="text-xs text-neutral-450 italic">No paid campaigns launched yet. Start by scheduling a booster campaign in the plans section.</p>
+                <p className="text-sm font-semibold text-neutral-500 italic">No paid campaigns launched yet. Start by scheduling a booster campaign in the plans section.</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
+                  <table className="w-full text-left text-xs md:text-sm border-collapse">
                     <thead>
-                      <tr className="border-b border-neutral-100 font-bold uppercase tracking-wider text-neutral-400 text-3xs">
+                      <tr className="border-b border-neutral-200 font-extrabold uppercase tracking-wider text-neutral-500 text-2xs">
                         <th className="py-3 px-2">Ad Plan</th>
                         <th className="py-3 px-2">Duration</th>
                         <th className="py-3 px-2">Amount</th>
@@ -959,24 +958,24 @@ export default function AdminMarketing() {
                         <th className="py-3 px-2 text-right">Expiration</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-neutral-50">
+                    <tbody className="divide-y divide-neutral-100 text-neutral-800 font-medium">
                       {campaigns.map((camp) => (
                         <tr key={camp.id} className="hover:bg-neutral-50/50">
                           <td className="py-4 px-2">
                             <div>
-                              <span className="font-semibold text-neutral-850 capitalize">{camp.planName} Booster</span>
-                              <p className="text-[10px] text-neutral-400 truncate max-w-[150px] font-semibold">{camp.keywords || 'Broad'}</p>
+                              <span className="font-bold text-neutral-900 capitalize text-sm md:text-base">{camp.planName} Booster</span>
+                              <p className="text-xs text-neutral-500 truncate max-w-[150px] font-bold">{camp.keywords || 'Broad'}</p>
                             </div>
                           </td>
-                          <td className="py-4 px-2 font-medium">{camp.durationDays} Days</td>
-                          <td className="py-4 px-2 font-bold text-neutral-900">${Number(camp.amount).toFixed(2)}</td>
-                          <td className="py-4 px-2 font-black text-indigo-600">{camp.estimatedReach.toLocaleString()} views</td>
+                          <td className="py-4 px-2 font-semibold">{camp.durationDays} Days</td>
+                          <td className="py-4 px-2 font-black text-neutral-950 text-sm">${Number(camp.amount).toFixed(2)}</td>
+                          <td className="py-4 px-2 font-black text-indigo-750 text-sm">{camp.estimatedReach.toLocaleString()} views</td>
                           <td className="py-4 px-2">
-                            <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-50 border border-emerald-100 text-emerald-600 uppercase tracking-widest">
+                            <span className="px-3 py-1 rounded-full text-xs font-black bg-emerald-50 border border-emerald-150 text-emerald-700 uppercase tracking-wider">
                               ACTIVE
                             </span>
                           </td>
-                          <td className="py-4 px-2 text-right text-neutral-400 text-[10px] font-semibold">
+                          <td className="py-4 px-2 text-right text-neutral-500 text-xs font-bold">
                             {camp.expiresAt ? new Date(camp.expiresAt).toLocaleDateString() : 'N/A'}
                           </td>
                         </tr>
@@ -988,25 +987,25 @@ export default function AdminMarketing() {
             </div>
 
             {/* Organic posts feed logs */}
-            <div className="rounded-[32px] border border-neutral-100 bg-white p-8 shadow-sm">
-              <h3 className="font-display text-xl font-bold text-neutral-950 mb-6">Social Organic Feed Logs</h3>
+            <div className="rounded-[32px] border border-neutral-150 bg-white p-10 shadow-md">
+              <h3 className="font-display text-2xl font-black text-neutral-950 mb-6 pb-2 border-b border-neutral-100">Social Organic Feed Logs</h3>
               {loadingPosts ? (
                 <div className="flex items-center justify-center py-10">
                   <Loader2 size={18} className="animate-spin text-neutral-300" />
                 </div>
               ) : posts.length === 0 ? (
-                <p className="text-xs text-neutral-450 italic">No social feeds published yet.</p>
+                <p className="text-sm font-semibold text-neutral-500 italic">No social feeds published yet.</p>
               ) : (
                 <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2">
                   {posts.map((post) => (
-                    <div key={post.id} className="p-4 border border-neutral-100 bg-neutral-50/30 rounded-2xl text-xs space-y-2">
+                    <div key={post.id} className="p-4 border border-neutral-150 bg-neutral-50/30 rounded-2xl text-sm space-y-3 font-semibold">
                       <div className="flex justify-between items-center">
-                        <span className="capitalize font-bold px-2 py-0.5 rounded-full bg-neutral-900 text-white text-3xs">
+                        <span className="capitalize font-extrabold px-2.5 py-0.5 rounded-full bg-neutral-900 text-white text-2xs">
                           {post.platform}
                         </span>
-                        <span className="text-[9px] text-neutral-450 font-semibold">{new Date(post.createdAt).toLocaleDateString()}</span>
+                        <span className="text-xs text-neutral-500 font-bold">{new Date(post.createdAt).toLocaleDateString()}</span>
                       </div>
-                      <p className="text-neutral-700 leading-normal line-clamp-3">{post.content}</p>
+                      <p className="text-neutral-800 leading-relaxed font-bold">{post.content}</p>
                     </div>
                   ))}
                 </div>
@@ -1019,15 +1018,15 @@ export default function AdminMarketing() {
       {/* SOCIAL CONNECTORS TAB */}
       {subTab === 'connectors' && (
         <div className="space-y-6 animate-in fade-in duration-300 text-left">
-          <div className="bg-emerald-50/50 border border-emerald-100/50 rounded-3xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="space-y-1">
-              <span className="text-[10px] font-black uppercase text-emerald-800 tracking-wider flex items-center gap-1.5 bg-emerald-100/60 border border-emerald-200/50 px-2.5 py-0.5 rounded-full w-fit">
-                <Activity size={12} /> Status Monitor
+          <div className="bg-emerald-50/60 border border-emerald-150 rounded-3xl p-8 flex flex-col xl:flex-row items-start xl:items-center justify-between gap-6 shadow-sm">
+            <div className="space-y-2">
+              <span className="text-xs font-black uppercase text-emerald-800 tracking-wider flex items-center gap-1.5 bg-emerald-100 border border-emerald-250 px-3 py-1 rounded-full w-fit">
+                <Activity size={14} /> Status Monitor
               </span>
-              <h3 className="font-display text-base font-bold text-neutral-900 mt-2">
+              <h3 className="font-display text-xl font-extrabold text-neutral-950 mt-2.5">
                 {productionMode ? "🔴 Direct Live Production Mode Active" : "🟢 Sandbox Simulation Mode Active"}
               </h3>
-              <p className="text-xs text-neutral-500 leading-normal max-w-2xl">
+              <p className="text-sm font-semibold text-neutral-600 leading-relaxed max-w-3xl">
                 If **Direct Live Production Mode** is active, clicking "Publish Organically Now" will dispatch the post directly to your Facebook Page, Instagram Business profile, or TikTok account. Otherwise, it compiles safely into your sandbox mock logs.
               </p>
             </div>
@@ -1036,7 +1035,7 @@ export default function AdminMarketing() {
               type="button"
               onClick={() => setProductionMode(!productionMode)}
               className={cn(
-                "py-3 px-5 text-xs font-black rounded-2xl transition-all shadow-sm shrink-0 uppercase tracking-wider select-none cursor-pointer",
+                "py-4 px-6 text-sm font-black rounded-2xl transition-all shadow-md shrink-0 uppercase tracking-wider select-none cursor-pointer",
                 productionMode 
                   ? "bg-red-600 hover:bg-red-700 text-white" 
                   : "bg-neutral-900 hover:bg-neutral-850 text-white"
@@ -1045,32 +1044,32 @@ export default function AdminMarketing() {
               {productionMode ? "Switch to Sandbox Mode" : "Switch to Direct Live Mode"}
             </button>
           </div>
- 
+  
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Forms configuration column */}
             <form onSubmit={handleSaveConnectors} className="lg:col-span-2 space-y-6">
-              <div className="bg-white rounded-[32px] border border-neutral-100 p-8 shadow-sm space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-105 pb-4">
-                  <h3 className="font-display text-xl font-bold text-neutral-950 flex items-center gap-2">
-                    <Globe size={20} className="text-violet-600" />
+              <div className="bg-white rounded-[32px] border border-neutral-150 p-10 shadow-md space-y-8">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-100 pb-5">
+                  <h3 className="font-display text-2xl font-black text-neutral-950 flex items-center gap-3">
+                    <Globe size={24} className="text-violet-650" />
                     Social API Connectors & Credentials
                   </h3>
                   
                   {/* Mode preference selector */}
-                  <div className="flex items-center gap-2 bg-violet-50/80 border border-violet-100/60 px-4 py-2 rounded-2xl">
+                  <div className="flex items-center gap-2.5 bg-violet-50/90 border border-violet-100 px-5 py-3 rounded-2xl">
                     <input 
                       type="checkbox" 
                       id="quickConnectToggle"
                       checked={quickConnectMode}
                       onChange={(e) => setQuickConnectMode(e.target.checked)}
-                      className="h-4 w-4 text-violet-600 focus:ring-violet-500 rounded border-neutral-200 cursor-pointer"
+                      className="h-4 w-4 text-violet-650 focus:ring-violet-500 rounded border-neutral-200 cursor-pointer"
                     />
-                    <label htmlFor="quickConnectToggle" className="text-xs font-semibold text-violet-950 cursor-pointer select-none">
+                    <label htmlFor="quickConnectToggle" className="text-sm font-bold text-violet-950 cursor-pointer select-none">
                       ⚡ Quick Connect with ID Only (Token-free)
                     </label>
                   </div>
                 </div>
- 
+  
                 {loadingConnectors ? (
                   <div className="flex flex-col items-center justify-center py-12 gap-3">
                     <Loader2 className="animate-spin text-neutral-400" size={32} />
@@ -1079,42 +1078,42 @@ export default function AdminMarketing() {
                 ) : (
                   <div className="space-y-6">
                     {quickConnectMode && (
-                      <div className="bg-emerald-50/60 border border-emerald-100/50 p-4 rounded-2xl flex items-start gap-2.5">
-                        <span className="text-emerald-700 mt-0.5">⚡</span>
-                        <div className="space-y-0.5">
-                          <h4 className="font-bold text-xs text-emerald-950">Page ID Direct Connector Active</h4>
-                          <p className="text-[11px] text-emerald-800 leading-normal">
+                      <div className="bg-emerald-50/60 border border-emerald-150 p-5 rounded-2xl flex items-start gap-3">
+                        <span className="text-emerald-700 mt-0.5 text-base">⚡</span>
+                        <div className="space-y-1">
+                          <h4 className="font-extrabold text-sm md:text-base text-emerald-950">Page ID Direct Connector Active</h4>
+                          <p className="text-xs md:text-sm font-bold text-emerald-850 leading-relaxed">
                             No complex permanent API access tokens required! Simply configure your social Page IDs and save. Our smart direct gateway handles direct posting tasks automatically.
                           </p>
                         </div>
                       </div>
                     )}
-
+ 
                     {/* Facebook Group */}
-                    <div className="bg-blue-50/40 border border-blue-100 placeholder:text-neutral-450 rounded-2xl p-6 space-y-4">
-                      <h4 className="font-bold text-xs text-blue-900 flex items-center gap-2">
-                        <Facebook size={16} /> Facebook Page Gateway
+                    <div className="bg-blue-50/40 border border-blue-100 rounded-2xl p-6 space-y-4">
+                      <h4 className="font-black text-sm text-blue-900 flex items-center gap-2.5">
+                        <Facebook size={18} /> Facebook Page Gateway
                       </h4>
                       <div className={cn("grid grid-cols-1 gap-4", quickConnectMode ? "md:grid-cols-1" : "md:grid-cols-2")}>
                         <div>
-                          <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Facebook Page ID</label>
+                          <label className="block text-xs font-black uppercase tracking-wider text-neutral-750 mb-1.5">Facebook Page ID</label>
                           <input 
                             type="text" 
                             placeholder="e.g. 102456239102931" 
                             value={facebookPageId}
                             onChange={(e) => setFacebookPageId(e.target.value)}
-                            className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
+                            className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
                           />
                         </div>
                         {!quickConnectMode && (
                           <div>
-                            <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Page Permanent Access Token</label>
+                            <label className="block text-xs font-black uppercase tracking-wider text-neutral-750 mb-1.5">Page Permanent Access Token</label>
                             <input 
                               type="password" 
                               placeholder={facebookAccessToken ? "••••••••••••••••" : "Paste EAAXX... permanent token"} 
                               value={facebookAccessToken}
                               onChange={(e) => setFacebookAccessToken(e.target.value)}
-                              className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
+                              className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
                             />
                           </div>
                         )}
@@ -1123,29 +1122,29 @@ export default function AdminMarketing() {
 
                     {/* Instagram Group */}
                     <div className="bg-pink-50/40 border border-pink-100 rounded-2xl p-6 space-y-4">
-                      <h4 className="font-bold text-xs text-pink-900 flex items-center gap-2">
-                        <Instagram size={16} /> Instagram Business API Connector
+                      <h4 className="font-black text-sm text-pink-900 flex items-center gap-2.5">
+                        <Instagram size={18} /> Instagram Business API Connector
                       </h4>
                       <div className={cn("grid grid-cols-1 gap-4", quickConnectMode ? "md:grid-cols-1" : "md:grid-cols-2")}>
                         <div>
-                          <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Instagram Business ID (Page ID)</label>
+                          <label className="block text-xs font-black uppercase tracking-wider text-neutral-750 mb-1.5">Instagram Business ID (Page ID)</label>
                           <input 
                             type="text" 
                             placeholder="e.g. 178414029102456" 
                             value={instagramBusinessId}
                             onChange={(e) => setInstagramBusinessId(e.target.value)}
-                            className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
+                            className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
                           />
                         </div>
                         {!quickConnectMode && (
                           <div>
-                            <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Instagram Access Token</label>
+                            <label className="block text-xs font-black uppercase tracking-wider text-neutral-750 mb-1.5">Instagram Access Token</label>
                             <input 
                               type="password" 
                               placeholder={instagramAccessToken ? "••••••••••••••••" : "Paste IG token (EAAXX...)"} 
                               value={instagramAccessToken}
                               onChange={(e) => setInstagramAccessToken(e.target.value)}
-                              className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
+                              className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
                             />
                           </div>
                         )}
@@ -1154,29 +1153,29 @@ export default function AdminMarketing() {
 
                     {/* TikTok Group */}
                     <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-6 space-y-4">
-                      <h4 className="font-bold text-xs text-neutral-900 flex items-center gap-2">
-                        <Video size={16} /> TikTok Content Publisher Config
+                      <h4 className="font-black text-sm text-neutral-900 flex items-center gap-2.5">
+                        <Video size={18} /> TikTok Content Publisher Config
                       </h4>
                       <div className={cn("grid grid-cols-1 gap-4", quickConnectMode ? "md:grid-cols-1" : "md:grid-cols-2")}>
                         <div>
-                          <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">TikTok Client/Creator ID (Page/Account ID)</label>
+                          <label className="block text-xs font-black uppercase tracking-wider text-neutral-750 mb-1.5">TikTok Client/Creator ID (Page/Account ID)</label>
                           <input 
                             type="text" 
                             placeholder="e.g. act_1028373190" 
                             value={tiktokAccountId}
                             onChange={(e) => setTiktokAccountId(e.target.value)}
-                            className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
+                            className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
                           />
                         </div>
                         {!quickConnectMode && (
                           <div>
-                            <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">TikTok Developer Access Token</label>
+                            <label className="block text-xs font-black uppercase tracking-wider text-neutral-750 mb-1.5">TikTok Developer Access Token</label>
                             <input 
                               type="password" 
                               placeholder={tiktokAccessToken ? "••••••••••••••••" : "Paste TikTok App token"} 
                               value={tiktokAccessToken}
                               onChange={(e) => setTiktokAccessToken(e.target.value)}
-                              className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
+                              className="w-full bg-white border border-neutral-200 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
                             />
                           </div>
                         )}
@@ -1185,15 +1184,15 @@ export default function AdminMarketing() {
                   </div>
                 )}
 
-                <div className="flex justify-end pt-4 border-t border-neutral-100">
+                <div className="flex justify-end pt-5 border-t border-neutral-100">
                   <button
                     type="submit"
                     disabled={savingConnectors || loadingConnectors}
-                    className="py-4 px-8 rounded-2xl bg-neutral-900 border border-neutral-900 hover:bg-neutral-800 text-white text-xs font-black uppercase tracking-widest transition-all shadow-md hover:shadow-lg disabled:opacity-30 cursor-pointer"
+                    className="py-4.5 px-8 rounded-2xl bg-neutral-900 border border-neutral-900 hover:bg-neutral-800 text-white text-sm font-black uppercase tracking-wide transition-all shadow-md hover:shadow-lg disabled:opacity-30 cursor-pointer"
                   >
                     {savingConnectors ? (
                       <span className="flex items-center gap-1.5">
-                        <Loader2 size={14} className="animate-spin" /> Synchronizing...
+                        <Loader2 size={16} className="animate-spin" /> Synchronizing...
                       </span>
                     ) : (
                       "Save Integration Keys"
@@ -1204,40 +1203,40 @@ export default function AdminMarketing() {
             </form>
 
             {/* Documentation Guidelines column */}
-            <div className="rounded-[32px] border border-neutral-100 bg-white p-8 shadow-sm space-y-6 text-left">
-              <h3 className="font-display text-base font-bold text-neutral-950 flex items-center gap-1.5">
-                <Plus size={18} className="text-violet-600" />
+            <div className="rounded-[32px] border border-neutral-150 bg-white p-10 shadow-md space-y-6 text-left">
+              <h3 className="font-display text-lg font-black text-neutral-950 flex items-center gap-2 border-b border-neutral-100 pb-2">
+                <Plus size={20} className="text-violet-600" />
                 Setup Steps & Directives
               </h3>
               
-              <div className="space-y-4 text-xs text-neutral-600 leading-relaxed">
-                <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-105 space-y-2">
-                  <h4 className="font-bold text-blue-950 text-xs">📘 Facebook Integration (Facebook Page)</h4>
-                  <ul className="list-decimal pl-4 space-y-1 text-[11px] text-blue-900">
+              <div className="space-y-4 text-xs md:text-sm text-neutral-700 leading-relaxed font-semibold">
+                <div className="p-5 rounded-2xl bg-blue-50/50 border border-blue-150 space-y-2">
+                  <h4 className="font-black text-blue-950 text-sm">📘 Facebook Integration (Facebook Page)</h4>
+                  <ul className="list-decimal pl-5 space-y-1.5 text-xs md:text-sm text-blue-900">
                     <li>Create an App inside the Meta Developer Console and configure Page permissions.</li>
                     <li>Acquire a permanent, never-expiring **Page Access Token** using Meta's Graph API Explorer tool.</li>
                     <li>Retrieve and save your Facebook **Page ID** into the connector configuration.</li>
                   </ul>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-pink-50/50 border border-pink-105 space-y-2">
-                  <h4 className="font-bold text-pink-950 text-xs">📙 Instagram Business (Instagram Profile)</h4>
-                  <ul className="list-decimal pl-4 space-y-1 text-[11px] text-pink-900">
+                <div className="p-5 rounded-2xl bg-pink-50/50 border border-pink-150 space-y-2">
+                  <h4 className="font-black text-pink-955 text-sm">📙 Instagram Business (Instagram Profile)</h4>
+                  <ul className="list-decimal pl-5 space-y-1.5 text-xs md:text-sm text-pink-900 bg-transparent">
                     <li>Ensure your Instagram profile is converted to a Professional Business Account.</li>
                     <li>Link your Instagram Business Account directly with your connected Facebook Page.</li>
                     <li>Retrieve and input your **Instagram Business ID** from your Meta Graph setup.</li>
                   </ul>
                 </div>
 
-                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-2">
-                  <h4 className="font-bold text-neutral-900 text-xs">⬛ TikTok Content API (TikTok Profile)</h4>
-                  <ul className="list-decimal pl-4 space-y-1 text-[11px] text-neutral-700">
+                <div className="p-5 rounded-2xl bg-neutral-55 border border-neutral-150 space-y-2">
+                  <h4 className="font-black text-neutral-950 text-sm">⬛ TikTok Content API (TikTok Profile)</h4>
+                  <ul className="list-decimal pl-5 space-y-1.5 text-xs md:text-sm text-neutral-850 bg-transparent">
                     <li>Register a developer profile on the official TikTok For Developers portal.</li>
                     <li>Gain approvals for "Direct Content Posting" and generate client/creator tokens to integrate.</li>
                   </ul>
                 </div>
 
-                <div className="pt-2 text-[10.5px] italic text-neutral-400 font-semibold text-center border-t border-neutral-100">
+                <div className="pt-3 text-xs italic text-neutral-500 font-semibold text-center border-t border-neutral-100">
                   ⚠️ Note: Direct Live Mode runs actual network payloads under the https protocol. Images are programmatically mapped directly to keep scrapers active.
                 </div>
               </div>
@@ -1249,16 +1248,16 @@ export default function AdminMarketing() {
       {/* PAYMENT AND CARD BILLING MODAL */}
       {showPaymentModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-[32px] max-w-md w-full p-8 border border-neutral-100 shadow-xl relative overflow-hidden text-left">
-            <h3 className="font-display text-2xl font-bold text-neutral-950 mb-2">Secure Credit Card Gateway</h3>
-            <p className="text-xs text-neutral-400 mb-6">Process payment securely via our linked agency billing network.</p>
+          <div className="bg-white rounded-[32px] max-w-lg w-full p-10 border border-neutral-150 shadow-2xl relative overflow-hidden text-left">
+            <h3 className="font-display text-3xl font-black text-neutral-950 mb-2">Secure Credit Card Gateway</h3>
+            <p className="text-sm font-semibold text-neutral-550 mb-7">Process payment securely via our linked agency billing network.</p>
 
             {paymentSuccessMessage ? (
-              <div className="space-y-4 text-center py-6">
-                <div className="size-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
-                  <CheckCircle2 size={24} />
+              <div className="space-y-6 text-center py-8">
+                <div className="size-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                  <CheckCircle2 size={32} />
                 </div>
-                <p className="text-xs font-bold text-emerald-800 bg-emerald-50/50 p-4 border border-emerald-100 rounded-2xl leading-relaxed whitespace-pre-wrap">
+                <p className="text-sm font-bold text-emerald-900 bg-emerald-50 border border-emerald-150 p-5 rounded-2xl leading-relaxed whitespace-pre-wrap">
                   {paymentSuccessMessage}
                 </p>
                 <button
@@ -1266,38 +1265,38 @@ export default function AdminMarketing() {
                     setShowPaymentModal(false);
                     setPaymentSuccessMessage(null);
                   }}
-                  className="w-full py-3 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-all"
+                  className="w-full py-4 text-sm font-black uppercase tracking-wider rounded-2xl bg-neutral-900 hover:bg-neutral-850 text-white transition-all cursor-pointer"
                 >
                   Return to Dashboard
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleProcessManualPayment} className="space-y-5">
+              <form onSubmit={handleProcessManualPayment} className="space-y-6">
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Selected Plan Price</label>
-                  <div className="p-4 bg-neutral-50 rounded-2xl border border-neutral-100 flex items-center justify-between">
+                  <label className="block text-xs font-black uppercase tracking-wider text-neutral-700 mb-1.5">Selected Plan Price</label>
+                  <div className="p-5 bg-neutral-50 rounded-2xl border border-neutral-150 flex items-center justify-between">
                     <div>
-                      <span className="text-xs font-bold text-neutral-800 capitalize">{plans[selectedPlan].name}</span>
-                      <p className="text-[10.5px] text-neutral-450 mt-0.5">Duration: {plans[selectedPlan].days} Days</p>
+                      <span className="text-sm font-black text-neutral-900 capitalize">{plans[selectedPlan].name}</span>
+                      <p className="text-xs font-bold text-neutral-550 mt-0.5">Duration: {plans[selectedPlan].days} Days</p>
                     </div>
-                    <span className="font-display text-xl font-bold text-neutral-900">${plans[selectedPlan].price}.00</span>
+                    <span className="font-display text-2xl font-black text-emerald-700">${plans[selectedPlan].price}.00</span>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Cardholder Full Name</label>
+                  <label className="block text-xs font-black uppercase tracking-wider text-neutral-700 mb-1.5">Cardholder Full Name</label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. John Doe"
                     value={cardName}
                     onChange={(e) => setCardName(e.target.value)}
-                    className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-4 py-3.5 text-xs font-semibold focus:outline-none focus:border-neutral-950 focus:bg-white transition-all text-neutral-850 placeholder:text-neutral-400"
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:border-neutral-950 focus:bg-white transition-all text-neutral-850 placeholder:text-neutral-400"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Credit Card Number</label>
+                  <label className="block text-xs font-black uppercase tracking-wider text-neutral-700 mb-1.5">Credit Card Number</label>
                   <input
                     type="text"
                     required
@@ -1309,13 +1308,13 @@ export default function AdminMarketing() {
                       const val = e.target.value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim();
                       setCardNumber(val);
                     }}
-                    className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-4 py-3.5 text-xs font-semibold focus:outline-none focus:border-neutral-950 focus:bg-white transition-all text-neutral-850 placeholder:text-neutral-400"
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:border-neutral-950 focus:bg-white transition-all text-neutral-850 placeholder:text-neutral-400"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Expiration date</label>
+                    <label className="block text-xs font-black uppercase tracking-wider text-neutral-700 mb-1.5">Expiration date</label>
                     <input
                       type="text"
                       required
@@ -1329,11 +1328,11 @@ export default function AdminMarketing() {
                         }
                         setCardExpiry(val);
                       }}
-                      className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-4 py-3.5 text-xs font-semibold focus:outline-none focus:border-neutral-950 focus:bg-white transition-all text-neutral-850 placeholder:text-neutral-400"
+                      className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:border-neutral-950 focus:bg-white transition-all text-neutral-850 placeholder:text-neutral-400"
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Security Code (CVC)</label>
+                    <label className="block text-xs font-black uppercase tracking-wider text-neutral-700 mb-1.5">Security Code (CVC)</label>
                     <input
                       type="text"
                       required
@@ -1341,35 +1340,35 @@ export default function AdminMarketing() {
                       maxLength={4}
                       value={cardCvc}
                       onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, ''))}
-                      className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-4 py-3.5 text-xs font-semibold focus:outline-none focus:border-neutral-950 focus:bg-white transition-all text-neutral-850 placeholder:text-neutral-400"
+                      className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:border-neutral-950 focus:bg-white transition-all text-neutral-850 placeholder:text-neutral-400"
                     />
                   </div>
                 </div>
 
-                <div className="pt-4 flex gap-3">
+                <div className="pt-6 flex gap-4">
                   <button
                     type="button"
                     onClick={() => {
                       setShowPaymentModal(false);
                       setPaymentSuccessMessage(null);
                     }}
-                    className="flex-1 py-3.5 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-850 text-xs font-bold transition-all"
+                    className="flex-1 py-4.5 rounded-2xl bg-neutral-105 hover:bg-neutral-200 text-neutral-850 text-sm font-black uppercase tracking-wider transition-all cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={isProcessingCard}
-                    className="flex-1 py-3.5 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-md"
+                    className="flex-1 py-4.5 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
                   >
                     {isProcessingCard ? (
                       <>
-                        <Loader2 size={14} className="animate-spin" />
+                        <Loader2 size={16} className="animate-spin" />
                         <span>Verifying...</span>
                       </>
                     ) : (
                       <>
-                        <CheckCircle2 size={14} />
+                        <CheckCircle2 size={16} />
                         <span>Authorize Payment</span>
                       </>
                     )}
