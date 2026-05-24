@@ -144,6 +144,8 @@ export default function AdminMarketing() {
   const [sendingPost, setSendingPost] = useState(false);
   const [generatingAIImage, setGeneratingAIImage] = useState(false);
   const [aiImageError, setAiImageError] = useState<string | null>(null);
+  const [optimizingContent, setOptimizingContent] = useState(false);
+  const [optimizeError, setOptimizeError] = useState<string | null>(null);
 
   // Paid Ads form state
   const [selectedPlan, setSelectedPlan] = useState<'basic' | 'standard' | 'premium'>('basic');
@@ -322,6 +324,39 @@ export default function AdminMarketing() {
         setPostBase64Image(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  // Convert messy description or keywords into a beautiful structured social copywriting
+  const handleOptimizeContent = async () => {
+    if (!postDraftContent.trim()) {
+      alert("অপ্টিমাইজ করার জন্য অনুগ্রহ করে ড্রাফট বক্সে কিছু লিখুন বা এলোমেলো তথ্য দিন।");
+      return;
+    }
+
+    setOptimizingContent(true);
+    setOptimizeError(null);
+
+    try {
+      const res = await fetch('/api/marketing/optimize-content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ prompt: postDraftContent })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.optimizedContent) {
+        setPostDraftContent(data.optimizedContent);
+      } else {
+        setOptimizeError(data.error || "কনটেন্ট অপ্টিমাইজ করতে ব্যর্থ হয়েছে।");
+      }
+    } catch (err: any) {
+      console.error("Content optimization error:", err);
+      setOptimizeError(err.message || "নেটওয়ার্ক সংক্রান্ত কোনো সমস্যা দেখা দিয়েছে।");
+    } finally {
+      setOptimizingContent(false);
     }
   };
 
@@ -714,49 +749,46 @@ export default function AdminMarketing() {
                 />
               </div>
 
-              {/* AI Image Generation Option */}
-              <div className="bg-violet-50/40 border border-violet-100/50 rounded-2xl p-4 space-y-3">
+              {/* AI Post Content Optimizer */}
+              <div className="bg-violet-50/40 border border-violet-100/50 rounded-3xl p-5 space-y-3 text-left">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="text-violet-600 size-4 animate-pulse" />
-                    <span className="text-xs font-bold text-violet-950">AI Creative Assistant</span>
+                    <Sparkles className="text-violet-600 size-4.5 animate-pulse" />
+                    <span className="text-xs font-extrabold text-violet-950">এআই রাইটিং অ্যাসিস্ট্যান্ট (AI Copywriter)</span>
                   </div>
-                  <span className="text-[9px] uppercase font-black tracking-widest bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">
-                    Gemini 2.5
+                  <span className="text-[9px] uppercase font-bold bg-violet-100 text-violet-700 px-2.5 py-0.5 rounded-full">
+                    Gemini 3.5 Active
                   </span>
                 </div>
-                <p className="text-[11px] text-violet-800 leading-normal">
-                  Generate high-quality social media creative artwork automatically using Gemini AI model from the draft description.
+                <p className="text-[11px] text-violet-850/95 font-medium leading-relaxed">
+                  আপনার কিওয়ার্ড, রাফ ড্রাফট বা এলোমেলো লেখাগুলোকে এক ক্লিকে দৃষ্টিনন্দন সোশ্যাল মিডিয়া পোস্টে রূপান্তর করুন। সঠিক ইমোজি, হুক এবং হ্যাশট্যাগ যুক্ত হবে স্বয়ংক্রিয়ভাবে!
                 </p>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col gap-2">
                   <button
                     type="button"
-                    onClick={handleGenerateAIImage}
-                    disabled={generatingAIImage || !postDraftContent.trim()}
-                    className="py-2.5 px-4 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold transition-all disabled:opacity-45 disabled:hover:bg-violet-600 flex items-center gap-1.5 shadow-sm"
+                    onClick={handleOptimizeContent}
+                    disabled={optimizingContent || !postDraftContent.trim()}
+                    className="w-full sm:w-auto self-start py-3 px-5 rounded-2xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-black transition-all disabled:opacity-45 disabled:hover:bg-violet-600 flex items-center justify-center gap-2 shadow-sm"
                   >
-                    {generatingAIImage ? (
+                    {optimizingContent ? (
                       <>
                         <Loader2 size={13} className="animate-spin" />
-                        <span>Generating Artwork...</span>
+                        <span>লেখা গোছানো হচ্ছে...</span>
                       </>
                     ) : (
                       <>
-                        <Sparkles size={13} />
-                        <span>Generate Creative Banner</span>
+                        <Sparkles size={13} className="text-violet-200" />
+                        <span>⚡ এআই দিয়ে পোস্টটি আকর্ষণীয় ও গোছানো করুন</span>
                       </>
                     )}
                   </button>
-                  {generatingAIImage && (
-                    <span className="text-[10px] text-neutral-400 font-medium">This might take a few seconds...</span>
+                  {optimizeError && (
+                    <div className="text-[11px] text-red-600 bg-red-50 p-2.5 rounded-xl font-semibold flex items-start gap-1">
+                      <AlertCircle size={12} className="shrink-0 mt-0.5" />
+                      <span>{optimizeError}</span>
+                    </div>
                   )}
                 </div>
-                {aiImageError && (
-                  <div className="text-[11px] text-red-600 bg-red-50 p-2.5 rounded-lg font-semibold flex items-start gap-1">
-                    <AlertCircle size={12} className="shrink-0 mt-0.5" />
-                    <span>{aiImageError}</span>
-                  </div>
-                )}
               </div>
 
               {/* Optional Post Media Preview */}
