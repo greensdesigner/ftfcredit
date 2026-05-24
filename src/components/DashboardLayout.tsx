@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, Bell, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, Bell, MessageSquare, Megaphone } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { UserRole } from '../types';
 
@@ -26,6 +26,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         { icon: LayoutDashboard, label: 'Overview', path: '/admin-portal?tab=overview' },
         { icon: Users, label: 'Client List', path: '/admin-portal?tab=clients' },
         { icon: MessageSquare, label: 'Inbox', path: '/admin-portal?tab=inbox' },
+        { icon: Megaphone, label: 'Marketing', path: '/admin-portal?tab=marketing' },
         { icon: CreditCard, label: 'System Billing', path: '/admin-portal?tab=billing' },
         { icon: Settings, label: 'Settings', path: '/admin-portal?tab=settings' },
       ]

@@ -301,6 +301,35 @@ async function startServer() {
             )
           `);
 
+          // Organic posts table for marketing
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS organic_posts (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              tenantId VARCHAR(128),
+              platform VARCHAR(64) NOT NULL,
+              content TEXT NOT NULL,
+              status VARCHAR(64) DEFAULT 'posted',
+              imageUrl TEXT,
+              createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+          `);
+
+          // Marketing campaigns table for running paid ads
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS marketing_campaigns (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              tenantId VARCHAR(128),
+              planName VARCHAR(128) NOT NULL,
+              durationDays INT NOT NULL,
+              amount DECIMAL(10,2) NOT NULL,
+              status VARCHAR(64) DEFAULT 'active',
+              keywords TEXT,
+              estimatedReach INT DEFAULT 0,
+              createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              expiresAt TIMESTAMP NULL
+            )
+          `);
+
           console.log("✅ All database tables verified/created successfully.");
         } catch (dbErr: any) {
           console.error("❌ Error initializing tables:", dbErr.message);
@@ -1133,6 +1162,184 @@ async function startServer() {
     } catch (error: any) {
       console.error("Mark Read Error:", error.message);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // --- MARKETING SYSTEM API (ORGANIC POSTS & PAID ADS CAMPAIGNS) ---
+
+  // 1. Get campaigns
+  app.get("/api/marketing/campaigns", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { tenantId } = req.query;
+    if (!tenantId) return res.status(400).json({ error: "tenantId is required" });
+
+    try {
+      const [campaigns]: any = await pool.query(
+        "SELECT * FROM marketing_campaigns WHERE tenantId = ? ORDER BY id DESC",
+        [tenantId]
+      );
+      res.json(campaigns);
+    } catch (error: any) {
+      console.error("Fetch Campaigns Error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // 2. Get organic posts
+  app.get("/api/marketing/posts", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { tenantId } = req.query;
+    if (!tenantId) return res.status(400).json({ error: "tenantId is required" });
+
+    try {
+      const [posts]: any = await pool.query(
+        "SELECT * FROM organic_posts WHERE tenantId = ? ORDER BY id DESC",
+        [tenantId]
+      );
+      res.json(posts);
+    } catch (error: any) {
+      console.error("Fetch Posts Error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // 3. Create organic post
+  app.post("/api/marketing/post", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { tenantId, platform, content, imageUrl } = req.body;
+
+    if (!tenantId || !platform || !content) {
+      return res.status(400).json({ error: "Missing tenantId, platform, or content" });
+    }
+
+    try {
+      const [result]: any = await pool.query(
+        "INSERT INTO organic_posts (tenantId, platform, content, imageUrl, status) VALUES (?, ?, ?, ?, 'posted')",
+        [tenantId, platform, content, imageUrl || null]
+      );
+      res.json({
+        id: result.insertId,
+        tenantId,
+        platform,
+        content,
+        imageUrl,
+        status: 'posted',
+        createdAt: new Date().toISOString()
+      });
+    } catch (error: any) {
+      console.error("Create Post Error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // 4. Calculate simulated Meta reach based on keywords & plan
+  app.post("/api/marketing/campaign/calculate-reach", async (req, res) => {
+    const { keywords, planKey } = req.body;
+    if (!planKey) return res.status(400).json({ error: "planKey is required" });
+
+    // Reach multipliers by plan
+    const multipliers = {
+      basic: { min: 8200, max: 24500 },
+      standard: { min: 25000, max: 74000 },
+      premium: { min: 78000, max: 210000 }
+    };
+
+    const range = multipliers[planKey] || multipliers.basic;
+
+    // Generate reach based on keyword count and keyword length (simulating keyword quality matching)
+    const keywordList = (keywords || '').split(',').map((k: string) => k.trim()).filter(Boolean);
+    let baseReach = range.min + Math.floor(Math.random() * (range.max - range.min));
+
+    // Keyword optimization bonus
+    if (keywordList.length > 0) {
+      const bonus = Math.min(keywordList.length * 3500, baseReach * 0.35);
+      baseReach = Math.floor(baseReach + bonus);
+    }
+
+    res.json({
+      estimatedReach: baseReach,
+      targetingScore: Math.min(65 + (keywordList.length * 8) + (keywords.length % 7), 100),
+      keywordsCount: keywordList.length
+    });
+  });
+
+  // 5. Create Stripe Checkout session for paid campaign
+  app.post("/api/marketing/campaign/checkout", async (req, res) => {
+    const stripeInst = getStripe();
+    const { planKey, tenantId, keywords, estimatedReach } = req.body;
+
+    const plans = {
+      basic: { name: 'Basic Ads Booster (7 Days)', amount: 15000, days: 7 },
+      standard: { name: 'Standard Ads Booster (15 Days)', amount: 30000, days: 15 },
+      premium: { name: 'Premium Full-Scale Campaign (30 Days)', amount: 60000, days: 30 }
+    };
+
+    const plan = plans[planKey];
+    if (!plan) return res.status(400).json({ error: "Invalid planKey" });
+
+    if (!stripeInst) {
+      return res.json({ fallbackSimulate: true, amount: plan.amount / 100 });
+    }
+
+    try {
+      const protocol = req.headers['x-forwarded-proto'] || 'http';
+      const host = req.headers.host;
+      const baseUrl = process.env.APP_URL || `${protocol}://${host}`;
+
+      const session = await stripeInst.checkout.sessions.create({
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price_data: {
+               currency: 'usd',
+               product_data: {
+                 name: `Meta Ads: ${plan.name}`,
+                 description: `Targeted Meta Paid Ads Booster Campaign (Facebook & Instagram) for ${plan.days} Days. Target: ${keywords || 'Broad audience'}`,
+               },
+               unit_amount: plan.amount,
+            },
+            quantity: 1,
+          }
+        ],
+        mode: 'payment',
+        success_url: `${baseUrl}/admin-portal?tab=marketing&payment_success=true&planKey=${planKey}&keywords=${encodeURIComponent(keywords || '')}&reach=${estimatedReach || 0}`,
+        cancel_url: `${baseUrl}/admin-portal?tab=marketing&payment_success=false`,
+      });
+
+      res.json({ url: session.url });
+    } catch (err: any) {
+      console.error("Stripe Marketing Session Error:", err.message);
+      res.json({ fallbackSimulate: true, amount: plan.amount / 100 });
+    }
+  });
+
+  // 6. Direct activation
+  app.post("/api/marketing/campaign/activate-mock", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { planKey, tenantId, keywords, estimatedReach } = req.body;
+
+    const plans = {
+      basic: { name: 'Basic Ads Booster', amount: 150.00, days: 7 },
+      standard: { name: 'Standard Ads Booster', amount: 300.00, days: 15 },
+      premium: { name: 'Premium Ads Booster', amount: 600.00, days: 30 }
+    };
+
+    const plan = plans[planKey];
+    if (!plan) return res.status(400).json({ error: "Invalid plan" });
+
+    try {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + plan.days);
+
+      await pool.query(
+        "INSERT INTO marketing_campaigns (tenantId, planName, durationDays, amount, status, keywords, estimatedReach, expiresAt) VALUES (?, ?, ?, ?, 'active', ?, ?, ?)",
+        [tenantId, planKey, plan.days, plan.amount, keywords || '', estimatedReach || 0, expiresAt]
+      );
+
+      res.json({ success: true, message: "Campaign activated successfully!" });
+    } catch (err: any) {
+      console.error("Activate Mock Campaign Error:", err.message);
+      res.status(500).json({ error: err.message });
     }
   });
 
