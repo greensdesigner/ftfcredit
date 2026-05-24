@@ -6,6 +6,7 @@ import mysql from "mysql2/promise";
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import Stripe from "stripe";
+import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
 
@@ -1229,6 +1230,70 @@ async function startServer() {
     } catch (error: any) {
       console.error("Create Post Error:", error.message);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // 3b. Generate AI Image using Gemini SDK
+  app.post("/api/marketing/generate-image", async (req, res) => {
+    const { prompt } = req.body;
+    if (!prompt || !prompt.trim()) {
+      return res.status(400).json({ error: "Prompt/content is required to generate an image" });
+    }
+
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return res.status(400).json({ 
+        error: "Gemini API key is not configured in Secrets settings. Please check your system setting variables." 
+      });
+    }
+
+    try {
+      console.log(`Generating AI image for prompt: "${prompt}"`);
+      const ai = new GoogleGenAI({
+        apiKey: apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          }
+        }
+      });
+
+      // Call generateContent with gemini-2.5-flash-image model as instructed in gemini-api skill
+      const response = await ai.models.generateContent({
+        model: 'gemini-2.5-flash-image',
+        contents: {
+          parts: [
+            {
+              text: prompt,
+            },
+          ],
+        },
+        config: {
+          imageConfig: {
+            aspectRatio: "1:1",
+          },
+        },
+      });
+
+      let base64Image = null;
+      if (response.candidates?.[0]?.content?.parts) {
+        for (const part of response.candidates[0].content.parts) {
+          if (part.inlineData) {
+            base64Image = part.inlineData.data;
+            break;
+          }
+        }
+      }
+
+      if (!base64Image) {
+        return res.status(500).json({ error: "The AI model returned no image part in its response." });
+      }
+
+      const imageUrl = `data:image/png;base64,${base64Image}`;
+      res.json({ status: "success", imageUrl });
+    } catch (error: any) {
+      console.error("Gemini AI Image Generation Error:", error);
+      res.status(500).json({ error: error.message || "Failed to generate image via Gemini API" });
     }
   });
 

@@ -67,6 +67,8 @@ export default function AdminMarketing() {
   const [postDraftContent, setPostDraftContent] = useState('');
   const [postBase64Image, setPostBase64Image] = useState<string | null>(null);
   const [sendingPost, setSendingPost] = useState(false);
+  const [generatingAIImage, setGeneratingAIImage] = useState(false);
+  const [aiImageError, setAiImageError] = useState<string | null>(null);
 
   // Paid Ads form state
   const [selectedPlan, setSelectedPlan] = useState<'basic' | 'standard' | 'premium'>('basic');
@@ -238,6 +240,39 @@ export default function AdminMarketing() {
         setPostBase64Image(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  // Generate image using server-side Gemini SDK (gemini-2.5-flash-image)
+  const handleGenerateAIImage = async () => {
+    if (!postDraftContent.trim()) {
+      alert("Please enter some keywords or description text in the copywriting draft box first.");
+      return;
+    }
+
+    setGeneratingAIImage(true);
+    setAiImageError(null);
+
+    try {
+      const res = await fetch('/api/marketing/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ prompt: postDraftContent })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.imageUrl) {
+        setPostBase64Image(data.imageUrl);
+      } else {
+        setAiImageError(data.error || "Failed to generate image.");
+      }
+    } catch (err: any) {
+      console.error("AI image generation error:", err);
+      setAiImageError(err.message || "Network error generating image.");
+    } finally {
+      setGeneratingAIImage(false);
     }
   };
 
@@ -517,6 +552,51 @@ export default function AdminMarketing() {
                   className="w-full bg-neutral-50 border border-neutral-200/80 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 focus:bg-white transition-all text-neutral-850 placeholder:text-neutral-400"
                   required
                 />
+              </div>
+
+              {/* AI Image Generation Option */}
+              <div className="bg-violet-50/40 border border-violet-100/50 rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="text-violet-600 size-4 animate-pulse" />
+                    <span className="text-xs font-bold text-violet-950">AI Creative Assistant</span>
+                  </div>
+                  <span className="text-[9px] uppercase font-black tracking-widest bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">
+                    Gemini 2.5
+                  </span>
+                </div>
+                <p className="text-[11px] text-violet-800 leading-normal">
+                  Generate high-quality social media creative artwork automatically using Gemini AI model from the draft description.
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleGenerateAIImage}
+                    disabled={generatingAIImage || !postDraftContent.trim()}
+                    className="py-2.5 px-4 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold transition-all disabled:opacity-45 disabled:hover:bg-violet-600 flex items-center gap-1.5 shadow-sm"
+                  >
+                    {generatingAIImage ? (
+                      <>
+                        <Loader2 size={13} className="animate-spin" />
+                        <span>Generating Artwork...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={13} />
+                        <span>Generate Creative Banner</span>
+                      </>
+                    )}
+                  </button>
+                  {generatingAIImage && (
+                    <span className="text-[10px] text-neutral-400 font-medium">This might take a few seconds...</span>
+                  )}
+                </div>
+                {aiImageError && (
+                  <div className="text-[11px] text-red-600 bg-red-50 p-2.5 rounded-lg font-semibold flex items-start gap-1">
+                    <AlertCircle size={12} className="shrink-0 mt-0.5" />
+                    <span>{aiImageError}</span>
+                  </div>
+                )}
               </div>
 
               {/* Optional Post Media Preview */}
