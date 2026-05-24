@@ -17,6 +17,25 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT || 3000;
 
+  let pool: any = null;
+  let cacheMaintenanceMode = false;
+
+  const fetchMaintenanceMode = async () => {
+    if (pool) {
+      try {
+        const [rows]: any = await pool.query("SELECT maintenanceMode FROM system_settings WHERE id = 1");
+        if (rows && rows.length > 0) {
+          cacheMaintenanceMode = !!rows[0].maintenanceMode;
+        }
+      } catch (e) {
+        // Safe fail-silent: avoid blocking requests if database query fails or times out
+      }
+    }
+  };
+
+  // Start periodic sync of maintenance mode status in the background
+  setInterval(fetchMaintenanceMode, 10000);
+
   // Stripe lazy init
   let stripe: Stripe | null = null;
   const getStripe = () => {
@@ -50,29 +69,18 @@ async function startServer() {
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-  // Maintenance Mode Middleware
+  // Maintenance Mode Cache Middleware
   app.use(async (req, res, next) => {
     // Exclude health check, static files, login/signup and admin routes from 503 check
     const excludedPaths = ['/health', '/api/health', '/api/auth/login', '/api/auth/signup', '/api/admin', '/api/admin/system-settings'];
     const isExcluded = excludedPaths.some(path => req.path.startsWith(path));
     
-    // Also exclude non-API routes if they are intended to serve the frontend (Vite/Static)
-    // Actually, we want to show a maintenance page on frontend too.
-    // For now, let's just protect the API.
-    
     if (req.path.startsWith('/api/') && !isExcluded) {
-      if (pool) {
-        try {
-          const [rows]: any = await pool.query("SELECT maintenanceMode FROM system_settings WHERE id = 1");
-          if (rows[0]?.maintenanceMode) {
-            return res.status(503).json({ 
-              error: "Maintenance Mode", 
-              message: "The system is currently undergoing maintenance. Please try again later." 
-            });
-          }
-        } catch (e) {
-          // Ignore DB error here to avoid blocking app if DB is struggling
-        }
+      if (cacheMaintenanceMode) {
+        return res.status(503).json({ 
+          error: "Maintenance Mode", 
+          message: "The system is currently undergoing maintenance. Please try again later." 
+        });
       }
     }
     next();
@@ -96,7 +104,8 @@ async function startServer() {
     charset: 'utf8mb4'
   };
 
-  let pool: any;
+// No redundant let pool here
+
 
   if (process.env.DB_HOST) {
     try {
@@ -128,6 +137,7 @@ async function startServer() {
           console.log("✅ Successfully connected to MySQL database pool");
           connection.release();
           await initializeDB();
+          await fetchMaintenanceMode(); // Force initial sync
         } catch (err: any) {
           console.error("❌ Database connection test failed!");
           console.error(`Error Code: ${err.code}`);
@@ -545,6 +555,7 @@ async function startServer() {
         "UPDATE system_settings SET maintenanceMode = ?, emailAlerts = ?, systemName = ?, systemLogo = ? WHERE id = 1",
         [maintenanceMode === true, emailAlerts === true, systemName || 'FTF Consulting', systemLogo || null]
       );
+      cacheMaintenanceMode = maintenanceMode === true; // Update cache instantly
       res.json({ status: "success", message: "Settings updated successfully" });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
