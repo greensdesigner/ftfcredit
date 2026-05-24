@@ -1031,31 +1031,32 @@ export default function AdminDashboard() {
 
                <div className="bg-neutral-900 rounded-[32px] p-8 text-white flex flex-col justify-between">
                   <div>
-                    <h3 className="text-xl font-bold mb-4 font-display">Billing Support</h3>
-                    <p className="text-neutral-400 text-sm leading-relaxed mb-6">
-                       Your enterprise platform fee includes priority support, unlimited client capacity, and dedicated server resources.
+                    <h3 className="text-xl font-bold mb-4 font-display">Ad Payments & Billing</h3>
+                    <p className="text-neutral-400 text-sm leading-relaxed mb-6 font-semibold">
+                       সিস্টেম সাবস্ক্রিপশন এবং পেইড ফেসবুক/ইনস্টাগ্রাম অ্যাড ক্যাম্পেইনের যাবতীয় পেমেন্ট একই ওয়ান-টাইম/রিকারিং স্ট্রাইপ (Stripe Checkout) এপিআই কীর মাধ্যমে রিয়েল-টাইমে লাইভ মোডে সম্পন্ন হয়।
                     </p>
                     <ul className="space-y-3">
                        {[
-                         'API Scaling: Enabled',
-                         'Client CRM: Unlimited',
-                         'Dispute Engine: Pro',
-                         'Compliance: Tier 1'
+                         'Stripe Live Mode API: Active',
+                         'Paid Ad Campaigns Sync: Enabled',
+                         'Dispute Marketing Budget: Integrated',
+                         'Stripe Connector Core: Same API Key'
                        ].map(item => (
-                         <li key={item} className="flex items-center gap-2 text-xs font-medium">
-                            <div className="size-1.5 rounded-full bg-emerald-500"></div>
+                         <li key={item} className="flex items-center gap-2 text-xs font-semibold">
+                            <div className="size-1.5 rounded-full bg-emerald-400"></div>
                             {item}
                          </li>
                        ))}
                     </ul>
                   </div>
                   <div className="mt-8 pt-6 border-t border-white/10">
-                     <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-1">Status</p>
+                     <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-1">Stripe Status Monitor</p>
                      <p className={cn(
-                       "font-bold",
-                       systemSettings?.subscriptionStatus === 'active' ? "text-emerald-400" : "text-red-400"
+                       "font-bold text-xs uppercase tracking-wider flex items-center gap-1.5",
+                       systemSettings?.subscriptionStatus === 'active' ? "text-emerald-400" : "text-yellow-400"
                      )}>
-                        {systemSettings?.subscriptionStatus === 'active' ? 'Account in good standing' : 'Account Expired'}
+                        <span className="size-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        Syncing with Primary Stripe Gateway
                      </p>
                   </div>
                </div>

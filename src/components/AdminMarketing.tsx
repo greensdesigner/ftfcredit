@@ -269,12 +269,106 @@ export default function AdminMarketing() {
     }
   };
 
+  // Handle checking URL parameters for Stripe checkout success
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const paymentSuccess = params.get('payment_success') === 'true';
+    const planKey = params.get('planKey');
+    const keywords = params.get('keywords');
+    const reach = parseInt(params.get('reach') || '0', 10);
+
+    if (paymentSuccess && planKey && tenantId) {
+      const autoActivate = async () => {
+        try {
+          const res = await fetch('/api/marketing/campaign/activate-mock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              planKey,
+              tenantId,
+              keywords: decodeURIComponent(keywords || ''),
+              estimatedReach: reach
+            })
+          });
+
+          if (res.ok) {
+            setPaymentSuccessMessage(`Success! Payment for ${plans[planKey as 'basic' | 'standard' | 'premium']?.name || 'Booster Campaign'} was processed securely via Stripe. Your live paid campaign has been successfully activated.`);
+            setShowPaymentModal(true);
+            loadData();
+          }
+        } catch (error) {
+          console.error("Auto activation of paid campaign failed:", error);
+        } finally {
+          // Clean up the URL search params elegantly without reloading the page
+          const cleanUrl = window.location.pathname + '?tab=marketing';
+          window.history.replaceState({}, document.title, cleanUrl);
+        }
+      };
+
+      autoActivate();
+    }
+  }, [tenantId]);
+
   // Initiate Stripe purchase flow
   const handleInitiatePaidCampaign = async () => {
     // We open the checkout / payment modal
     setShowPaymentModal(true);
     // Reset any previous state
     setPaymentSuccessMessage(null);
+  };
+
+  // Pay securely using real Stripe Checkout Session
+  const handlePayWithStripeCheckout = async () => {
+    if (!tenantId) return;
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch('/api/marketing/campaign/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          planKey: selectedPlan,
+          tenantId,
+          keywords: campaignKeywords,
+          estimatedReach: reachStats?.estimatedReach || 0
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.url) {
+          // Redirect the user’s window to the secure Stripe-hosted Checkout Page
+          window.location.href = data.url;
+        } else if (data.fallbackSimulate) {
+          // Fallback if Stripe credentials are not bound yet
+          alert("Stripe credentials are not fully bound in the server configuration. Activating campaign in Demo Simulator Mode.");
+          const runFallback = async () => {
+            const fallbackRes = await fetch('/api/marketing/campaign/activate-mock', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                planKey: selectedPlan,
+                tenantId,
+                keywords: campaignKeywords,
+                estimatedReach: reachStats?.estimatedReach || 0
+              })
+            });
+
+            if (fallbackRes.ok) {
+              setPaymentSuccessMessage(`Success! Your booster campaign (${plans[selectedPlan].name}) has been activated in Simulator Demo Mode.`);
+              loadData();
+            }
+          };
+          await runFallback();
+        }
+      } else {
+        alert("Failed to create Stripe checkout session. Please check backend environment configuration.");
+      }
+    } catch (err: any) {
+      console.error("Stripe Checkout Session Error:", err);
+      alert("Error starting Stripe payment: " + err.message);
+    } finally {
+      setCheckoutLoading(false);
+    }
   };
 
   // Complete checkout via payment details
@@ -1249,8 +1343,8 @@ export default function AdminMarketing() {
       {showPaymentModal && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-white rounded-[32px] max-w-lg w-full p-10 border border-neutral-150 shadow-2xl relative overflow-hidden text-left">
-            <h3 className="font-display text-3xl font-black text-neutral-950 mb-2">Secure Credit Card Gateway</h3>
-            <p className="text-sm font-semibold text-neutral-550 mb-7">Process payment securely via our linked agency billing network.</p>
+            <h3 className="font-display text-3xl font-black text-neutral-950 mb-1">Ad Campaign Payment Gateway</h3>
+            <p className="text-sm font-semibold text-neutral-550 mb-6">Complete transaction securely using your agency's connected Stripe integration.</p>
 
             {paymentSuccessMessage ? (
               <div className="space-y-6 text-center py-8">
@@ -1271,7 +1365,7 @@ export default function AdminMarketing() {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleProcessManualPayment} className="space-y-6">
+              <form onSubmit={handleProcessManualPayment} className="space-y-5">
                 <div>
                   <label className="block text-xs font-black uppercase tracking-wider text-neutral-700 mb-1.5">Selected Plan Price</label>
                   <div className="p-5 bg-neutral-50 rounded-2xl border border-neutral-150 flex items-center justify-between">
@@ -1281,6 +1375,39 @@ export default function AdminMarketing() {
                     </div>
                     <span className="font-display text-2xl font-black text-emerald-700">${plans[selectedPlan].price}.00</span>
                   </div>
+                </div>
+
+                <div className="p-1 rounded-3xl bg-neutral-50/50 border border-neutral-150 relative">
+                  <div className="p-5 text-center">
+                    <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3">RECOMMENDED LIVE SECURE PAYMENT</p>
+                    <button
+                      type="button"
+                      disabled={checkoutLoading}
+                      onClick={handlePayWithStripeCheckout}
+                      className="w-full h-14 bg-gradient-to-r from-indigo-600 to-violet-700 hover:from-indigo-500 hover:to-violet-650 disabled:from-neutral-300 disabled:to-neutral-400 text-white font-extrabold rounded-2xl flex items-center justify-center gap-2.5 transition-all shadow-md active:scale-[0.98] cursor-pointer"
+                    >
+                      {checkoutLoading ? (
+                        <>
+                          <Loader2 size={18} className="animate-spin" />
+                          <span>Preparing Secure Checkout...</span>
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard size={18} />
+                          <span>Pay with Stripe Checkout</span>
+                        </>
+                      )}
+                    </button>
+                    <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider mt-2.5 flex items-center justify-center gap-1">
+                      🔒 Live connection with secure Stripe keys
+                    </p>
+                  </div>
+                </div>
+
+                <div className="relative flex items-center py-1">
+                  <div className="flex-grow border-t border-neutral-150"></div>
+                  <span className="flex-shrink mx-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Or Sandbox Credit Card</span>
+                  <div className="flex-grow border-t border-neutral-150"></div>
                 </div>
 
                 <div>
