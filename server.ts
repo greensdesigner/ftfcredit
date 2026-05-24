@@ -43,8 +43,18 @@ async function startServer() {
     }
   };
 
-  // Start periodic sync of maintenance mode status in the background
-  setInterval(fetchMaintenanceMode, 10000);
+  // Start periodic sync of maintenance mode status in the background (preventing connection/callback overlaps)
+  const runMaintenanceModeSync = async () => {
+    try {
+      await fetchMaintenanceMode();
+    } catch (e) {
+      // Safe fail-silent
+    } finally {
+      setTimeout(runMaintenanceModeSync, 10000);
+    }
+  };
+  // Schedule first background run
+  setTimeout(runMaintenanceModeSync, 10000);
 
   // Stripe lazy init
   let stripe: Stripe | null = null;
@@ -87,7 +97,7 @@ async function startServer() {
     
     if (req.path.startsWith('/api/') && !isExcluded) {
       if (cacheMaintenanceMode) {
-        return res.status(503).json({ 
+        return res.status(403).json({ 
           error: "Maintenance Mode", 
           message: "The system is currently undergoing maintenance. Please try again later." 
         });
@@ -1429,9 +1439,9 @@ async function startServer() {
     }
   });
 
-  // Vite middleware for development
-  // Auto-detect production mode if dist folder exists or NODE_ENV is set to production
-  const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(path.resolve(__dirname, "../dist"));
+  // Safe production mode detection: Default to production mode on any hosting environment (like Hostinger/cPanel)
+  // to avoid starting the heavy Vite dev-server unless we are explicitly in 'development' mode.
+  const isProduction = process.env.NODE_ENV !== "development";
 
   if (!isProduction) {
     try {
@@ -1507,13 +1517,26 @@ async function startServer() {
     });
   });
 
-  app.listen(Number(PORT), "0.0.0.0", () => {
-    console.log(`Server is listening on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV}`);
-    if (!process.env.DB_HOST) {
-      console.warn("WARNING: DB_HOST is not set. Database features will be limited.");
-    }
-  });
+  // Resilient listening parameter to support both numeric ports and string-based UNIX sockets/named pipes (used by Passenger/Hostinger)
+  const numericPort = Number(PORT);
+  if (!isNaN(numericPort) && isFinite(numericPort)) {
+    app.listen(numericPort, "0.0.0.0", () => {
+      console.log(`Server is listening on port ${numericPort}`);
+      console.log(`Environment: ${process.env.NODE_ENV}`);
+      if (!process.env.DB_HOST) {
+        console.warn("WARNING: DB_HOST is not set. Database features will be limited.");
+      }
+    });
+  } else {
+    // String socket path or named pipe (e.g., Passenger socket)
+    app.listen(PORT, () => {
+      console.log(`Server is listening on UNIX socket/pipe: ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV}`);
+      if (!process.env.DB_HOST) {
+        console.warn("WARNING: DB_HOST is not set. Database features will be limited.");
+      }
+    });
+  }
 }
 
 startServer();
