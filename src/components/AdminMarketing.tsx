@@ -244,16 +244,16 @@ export default function AdminMarketing() {
   return (
     <div className="space-y-8 animate-in fade-in duration-500 text-left">
       {/* Header Banner */}
-      <div className="p-8 rounded-[32px] bg-neutral-900 text-white relative overflow-hidden shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-neutral-850">
-        <div className="absolute right-0 top-0 p-12 opacity-[0.03] pointer-events-none">
+      <div className="p-8 rounded-[32px] bg-gradient-to-r from-violet-700 to-indigo-900 text-white relative overflow-hidden shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-violet-650/30">
+        <div className="absolute right-0 top-0 p-12 opacity-[0.06] pointer-events-none">
           <Megaphone size={190} />
         </div>
         <div className="space-y-2 z-10">
           <h2 className="font-display text-3xl font-bold tracking-tight flex items-center gap-2.5">
-            <Megaphone size={30} className="text-neutral-200" />
+            <Megaphone size={30} className="text-violet-200" />
             Meta ADS & Social Center
           </h2>
-          <p className="text-sm text-neutral-400 max-w-xl">
+          <p className="text-sm text-violet-200 max-w-xl">
             Simulate campaign reach organically, design and post directly to social pages, or launch targeted Paid Ads boosters using system Stripe credit integration.
           </p>
         </div>
@@ -262,16 +262,16 @@ export default function AdminMarketing() {
             onClick={() => setSubTab('paid')}
             className={cn(
               "px-5 py-2.5 text-xs font-bold rounded-2xl transition-all shadow-sm",
-              subTab === 'paid' ? "bg-white text-neutral-950" : "bg-neutral-800 text-neutral-300 hover:bg-neutral-750"
+              subTab === 'paid' ? "bg-white text-violet-900" : "bg-violet-800/40 text-violet-100 hover:bg-violet-700/60"
             )}
           >
-            Paid Kampaigns
+            Paid Campaigns
           </button>
           <button 
             onClick={() => setSubTab('organic')}
             className={cn(
               "px-5 py-2.5 text-xs font-bold rounded-2xl transition-all shadow-sm",
-              subTab === 'organic' ? "bg-white text-neutral-950" : "bg-neutral-800 text-neutral-300 hover:bg-neutral-750"
+              subTab === 'organic' ? "bg-white text-violet-900" : "bg-violet-800/40 text-violet-100 hover:bg-violet-700/60"
             )}
           >
             Organic Social Posting
@@ -280,7 +280,7 @@ export default function AdminMarketing() {
             onClick={() => setSubTab('history')}
             className={cn(
               "px-5 py-2.5 text-xs font-bold rounded-2xl transition-all shadow-sm",
-              subTab === 'history' ? "bg-white text-neutral-950" : "bg-neutral-800 text-neutral-300 hover:bg-neutral-750"
+              subTab === 'history' ? "bg-white text-violet-900" : "bg-violet-800/40 text-violet-100 hover:bg-violet-700/60"
             )}
           >
             History & Billing
@@ -311,26 +311,26 @@ export default function AdminMarketing() {
                       className={cn(
                         "p-5 rounded-2xl text-left border transition-all relative flex flex-col justify-between h-[180px]",
                         isSelected 
-                          ? "border-neutral-950 bg-neutral-950 text-white shadow-md scale-[1.02]" 
-                          : "border-neutral-200 bg-white hover:border-neutral-400 text-neutral-850"
+                          ? "border-violet-600 bg-violet-600 text-white shadow-md scale-[1.02]" 
+                          : "border-neutral-200 bg-white hover:border-violet-350 hover:bg-violet-50/20 text-neutral-850"
                       )}
                     >
                       <div>
                         <div className="flex justify-between items-start">
-                          <span className={cn("text-xxs font-black tracking-widest uppercase py-1 px-2.5 rounded-full", isSelected ? 'bg-neutral-800 text-neutral-200' : 'bg-neutral-50 text-neutral-500')}>
+                          <span className={cn("text-xxs font-black tracking-widest uppercase py-1 px-2.5 rounded-full", isSelected ? 'bg-violet-500 text-violet-100' : 'bg-neutral-50 text-neutral-500')}>
                             {key}
                           </span>
                           {isSelected && <CheckCircle2 size={16} className="text-white" />}
                         </div>
                         <h4 className="font-bold text-sm mt-3 line-clamp-1">{plan.name}</h4>
-                        <p className={cn("text-3xs mt-1 leading-normal line-clamp-3", isSelected ? "text-neutral-300" : "text-neutral-500")}>
+                        <p className={cn("text-3xs mt-1 leading-normal line-clamp-3", isSelected ? "text-violet-105" : "text-neutral-500")}>
                           {plan.desc}
                         </p>
                       </div>
 
                       <div className="flex items-baseline gap-1 mt-4">
                         <span className="font-display text-2xl font-black">${plan.price}</span>
-                        <span className={cn("text-[10px] font-semibold", isSelected ? "text-neutral-300" : "text-neutral-500")}>
+                        <span className={cn("text-[10px] font-semibold", isSelected ? "text-violet-105" : "text-neutral-500")}>
                           / {plan.days} Days
                         </span>
                       </div>
@@ -372,7 +372,7 @@ export default function AdminMarketing() {
                   </button>
                   <button
                     onClick={handleInitiatePaidCampaign}
-                    className="flex-1 py-3 px-5 rounded-2xl bg-neutral-900 text-white text-xs font-bold hover:bg-neutral-800 transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
+                    className="flex-1 py-3 px-5 rounded-2xl bg-gradient-to-r from-violet-600 to-indigo-700 hover:from-violet-500 hover:to-indigo-650 text-white text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-md hover:shadow-lg"
                   >
                     <CreditCard size={14} />
                     Pay and Activate Campaign (${plans[selectedPlan].price}.00)
