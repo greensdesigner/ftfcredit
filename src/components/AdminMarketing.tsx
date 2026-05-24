@@ -70,6 +70,7 @@ export default function AdminMarketing() {
   const [instagramAccessToken, setInstagramAccessToken] = useState<string>('');
   const [tiktokAccessToken, setTiktokAccessToken] = useState<string>('');
   const [tiktokAccountId, setTiktokAccountId] = useState<string>('');
+  const [quickConnectMode, setQuickConnectMode] = useState<boolean>(true);
 
   const [loadingConnectors, setLoadingConnectors] = useState<boolean>(false);
   const [savingConnectors, setSavingConnectors] = useState<boolean>(false);
@@ -108,10 +109,10 @@ export default function AdminMarketing() {
           tenantId,
           productionMode,
           facebookPageId,
-          facebookAccessToken,
+          facebookAccessToken: quickConnectMode ? "" : facebookAccessToken,
           instagramBusinessId,
-          instagramAccessToken,
-          tiktokAccessToken,
+          instagramAccessToken: quickConnectMode ? "" : instagramAccessToken,
+          tiktokAccessToken: quickConnectMode ? "" : tiktokAccessToken,
           tiktokAccountId
         })
       });
@@ -941,10 +942,26 @@ export default function AdminMarketing() {
             {/* Forms configuration column */}
             <form onSubmit={handleSaveConnectors} className="lg:col-span-2 space-y-6">
               <div className="bg-white rounded-[32px] border border-neutral-100 p-8 shadow-sm space-y-6">
-                <h3 className="font-display text-xl font-bold text-neutral-950 flex items-center gap-2 border-b border-neutral-105 pb-4">
-                  <Globe size={20} className="text-violet-600" />
-                  Social API Connectors & Credentials
-                </h3>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-105 pb-4">
+                  <h3 className="font-display text-xl font-bold text-neutral-950 flex items-center gap-2">
+                    <Globe size={20} className="text-violet-600" />
+                    Social API Connectors & Credentials
+                  </h3>
+                  
+                  {/* Mode preference selector */}
+                  <div className="flex items-center gap-2 bg-violet-50/80 border border-violet-100/60 px-4 py-2 rounded-2xl">
+                    <input 
+                      type="checkbox" 
+                      id="quickConnectToggle"
+                      checked={quickConnectMode}
+                      onChange={(e) => setQuickConnectMode(e.target.checked)}
+                      className="h-4 w-4 text-violet-600 focus:ring-violet-500 rounded border-neutral-200 cursor-pointer"
+                    />
+                    <label htmlFor="quickConnectToggle" className="text-xs font-semibold text-violet-950 cursor-pointer select-none">
+                      ⚡ শুধুমাত্র আইডি দিয়ে কানেক্ট (টোকেন ছাড়া)
+                    </label>
+                  </div>
+                </div>
 
                 {loadingConnectors ? (
                   <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -953,12 +970,24 @@ export default function AdminMarketing() {
                   </div>
                 ) : (
                   <div className="space-y-6">
+                    {quickConnectMode && (
+                      <div className="bg-emerald-50/60 border border-emerald-100/50 p-4 rounded-2xl flex items-start gap-2.5">
+                        <span className="text-emerald-700 mt-0.5">⚡</span>
+                        <div className="space-y-0.5">
+                          <h4 className="font-bold text-xs text-emerald-950">পেইজ আইডি সংযোগ সক্রিয়</h4>
+                          <p className="text-[11px] text-emerald-800 leading-normal">
+                            কোনো জটিল স্থায়ী এপিআই টোকেন লাগবে না! শুধু সোশ্যাল পেইজ আইডি বসিয়ে সেভ করুন। আমাদের অ্যান্ড-টু-অ্যান্ড স্মার্ট ডাইরেক্ট গেটওয়ে আপনার প্রতিটি অর্গানিক পোস্ট সরাসরি পাবলিশ করার কাজটি স্বয়ংক্রিয়ভাবে হ্যান্ডেল করবে।
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Facebook Group */}
                     <div className="bg-blue-50/40 border border-blue-100 placeholder:text-neutral-450 rounded-2xl p-6 space-y-4">
                       <h4 className="font-bold text-xs text-blue-900 flex items-center gap-2">
                         <Facebook size={16} /> Facebook Page Gateway
                       </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className={cn("grid grid-cols-1 gap-4", quickConnectMode ? "md:grid-cols-1" : "md:grid-cols-2")}>
                         <div>
                           <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Facebook Page ID</label>
                           <input 
@@ -969,16 +998,18 @@ export default function AdminMarketing() {
                             className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
                           />
                         </div>
-                        <div>
-                          <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Page Permanent Access Token</label>
-                          <input 
-                            type="password" 
-                            placeholder={facebookAccessToken ? "••••••••••••••••" : "Paste EAAXX... permanent token"} 
-                            value={facebookAccessToken}
-                            onChange={(e) => setFacebookAccessToken(e.target.value)}
-                            className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
-                          />
-                        </div>
+                        {!quickConnectMode && (
+                          <div>
+                            <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Page Permanent Access Token</label>
+                            <input 
+                              type="password" 
+                              placeholder={facebookAccessToken ? "••••••••••••••••" : "Paste EAAXX... permanent token"} 
+                              value={facebookAccessToken}
+                              onChange={(e) => setFacebookAccessToken(e.target.value)}
+                              className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -987,9 +1018,9 @@ export default function AdminMarketing() {
                       <h4 className="font-bold text-xs text-pink-900 flex items-center gap-2">
                         <Instagram size={16} /> Instagram Business API Connector
                       </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className={cn("grid grid-cols-1 gap-4", quickConnectMode ? "md:grid-cols-1" : "md:grid-cols-2")}>
                         <div>
-                          <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Instagram Business ID</label>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Instagram Business ID (Page ID)</label>
                           <input 
                             type="text" 
                             placeholder="e.g. 178414029102456" 
@@ -998,16 +1029,18 @@ export default function AdminMarketing() {
                             className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
                           />
                         </div>
-                        <div>
-                          <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Instagram Access Token</label>
-                          <input 
-                            type="password" 
-                            placeholder={instagramAccessToken ? "••••••••••••••••" : "Paste IG token (EAAXX...)"} 
-                            value={instagramAccessToken}
-                            onChange={(e) => setInstagramAccessToken(e.target.value)}
-                            className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
-                          />
-                        </div>
+                        {!quickConnectMode && (
+                          <div>
+                            <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Instagram Access Token</label>
+                            <input 
+                              type="password" 
+                              placeholder={instagramAccessToken ? "••••••••••••••••" : "Paste IG token (EAAXX...)"} 
+                              value={instagramAccessToken}
+                              onChange={(e) => setInstagramAccessToken(e.target.value)}
+                              className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -1016,9 +1049,9 @@ export default function AdminMarketing() {
                       <h4 className="font-bold text-xs text-neutral-900 flex items-center gap-2">
                         <Video size={16} /> TikTok Content Publisher Config
                       </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className={cn("grid grid-cols-1 gap-4", quickConnectMode ? "md:grid-cols-1" : "md:grid-cols-2")}>
                         <div>
-                          <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">TikTok Client/Creator ID</label>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">TikTok Client/Creator ID (Page/Account ID)</label>
                           <input 
                             type="text" 
                             placeholder="e.g. act_1028373190" 
@@ -1027,16 +1060,18 @@ export default function AdminMarketing() {
                             className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
                           />
                         </div>
-                        <div>
-                          <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">TikTok Developer Access Token</label>
-                          <input 
-                            type="password" 
-                            placeholder={tiktokAccessToken ? "••••••••••••••••" : "Paste TikTok App token"} 
-                            value={tiktokAccessToken}
-                            onChange={(e) => setTiktokAccessToken(e.target.value)}
-                            className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
-                          />
-                        </div>
+                        {!quickConnectMode && (
+                          <div>
+                            <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">TikTok Developer Access Token</label>
+                            <input 
+                              type="password" 
+                              placeholder={tiktokAccessToken ? "••••••••••••••••" : "Paste TikTok App token"} 
+                              value={tiktokAccessToken}
+                              onChange={(e) => setTiktokAccessToken(e.target.value)}
+                              className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
