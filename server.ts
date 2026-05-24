@@ -345,6 +345,21 @@ async function startServer() {
             )
           `);
 
+          // Marketing social connectors for real integration credentials
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS social_connectors (
+              tenantId VARCHAR(128) PRIMARY KEY,
+              productionMode TINYINT(1) DEFAULT 0,
+              facebookPageId VARCHAR(255) NULL,
+              facebookAccessToken TEXT NULL,
+              instagramBusinessId VARCHAR(255) NULL,
+              instagramAccessToken TEXT NULL,
+              tiktokAccessToken TEXT NULL,
+              tiktokAccountId VARCHAR(255) NULL,
+              updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            )
+          `);
+
           // Marketing campaigns table for running paid ads
           await pool.query(`
             CREATE TABLE IF NOT EXISTS marketing_campaigns (
@@ -1235,7 +1250,7 @@ async function startServer() {
     }
   });
 
-  // 3. Create organic post
+  // 3. Create organic post (supporting direct posting if real connectors configurations are enabled)
   app.post("/api/marketing/post", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured" });
     const { tenantId, platform, content, imageUrl } = req.body;
@@ -1245,21 +1260,318 @@ async function startServer() {
     }
 
     try {
+      // Create local DB record
       const [result]: any = await pool.query(
-        "INSERT INTO organic_posts (tenantId, platform, content, imageUrl, status) VALUES (?, ?, ?, ?, 'posted')",
+        "INSERT INTO organic_posts (tenantId, platform, content, imageUrl, status) VALUES (?, ?, ?, ?, 'pending')",
         [tenantId, platform, content, imageUrl || null]
       );
+      const insertedId = result.insertId;
+
+      // Determine reqHost and isHttps protocol dynamically for public-image serving (needed for Meta scrappers to read from Express)
+      const reqHost = req.get("host") || "localhost:3000";
+      // Render as secure HTTPS under cloud environments, otherwise standard HTTP
+      const isHttps = req.secure || req.headers["x-forwarded-proto"] === "https" || reqHost.includes("asia-east1");
+
+      let apiStatus = "simulated_posted";
+      let postErrorLogs = null;
+      let remoteRefId = null;
+
+      try {
+        // Fetch connectors settings to see if redirecting to real Meta Graph or TikTok API
+        const [connectors]: any = await pool.query("SELECT * FROM social_connectors WHERE tenantId = ?", [tenantId]);
+        const keys = connectors?.[0];
+
+        if (keys && keys.productionMode === 1) {
+          const protocolString = isHttps ? "https" : "http";
+          const publicServingImgUrl = imageUrl ? `${protocolString}://${reqHost}/api/marketing/public-image/${insertedId}` : null;
+
+          if (platform === "facebook") {
+            if (!keys.facebookPageId || !keys.facebookAccessToken) {
+              throw new Error("Facebook credentials missing. Configure Page ID and Access Token under Integration Settings.");
+            }
+            
+            if (publicServingImgUrl) {
+              // Share Photo with Caption
+              const fbUrl = `https://graph.facebook.com/v20.0/${keys.facebookPageId}/photos`;
+              const response = await fetch(fbUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  url: publicServingImgUrl,
+                  caption: content,
+                  access_token: keys.facebookAccessToken
+                })
+              });
+              const data: any = await response.json();
+              if (!response.ok || data.error) {
+                throw new Error(`Meta Graph API Facebook error: ${JSON.stringify(data.error || data)}`);
+              }
+              apiStatus = "posted";
+              remoteRefId = data.id || data.post_id;
+            } else {
+              // Share Text Feed
+              const fbUrl = `https://graph.facebook.com/v20.0/${keys.facebookPageId}/feed`;
+              const response = await fetch(fbUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  message: content,
+                  access_token: keys.facebookAccessToken
+                })
+              });
+              const data: any = await response.json();
+              if (!response.ok || data.error) {
+                throw new Error(`Meta Graph API Facebook error: ${JSON.stringify(data.error || data)}`);
+              }
+              apiStatus = "posted";
+              remoteRefId = data.id;
+            }
+          } else if (platform === "instagram") {
+            if (!keys.instagramBusinessId || !keys.instagramAccessToken) {
+              throw new Error("Instagram configuration missing. Configure Business Account ID and Access Token.");
+            }
+            if (!publicServingImgUrl) {
+              throw new Error("Instagram requires a visual media attachment. Generate or load a Creative Artwork/Banner to post.");
+            }
+
+            // Create container
+            const containerRes = await fetch(`https://graph.facebook.com/v20.0/${keys.instagramBusinessId}/media`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                image_url: publicServingImgUrl,
+                caption: content,
+                access_token: keys.instagramAccessToken
+              })
+            });
+            const containerData: any = await containerRes.json();
+            if (!containerRes.ok || containerData.error) {
+              throw new Error(`Media Container creation failure: ${JSON.stringify(containerData.error || containerData)}`);
+            }
+            const creationId = containerData.id;
+
+            // Publish container
+            const publishRes = await fetch(`https://graph.facebook.com/v20.0/${keys.instagramBusinessId}/media_publish`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                creation_id: creationId,
+                access_token: keys.instagramAccessToken
+              })
+            });
+            const publishData: any = await publishRes.json();
+            if (!publishRes.ok || publishData.error) {
+              throw new Error(`Media publication failure: ${JSON.stringify(publishData.error || publishData)}`);
+            }
+            apiStatus = "posted";
+            remoteRefId = publishData.id;
+          } else if (platform === "tiktok") {
+            if (!keys.tiktokAccessToken || !keys.tiktokAccountId) {
+              throw new Error("TikTok configuration missing. Set Account Access Token and User/Creator ID.");
+            }
+
+            const tiktokUrl = "https://open.tiktokapis.com/v2/post/publish/content/init/";
+            const tiktokRes = await fetch(tiktokUrl, {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${keys.tiktokAccessToken}`,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                post_info: {
+                  title: content.substring(0, 80),
+                  text: content,
+                  privacy_level: "PUBLIC_TO_ALL"
+                },
+                source_info: {
+                  source: "PULL_FROM_URL",
+                  photo_cover_index: 0,
+                  photo_images: publicServingImgUrl ? [publicServingImgUrl] : []
+                }
+              })
+            });
+            const tiktokData: any = await tiktokRes.json();
+            if (!tiktokRes.ok || tiktokData.error) {
+              throw new Error(`TikTok Direct Content Posting API error: ${JSON.stringify(tiktokData.error || tiktokData)}`);
+            }
+            apiStatus = "posted";
+            remoteRefId = tiktokData.data?.publish_id || "tiktok-published";
+          }
+        }
+      } catch (postErr: any) {
+        console.error("Direct social media posting API request failed:", postErr.message || postErr);
+        apiStatus = "failed";
+        postErrorLogs = postErr.message || JSON.stringify(postErr);
+      }
+
+      // Update base status and save error logs if any occurred during real API posting
+      await pool.query(
+        "UPDATE organic_posts SET status = ? WHERE id = ?",
+        [apiStatus === "failed" ? "failed" : "posted", insertedId]
+      );
+
+      if (apiStatus === "failed") {
+        return res.status(500).json({ 
+          error: `Social Media API Connection failed. Stored as local log. Details: ${postErrorLogs}` 
+        });
+      }
+
       res.json({
-        id: result.insertId,
+        id: insertedId,
         tenantId,
         platform,
         content,
         imageUrl,
-        status: 'posted',
+        status: "posted",
+        remoteRefId,
+        mode: apiStatus === "posted" ? "production" : "simulation",
         createdAt: new Date().toISOString()
       });
     } catch (error: any) {
       console.error("Create Post Error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // 4a. Public Image Serve Endpoint (serves public binary graphics derived from internal MySQL base64 for API scrapers)
+  app.get("/api/marketing/public-image/:postId", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { postId } = req.params;
+
+    try {
+      const [rows]: any = await pool.query(
+        "SELECT imageUrl FROM organic_posts WHERE id = ?",
+        [postId]
+      );
+      if (rows.length === 0 || !rows[0].imageUrl) {
+        return res.status(404).json({ error: "No image found for this post identifier." });
+      }
+
+      const rawImgUrl: string = rows[0].imageUrl;
+      if (rawImgUrl.startsWith("data:image/")) {
+        const match = rawImgUrl.match(/^data:([^;]+);base64,(.+)$/);
+        if (match) {
+          const contentType = match[1];
+          const base64Content = match[2];
+          const fileBuffer = Buffer.from(base64Content, 'base64');
+          res.setHeader('Content-Type', contentType);
+          res.setHeader('Cache-Control', 'public, max-age=86400');
+          return res.send(fileBuffer);
+        }
+      }
+      
+      if (rawImgUrl.startsWith("http")) {
+        return res.redirect(rawImgUrl);
+      }
+
+      res.status(400).json({ error: "Unknown image data encoding format." });
+    } catch (e: any) {
+      console.error("Public image provider endpoint failed:", e.message);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  // 4b. Get connectors settings
+  app.get("/api/marketing/connectors", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { tenantId } = req.query;
+    if (!tenantId) return res.status(400).json({ error: "tenantId is required" });
+
+    try {
+      const [rows]: any = await pool.query(
+        "SELECT * FROM social_connectors WHERE tenantId = ?",
+        [tenantId]
+      );
+      if (rows.length === 0) {
+        return res.json({
+          tenantId,
+          productionMode: 0,
+          facebookPageId: "",
+          facebookAccessToken: "",
+          instagramBusinessId: "",
+          instagramAccessToken: "",
+          tiktokAccessToken: "",
+          tiktokAccountId: ""
+        });
+      }
+
+      // Keep tokens masked visually for security
+      const out = { ...rows[0] };
+      const maskToken = (tok: string) => {
+        if (!tok) return "";
+        if (tok.length <= 16) return "...";
+        return tok.substring(0, 8) + "..." + tok.substring(tok.length - 8);
+      };
+
+      out.facebookAccessToken = maskToken(out.facebookAccessToken);
+      out.instagramAccessToken = maskToken(out.instagramAccessToken);
+      out.tiktokAccessToken = maskToken(out.tiktokAccessToken);
+
+      res.json(out);
+    } catch (error: any) {
+      console.error("Fetch Connectors error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // 4c. Save / Sync Connectors
+  app.post("/api/marketing/connectors/save", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const {
+      tenantId,
+      productionMode,
+      facebookPageId,
+      facebookAccessToken,
+      instagramBusinessId,
+      instagramAccessToken,
+      tiktokAccessToken,
+      tiktokAccountId
+    } = req.body;
+
+    if (!tenantId) return res.status(400).json({ error: "tenantId is required" });
+
+    try {
+      const [current]: any = await pool.query("SELECT * FROM social_connectors WHERE tenantId = ?", [tenantId]);
+      const oldKeys = current.length > 0 ? current[0] : {};
+
+      let fbTok = facebookAccessToken;
+      if (fbTok?.includes("...") && oldKeys.facebookAccessToken) fbTok = oldKeys.facebookAccessToken;
+
+      let igTok = instagramAccessToken;
+      if (igTok?.includes("...") && oldKeys.instagramAccessToken) igTok = oldKeys.instagramAccessToken;
+
+      let tkTok = tiktokAccessToken;
+      if (tkTok?.includes("...") && oldKeys.tiktokAccessToken) tkTok = oldKeys.tiktokAccessToken;
+
+      await pool.query(
+        `INSERT INTO social_connectors (tenantId, productionMode, facebookPageId, facebookAccessToken, instagramBusinessId, instagramAccessToken, tiktokAccessToken, tiktokAccountId)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE 
+           productionMode = VALUES(productionMode), 
+           facebookPageId = VALUES(facebookPageId), 
+           facebookAccessToken = ?,
+           instagramBusinessId = VALUES(instagramBusinessId), 
+           instagramAccessToken = ?,
+           tiktokAccessToken = ?,
+           tiktokAccountId = VALUES(tiktokAccountId)`,
+        [
+          tenantId,
+          productionMode ? 1 : 0,
+          facebookPageId || null,
+          fbTok || null,
+          instagramBusinessId || null,
+          igTok || null,
+          tkTok || null,
+          tiktokAccountId || null,
+          fbTok || null,
+          igTok || null,
+          tkTok || null
+        ]
+      );
+
+      res.json({ status: "success", message: "Connectors and tokens synchronized securely." });
+    } catch (error: any) {
+      console.error("Save Connectors Error:", error.message);
       res.status(500).json({ error: error.message });
     }
   });

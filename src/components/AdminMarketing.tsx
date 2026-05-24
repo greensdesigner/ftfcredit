@@ -53,14 +53,89 @@ export default function AdminMarketing() {
   const { user } = useAuth();
   const tenantId = user?.tenantId;
 
-  // Tabs: 'paid' (Paid Campaigns), 'organic' (Organic Posts), 'history' (Active & past Campaigns)
-  const [subTab, setSubTab] = useState<'paid' | 'organic' | 'history'>('paid');
+  // Tabs: 'paid' (Paid Campaigns), 'organic' (Organic Posts), 'history' (Active & past Campaigns), 'connectors' (Direct API Gates)
+  const [subTab, setSubTab] = useState<'paid' | 'organic' | 'history' | 'connectors'>('organic');
 
   // Loaders & database collections
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [posts, setPosts] = useState<OrganicPost[]>([]);
   const [loadingCampaigns, setLoadingCampaigns] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(true);
+
+  // Direct Production APIs Connector Credentials Settings
+  const [productionMode, setProductionMode] = useState<boolean>(false);
+  const [facebookPageId, setFacebookPageId] = useState<string>('');
+  const [facebookAccessToken, setFacebookAccessToken] = useState<string>('');
+  const [instagramBusinessId, setInstagramBusinessId] = useState<string>('');
+  const [instagramAccessToken, setInstagramAccessToken] = useState<string>('');
+  const [tiktokAccessToken, setTiktokAccessToken] = useState<string>('');
+  const [tiktokAccountId, setTiktokAccountId] = useState<string>('');
+
+  const [loadingConnectors, setLoadingConnectors] = useState<boolean>(false);
+  const [savingConnectors, setSavingConnectors] = useState<boolean>(false);
+
+  const fetchConnectors = async () => {
+    if (!tenantId) return;
+    try {
+      setLoadingConnectors(true);
+      const res = await fetch(`/api/marketing/connectors?tenantId=${tenantId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setProductionMode(data.productionMode === 1);
+        setFacebookPageId(data.facebookPageId || '');
+        setFacebookAccessToken(data.facebookAccessToken || '');
+        setInstagramBusinessId(data.instagramBusinessId || '');
+        setInstagramAccessToken(data.instagramAccessToken || '');
+        setTiktokAccessToken(data.tiktokAccessToken || '');
+        setTiktokAccountId(data.tiktokAccountId || '');
+      }
+    } catch (e) {
+      console.error("Error loading social connectors key setup:", e);
+    } finally {
+      setLoadingConnectors(false);
+    }
+  };
+
+  const handleSaveConnectors = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tenantId) return;
+    setSavingConnectors(true);
+    try {
+      const res = await fetch('/api/marketing/connectors/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tenantId,
+          productionMode,
+          facebookPageId,
+          facebookAccessToken,
+          instagramBusinessId,
+          instagramAccessToken,
+          tiktokAccessToken,
+          tiktokAccountId
+        })
+      });
+      if (res.ok) {
+        alert("Success! Social Media Integrations & API Connectors configured.");
+        fetchConnectors();
+      } else {
+        const err = await res.json();
+        alert(`Failed to save connectors: ${err.error || "Unrecognized server error."}`);
+      }
+    } catch (err) {
+      console.error("Error saving credentials:", err);
+      alert("Network transition/error occurred trying to sync API keys.");
+    } finally {
+      setSavingConnectors(false);
+    }
+  };
+
+  // Fetch connector keys upon tab selection
+  useEffect(() => {
+    if (subTab === 'connectors') {
+      fetchConnectors();
+    }
+  }, [subTab, tenantId]);
 
   // Organic custom form state
   const [selectedPlatform, setSelectedPlatform] = useState<'facebook' | 'instagram' | 'tiktok'>('facebook');
@@ -319,6 +394,15 @@ export default function AdminMarketing() {
             )}
           >
             History & Billing
+          </button>
+          <button 
+            onClick={() => setSubTab('connectors')}
+            className={cn(
+              "px-5 py-2.5 text-xs font-bold rounded-2xl transition-all shadow-sm",
+              subTab === 'connectors' ? "bg-white text-violet-900" : "bg-violet-800/40 text-violet-100 hover:bg-violet-700/60"
+            )}
+          >
+            Social Connectors
           </button>
         </div>
       </div>
@@ -818,6 +902,202 @@ export default function AdminMarketing() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SOCIAL CONNECTORS TAB */}
+      {subTab === 'connectors' && (
+        <div className="space-y-6 animate-in fade-in duration-300 text-left">
+          <div className="bg-emerald-50/50 border border-emerald-100/50 rounded-3xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <span className="text-[10px] font-black uppercase text-emerald-800 tracking-wider flex items-center gap-1.5 bg-emerald-100/60 border border-emerald-200/50 px-2.5 py-0.5 rounded-full w-fit">
+                <Activity size={12} /> Status Monitor
+              </span>
+              <h3 className="font-display text-base font-bold text-neutral-900 mt-2">
+                {productionMode ? "🔴 Direct Live Production Mode Active (রিয়েল লাইভ পোস্টিং)" : "🟢 Sandbox Simulation Mode Active (ডেমো সিমুলেশন)"}
+              </h3>
+              <p className="text-xs text-neutral-500 leading-normal max-w-2xl">
+                যদি **Direct Live Production Mode** চালু থাকে, তাহলে "Publish Organically Now" বাটনে ক্লিক করলে পোস্টটি সরাসরি ফেসবুক পেজ, ইন্সটাগ্রাম পেজ এবং টিক টক-এ পোস্ট হবে। অন্যথায় এটি ডেমো মোডে ডেটাবেজে সংরক্ষিত হবে।
+              </p>
+            </div>
+            
+            <button
+              type="button"
+              onClick={() => setProductionMode(!productionMode)}
+              className={cn(
+                "py-3 px-5 text-xs font-black rounded-2xl transition-all shadow-sm shrink-0 uppercase tracking-wider select-none cursor-pointer",
+                productionMode 
+                  ? "bg-red-600 hover:bg-red-700 text-white" 
+                  : "bg-neutral-900 hover:bg-neutral-850 text-white"
+              )}
+            >
+              {productionMode ? "Switch to Sandbox Mode" : "Switch to Direct Live Mode"}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Forms configuration column */}
+            <form onSubmit={handleSaveConnectors} className="lg:col-span-2 space-y-6">
+              <div className="bg-white rounded-[32px] border border-neutral-100 p-8 shadow-sm space-y-6">
+                <h3 className="font-display text-xl font-bold text-neutral-950 flex items-center gap-2 border-b border-neutral-105 pb-4">
+                  <Globe size={20} className="text-violet-600" />
+                  Social API Connectors & Credentials
+                </h3>
+
+                {loadingConnectors ? (
+                  <div className="flex flex-col items-center justify-center py-12 gap-3">
+                    <Loader2 className="animate-spin text-neutral-400" size={32} />
+                    <span className="text-xs text-neutral-400 font-bold uppercase tracking-wider">Syncing Secure Tokens...</span>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Facebook Group */}
+                    <div className="bg-blue-50/40 border border-blue-100 placeholder:text-neutral-450 rounded-2xl p-6 space-y-4">
+                      <h4 className="font-bold text-xs text-blue-900 flex items-center gap-2">
+                        <Facebook size={16} /> Facebook Page Gateway
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Facebook Page ID</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. 102456239102931" 
+                            value={facebookPageId}
+                            onChange={(e) => setFacebookPageId(e.target.value)}
+                            className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Page Permanent Access Token</label>
+                          <input 
+                            type="password" 
+                            placeholder={facebookAccessToken ? "••••••••••••••••" : "Paste EAAXX... permanent token"} 
+                            value={facebookAccessToken}
+                            onChange={(e) => setFacebookAccessToken(e.target.value)}
+                            className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Instagram Group */}
+                    <div className="bg-pink-50/40 border border-pink-100 rounded-2xl p-6 space-y-4">
+                      <h4 className="font-bold text-xs text-pink-900 flex items-center gap-2">
+                        <Instagram size={16} /> Instagram Business API Connector
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Instagram Business ID</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. 178414029102456" 
+                            value={instagramBusinessId}
+                            onChange={(e) => setInstagramBusinessId(e.target.value)}
+                            className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">Instagram Access Token</label>
+                          <input 
+                            type="password" 
+                            placeholder={instagramAccessToken ? "••••••••••••••••" : "Paste IG token (EAAXX...)"} 
+                            value={instagramAccessToken}
+                            onChange={(e) => setInstagramAccessToken(e.target.value)}
+                            className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* TikTok Group */}
+                    <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-6 space-y-4">
+                      <h4 className="font-bold text-xs text-neutral-900 flex items-center gap-2">
+                        <Video size={16} /> TikTok Content Publisher Config
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">TikTok Client/Creator ID</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. act_1028373190" 
+                            value={tiktokAccountId}
+                            onChange={(e) => setTiktokAccountId(e.target.value)}
+                            className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-black uppercase tracking-wider text-neutral-600 mb-1.5">TikTok Developer Access Token</label>
+                          <input 
+                            type="password" 
+                            placeholder={tiktokAccessToken ? "••••••••••••••••" : "Paste TikTok App token"} 
+                            value={tiktokAccessToken}
+                            onChange={(e) => setTiktokAccessToken(e.target.value)}
+                            className="w-full bg-white border border-neutral-200/85 rounded-2xl px-4 py-3 text-xs font-semibold focus:outline-none focus:border-neutral-950 transition-all text-neutral-850"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end pt-4 border-t border-neutral-100">
+                  <button
+                    type="submit"
+                    disabled={savingConnectors || loadingConnectors}
+                    className="py-4 px-8 rounded-2xl bg-neutral-900 border border-neutral-900 hover:bg-neutral-800 text-white text-xs font-black uppercase tracking-widest transition-all shadow-md hover:shadow-lg disabled:opacity-30 cursor-pointer"
+                  >
+                    {savingConnectors ? (
+                      <span className="flex items-center gap-1.5">
+                        <Loader2 size={14} className="animate-spin" /> Synchronizing...
+                      </span>
+                    ) : (
+                      "Save Integration Config"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            {/* Documentation Guidelines column */}
+            <div className="rounded-[32px] border border-neutral-100 bg-white p-8 shadow-sm space-y-6 text-left">
+              <h3 className="font-display text-base font-bold text-neutral-950 flex items-center gap-1.5">
+                <Plus size={18} className="text-violet-600" />
+                Setup Steps / নির্দেশাবলী
+              </h3>
+              
+              <div className="space-y-4 text-xs text-neutral-600 leading-relaxed">
+                <div className="p-4 rounded-2xl bg-blue-50/50 border border-blue-105 space-y-2">
+                  <h4 className="font-bold text-blue-950 text-xs">📘 Facebook Integration (ফেসবুক পেজ)</h4>
+                  <ul className="list-decimal pl-4 space-y-1 text-[11px] text-blue-900">
+                    <li>Meta Developer Console থেকে একটি App তৈরি করে পেজ পারমিশন নির্বাচন করুন।</li>
+                    <li>Graph API Explorer ব্যবহার করে স্থায়ী (Permanent) **Page Access Token** জ্যাম করুন।</li>
+                    <li>আপনার নির্দিষ্ট ফেসবুক পেজের **Page ID** সংগ্রহ করে বসান।</li>
+                  </ul>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-pink-50/50 border border-pink-105 space-y-2">
+                  <h4 className="font-bold text-pink-950 text-xs">📙 Instagram Business (ইন্সটাগ্রাম পেজ)</h4>
+                  <ul className="list-decimal pl-4 space-y-1 text-[11px] text-pink-900">
+                    <li>ইন্সটাগ্রাম পেজের জন্য অবশ্যই Professional Business Account থাকতে হবে।</li>
+                    <li>ইন্সটাগ্রাম অ্যাকাউন্টটিকে আপনার ফেসবুক পেজের সাথে লিঙ্ক (Link) করুন।</li>
+                    <li>Meta Graph API থেকে **Instagram Business ID** সংগ্রহ করে বসান।</li>
+                  </ul>
+                </div>
+
+                <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-2">
+                  <h4 className="font-bold text-neutral-900 text-xs">⬛ TikTok Content API (টিকটক)</h4>
+                  <ul className="list-decimal pl-4 space-y-1 text-[11px] text-neutral-700">
+                    <li>TikTok For Developers পোর্টালে রেজিস্টার করুন।</li>
+                    <li>"Direct Content Posting" অনুমোদন পেয়ে ক্লায়েন্ট বা ক্রিয়েটর টোকেন জেনারেট করে যুক্ত করুন।</li>
+                  </ul>
+                </div>
+
+                <div className="pt-2 text-[10.5px] italic text-neutral-400 font-semibold text-center border-t border-neutral-100">
+                  ⚠️ Note: Direct Live Mode runs actual network payloads under the https protocol. Images are programmatically mapped directly to keep scrapers active.
+                </div>
+              </div>
             </div>
           </div>
         </div>
