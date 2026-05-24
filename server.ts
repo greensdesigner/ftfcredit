@@ -1271,8 +1271,16 @@ async function startServer() {
       return res.status(400).json({ error: "Prompt/content is required to generate an image" });
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY || 
+                   process.env.VITE_GEMINI_API_KEY || 
+                   process.env.GEMINI_KEY || 
+                   process.env.GEMINI_API ||
+                   process.env.API_KEY ||
+                   process.env.VITE_GEMINI_KEY;
+
     if (!apiKey) {
+      console.error("❌ CRITICAL: Gemini API key is missing from process.env");
+      console.log("Current Env Keys available:", Object.keys(process.env).filter(k => k.includes('GEMINI') || k.includes('KEY')));
       return res.status(400).json({ 
         error: "Gemini API key is not configured in Secrets settings. Please check your system setting variables." 
       });
