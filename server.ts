@@ -20,8 +20,8 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error("🚨 UNHANDLED REJECTION PREVENTED CRASH:", reason);
 });
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const _filename = typeof __filename !== 'undefined' ? __filename : fileURLToPath(import.meta.url);
+const _dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(_filename);
 
 async function startServer() {
   const app = express();
@@ -1462,14 +1462,14 @@ async function startServer() {
 
   function setupProductionMode() {
     // Find the correct path for static files (dist)
-    let distPath = path.resolve(__dirname, '../dist');
+    let distPath = path.resolve(_dirname, '../dist');
     
     // Fallback search for dist folder
     if (!fs.existsSync(path.join(distPath, 'index.html'))) {
       const candidates = [
         path.resolve(process.cwd(), 'dist'),
-        path.resolve(__dirname, 'dist'),
-        path.resolve(__dirname, '..')
+        path.resolve(_dirname, 'dist'),
+        path.resolve(_dirname, '..')
       ];
       for (const c of candidates) {
         if (fs.existsSync(path.join(c, 'index.html'))) {
@@ -1521,8 +1521,9 @@ async function startServer() {
   // We do NOT specify a hostname (like "0.0.0.0") on server.listen because Phusion Passenger/Hostinger intercepts the listen
   // call and fails with 503 Service Unavailable if a specific host IP/wildcard is passed.
   // Node.js/Express automatically defaults to listening on all interfaces when host is omitted.
-  app.listen(PORT, () => {
-    console.log(`Server is listening on: ${PORT}`);
+  const portToListen = (!isNaN(Number(PORT)) && isFinite(Number(PORT))) ? Number(PORT) : PORT;
+  app.listen(portToListen, () => {
+    console.log(`Server is listening on: ${portToListen}`);
     console.log(`Environment: ${process.env.NODE_ENV}`);
     if (!process.env.DB_HOST) {
       console.warn("WARNING: DB_HOST is not set. Database features will be limited.");
