@@ -1518,25 +1518,16 @@ async function startServer() {
   });
 
   // Resilient listening parameter to support both numeric ports and string-based UNIX sockets/named pipes (used by Passenger/Hostinger)
-  const numericPort = Number(PORT);
-  if (!isNaN(numericPort) && isFinite(numericPort)) {
-    app.listen(numericPort, "0.0.0.0", () => {
-      console.log(`Server is listening on port ${numericPort}`);
-      console.log(`Environment: ${process.env.NODE_ENV}`);
-      if (!process.env.DB_HOST) {
-        console.warn("WARNING: DB_HOST is not set. Database features will be limited.");
-      }
-    });
-  } else {
-    // String socket path or named pipe (e.g., Passenger socket)
-    app.listen(PORT, () => {
-      console.log(`Server is listening on UNIX socket/pipe: ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV}`);
-      if (!process.env.DB_HOST) {
-        console.warn("WARNING: DB_HOST is not set. Database features will be limited.");
-      }
-    });
-  }
+  // We do NOT specify a hostname (like "0.0.0.0") on server.listen because Phusion Passenger/Hostinger intercepts the listen
+  // call and fails with 503 Service Unavailable if a specific host IP/wildcard is passed.
+  // Node.js/Express automatically defaults to listening on all interfaces when host is omitted.
+  app.listen(PORT, () => {
+    console.log(`Server is listening on: ${PORT}`);
+    console.log(`Environment: ${process.env.NODE_ENV}`);
+    if (!process.env.DB_HOST) {
+      console.warn("WARNING: DB_HOST is not set. Database features will be limited.");
+    }
+  });
 }
 
 startServer();
