@@ -10,6 +10,16 @@ import { GoogleGenAI } from "@google/genai";
 
 dotenv.config();
 
+// Register global exception boundaries to prevent Node.js from crashing 
+// on unhandled promise rejections or database/API dropouts
+process.on('uncaughtException', (err) => {
+  console.error("🚨 UNCAUGHT EXCEPTION PREVENTED CRASH:", err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error("🚨 UNHANDLED REJECTION PREVENTED CRASH:", reason);
+});
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
