@@ -1275,11 +1275,12 @@ async function startServer() {
       let apiStatus = "simulated_posted";
       let postErrorLogs = null;
       let remoteRefId = null;
+      let keys: any = null;
 
       try {
         // Fetch connectors settings to see if redirecting to real Meta Graph or TikTok API
         const [connectors]: any = await pool.query("SELECT * FROM social_connectors WHERE tenantId = ?", [tenantId]);
-        const keys = connectors?.[0];
+        keys = connectors?.[0];
 
         if (keys && keys.productionMode === 1) {
           const protocolString = isHttps ? "https" : "http";
@@ -1444,6 +1445,10 @@ async function startServer() {
         status: "posted",
         remoteRefId,
         mode: apiStatus === "posted" ? "production" : "simulation",
+        facebookPageId: keys?.facebookPageId || null,
+        instagramBusinessId: keys?.instagramBusinessId || null,
+        tiktokAccountId: keys?.tiktokAccountId || null,
+        quickConnectMode: !keys?.facebookAccessToken || keys.facebookAccessToken.trim() === "",
         createdAt: new Date().toISOString()
       });
     } catch (error: any) {

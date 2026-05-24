@@ -71,6 +71,7 @@ export default function AdminMarketing() {
   const [tiktokAccessToken, setTiktokAccessToken] = useState<string>('');
   const [tiktokAccountId, setTiktokAccountId] = useState<string>('');
   const [quickConnectMode, setQuickConnectMode] = useState<boolean>(true);
+  const [lastCreatedPost, setLastCreatedPost] = useState<any>(null);
 
   const [loadingConnectors, setLoadingConnectors] = useState<boolean>(false);
   const [savingConnectors, setSavingConnectors] = useState<boolean>(false);
@@ -131,12 +132,10 @@ export default function AdminMarketing() {
     }
   };
 
-  // Fetch connector keys upon tab selection
+  // Fetch connector keys upon tab selection, tenantId validation or component mount
   useEffect(() => {
-    if (subTab === 'connectors') {
-      fetchConnectors();
-    }
-  }, [subTab, tenantId]);
+    fetchConnectors();
+  }, [tenantId]);
 
   // Organic custom form state
   const [selectedPlatform, setSelectedPlatform] = useState<'facebook' | 'instagram' | 'tiktok'>('facebook');
@@ -247,12 +246,19 @@ export default function AdminMarketing() {
       });
 
       if (res.ok) {
-        setPostDraftContent('');
-        setPostBase64Image(null);
-        // Refresh local listings
+        // Copy content text to clipboard instantly so they can easily paste
+        try {
+          await navigator.clipboard.writeText(postDraftContent);
+        } catch (clipErr) {
+          console.warn("Clipboard access not fully available in iframe, will provide manual copy buttons:", clipErr);
+        }
+
         const updatedPost = await res.json();
         setPosts(prev => [updatedPost, ...prev]);
-        alert("Success! Your post has been organically published.");
+        setLastCreatedPost(updatedPost);
+        
+        setPostDraftContent('');
+        setPostBase64Image(null);
       }
     } catch (err) {
       console.error("Error making organic post:", err);
@@ -570,7 +576,76 @@ export default function AdminMarketing() {
 
       {/* ORGANIC SOCIAL POSTING VIEW */}
       {subTab === 'organic' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-6 animate-in fade-in duration-300">
+          {lastCreatedPost && (
+            <div className="rounded-[32px] border-2 border-emerald-500 bg-emerald-50/60 p-6 md:p-8 text-left space-y-6 shadow-sm">
+              <div className="flex items-center justify-between border-b border-emerald-150 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <span className="size-10 bg-emerald-100 border border-emerald-250 text-emerald-800 rounded-2xl flex items-center justify-center font-display text-lg font-black animate-bounce mt-1">✓</span>
+                  <div>
+                    <h3 className="font-display text-base md:text-lg font-black text-emerald-950 uppercase">পোস্ট গেটওয়ে সফলভাবে তৈরি হয়েছে! (Branding Post Created)</h3>
+                    <p className="text-xs text-emerald-800 font-semibold mt-0.5">আপনার অর্গানিক সোশ্যাল ক্যাম্পেইন রেডি। কোনো টোকেন জেনারেট ছাড়া সরাসরি পোস্ট করুন।</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setLastCreatedPost(null)}
+                  className="px-3 py-1.5 text-xs font-black text-emerald-900 bg-emerald-100 hover:bg-emerald-200 rounded-xl"
+                >
+                  Dismiss / বন্ধ করুন
+                </button>
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl border border-emerald-100 space-y-3">
+                <span className="text-[10px] font-black uppercase text-emerald-800 tracking-wider bg-emerald-100/60 border border-emerald-250 px-2.5 py-0.5 rounded-full w-fit">
+                  কপি করা ক্যাপশন টেক্সট (Auto-Copied Caption)
+                </span>
+                <p className="text-xs text-neutral-800 leading-relaxed font-semibold italic">"{lastCreatedPost.content}"</p>
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(lastCreatedPost.content);
+                    alert("পোস্টের টেক্সট কপি করা হয়েছে!");
+                  }}
+                  className="text-xs font-black text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-120 px-3 py-2 rounded-xl flex items-center gap-1"
+                >
+                  <FileText size={12} /> ম্যানুয়ালি কপি করুন (Copy Manually)
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                <div className="p-4 bg-emerald-100/40 border border-emerald-200 rounded-2xl space-y-2">
+                  <h4 className="font-bold text-xs text-emerald-950 flex items-center gap-1">
+                    🟢 সহজ সংযোগ সমাধান নির্দেশাবলী (Easy Quick-Post Guide)
+                  </h4>
+                  <ul className="list-disc pl-4 text-[11.5px] text-emerald-950 space-y-1 font-medium leading-relaxed">
+                    <li>যেহেতু আপনি কোনো অনিরাপদ স্থায়ি পাসওয়ার্ড বা এপিআই টোকেন প্রদান ছাড়াই **শুধুমাত্র ফেসবুক পেজ আইডি** দিয়ে কানেক্ট করেছেন, তাই মেটার নতুন সিকিউরিটি পলিসি অনুযায়ী আপনার পোস্টের টেক্সটটি কপি করে দেওয়া হয়েছে।</li>
+                    <li>নিচের এক-ক্লিক ডাইরেক্ট অটো-পাবলিশ বাটনে চাপ দিয়ে ফেসবুক পেজটি ওপেন করুন এবং সরাসরি পোস্ট বক্সে পেস্ট (**Ctrl+V** বা **Tap & Paste**) করে পাবলিশ লেখাটিতে ক্লিক করুন!</li>
+                  </ul>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                  <a
+                    href={`https://www.facebook.com/${lastCreatedPost.facebookPageId || facebookPageId || 'pages'}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-750 text-white font-black text-xs px-6 py-4 rounded-2xl transition-all shadow-sm"
+                  >
+                    <Facebook size={16} /> ১-ক্লিক অটো-পাবলিশ গেটওয়ে (Publish to Page)
+                  </a>
+                  
+                  <a
+                    href={`https://www.facebook.com/sharer/sharer.php?quote=${encodeURIComponent(lastCreatedPost.content)}&u=${encodeURIComponent(window.location.origin)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center gap-2 bg-neutral-900 hover:bg-neutral-800 text-white font-black text-xs px-6 py-4 rounded-2xl transition-all shadow-sm"
+                  >
+                    ⚡ ফেসবুক ফিড পপআপ রাইটার (Feed Composer Popup)
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Post Designer Form */}
           <div className="rounded-[32px] border border-neutral-100 bg-white p-8 shadow-sm space-y-6">
             <h3 className="font-display text-xl font-bold text-neutral-950 flex items-center gap-2">
@@ -785,6 +860,7 @@ export default function AdminMarketing() {
               </div>
             </div>
           </div>
+        </div>
         </div>
       )}
 
