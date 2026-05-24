@@ -1297,38 +1297,121 @@ async function startServer() {
         }
       });
 
-      // Call generateContent with gemini-2.5-flash-image model as instructed in gemini-api skill
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
-        contents: {
-          parts: [
-            {
-              text: prompt,
-            },
-          ],
-        },
-        config: {
-          imageConfig: {
-            aspectRatio: "1:1",
-          },
-        },
-      });
+      // Call generation with multiple fallback models to handle free/standard quota profiles safely
+      let base64Image: string | null = null;
+      let usedModel = "gemini-2.5-flash-image";
 
-      let base64Image = null;
-      if (response.candidates?.[0]?.content?.parts) {
-        for (const part of response.candidates[0].content.parts) {
-          if (part.inlineData) {
-            base64Image = part.inlineData.data;
-            break;
+      try {
+        console.log(`Attempting image generation using "${usedModel}"...`);
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash-image',
+          contents: {
+            parts: [
+              {
+                text: prompt,
+              },
+            ],
+          },
+          config: {
+            imageConfig: {
+              aspectRatio: "1:1",
+            },
+          },
+        });
+
+        if (response.candidates?.[0]?.content?.parts) {
+          for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+              base64Image = part.inlineData.data;
+              break;
+            }
+          }
+        }
+      } catch (error: any) {
+        console.warn(`Primary model (${usedModel}) failed:`, error.message || error);
+        
+        // Fallback 1: Try Imagen 3 (imagen-3.0-generate-002)
+        try {
+          usedModel = "imagen-3.0-generate-002";
+          console.log(`Attempting fallback using "${usedModel}"...`);
+          const imgResponse = await ai.models.generateImages({
+            model: 'imagen-3.0-generate-002',
+            prompt: prompt,
+            config: {
+              numberOfImages: 1,
+              outputMimeType: 'image/jpeg',
+              aspectRatio: '1:1',
+            }
+          });
+
+          if (imgResponse.generatedImages?.[0]?.image?.imageBytes) {
+            base64Image = imgResponse.generatedImages[0].image.imageBytes;
+          }
+        } catch (imgError: any) {
+          console.warn(`Fallback model (${usedModel}) failed:`, imgError.message || imgError);
+
+          // Fallback 2: Try Imagen 4 (imagen-4.0-generate-001)
+          try {
+            usedModel = "imagen-4.0-generate-001";
+            console.log(`Attempting fallback using "${usedModel}"...`);
+            const v4Response = await ai.models.generateImages({
+              model: 'imagen-4.0-generate-001',
+              prompt: prompt,
+              config: {
+                numberOfImages: 1,
+                outputMimeType: 'image/jpeg',
+                aspectRatio: '1:1',
+              }
+            });
+
+            if (v4Response.generatedImages?.[0]?.image?.imageBytes) {
+              base64Image = v4Response.generatedImages[0].image.imageBytes;
+            }
+          } catch (v4Error: any) {
+            console.warn(`Fallback model (${usedModel}) failed:`, v4Error.message || v4Error);
+
+            // Fallback 3: Try gemini-3.1-flash-image-preview
+            try {
+              usedModel = "gemini-3.1-flash-image-preview";
+              console.log(`Attempting fallback using "${usedModel}"...`);
+              const previewResponse = await ai.models.generateContent({
+                model: 'gemini-3.1-flash-image-preview',
+                contents: {
+                  parts: [
+                    {
+                      text: prompt,
+                    },
+                  ],
+                },
+                config: {
+                  imageConfig: {
+                    aspectRatio: "1:1",
+                  },
+                },
+              });
+
+              if (previewResponse.candidates?.[0]?.content?.parts) {
+                for (const part of previewResponse.candidates[0].content.parts) {
+                  if (part.inlineData) {
+                    base64Image = part.inlineData.data;
+                    break;
+                  }
+                }
+              }
+            } catch (previewError: any) {
+              console.error("All image generation models failed.", previewError);
+              throw new Error(`All available image generation models failed. Please try a paid key flow or check your Gemini Key quota limits. Last error: ${previewError.message}`);
+            }
           }
         }
       }
 
       if (!base64Image) {
-        return res.status(500).json({ error: "The AI model returned no image part in its response." });
+        return res.status(500).json({ error: "No image content could be generated in any of the attempts." });
       }
 
       const imageUrl = `data:image/png;base64,${base64Image}`;
+      console.log(`Successfully generated AI image using model: ${usedModel}`);
       res.json({ status: "success", imageUrl });
     } catch (error: any) {
       console.error("Gemini AI Image Generation Error:", error);
