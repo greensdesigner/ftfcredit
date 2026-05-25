@@ -13,6 +13,38 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+async function handleFetchResponse(response: Response, actionName: string): Promise<any> {
+  const contentType = response.headers.get("content-type") || "";
+  
+  if (!contentType.includes("application/json")) {
+    const text = await response.text().catch(() => "");
+    if (text.includes("<!DOCTYPE") || text.includes("<html") || text.includes("<body")) {
+      throw new Error(
+        `সার্ভার থেকে JSON এর পরিবর্তে HTML ডকুমেন্ট পাওয়া গেছে। এর কারণ হতে পারেঃ\n\n` +
+        `১. আপনার হোস্টিংয়ে (যেমন Hostinger/cPanel) Node.js ব্যাকএন্ড সার্ভারটি এখনো চালু করা হয়নি বা বন্ধ হয়ে আছে।\n` +
+        `২. Nginx, Apache বা .htaccess রিরাইট রুল রিকুয়েস্টটিকে ব্যাকএন্ড প্রক্সি (/api) তে পাঠানোর পরিবর্তে সরাসরি ইন্ডেক্স ফাইলে পাঠিয়ে দিচ্ছে।\n\n` +
+        `দয়া করে নিশ্চিত করুন আপনার Node.js সার্ভারটি (পোর্ট ৩০০০) চালু আছে এবং রিভার্স প্রক্সি কনফিগারেশন ঠিক আছে।\n\n` +
+        `----------------\n` +
+        `English: Server returned HTML instead of JSON. This usually means that your Node.js backend (Port 3000) is either not running on Hostinger/cPanel, or the Reverse Proxy routing for '/api' is missing or misconfigured in your .htaccess / Nginx server blocks.`
+      );
+    }
+    throw new Error(`Server returned non-JSON response (${contentType || "unknown text"}): ${text.substring(0, 150)}`);
+  }
+
+  let data: any;
+  try {
+    data = await response.json();
+  } catch (err: any) {
+    throw new Error(`Failed to parse JSON response: ${err.message}`);
+  }
+
+  if (!response.ok) {
+    throw new Error(data.error || data.message || `${actionName} failed`);
+  }
+
+  return data;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,12 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ email, password }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Login failed');
-      }
-
-      const data = await response.json();
+      const data = await handleFetchResponse(response, 'Login');
       const loggedUser: UserProfile = data.user;
       
       setUser(loggedUser);
@@ -96,12 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify(userData),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Signup failed on server');
-      }
-
-      const data = await response.json();
+      const data = await handleFetchResponse(response, 'Signup');
 
       // After successful signup, we can construct the profile for the state
       const profile: UserProfile = {
@@ -144,10 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Update failed on server');
-      }
+      await handleFetchResponse(response, 'Update');
 
       const updatedUser = { ...user, ...data };
       setUser(updatedUser);
