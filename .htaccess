@@ -10,13 +10,19 @@
 
     # 2. Skip API requests (let Node.js handle them)
     RewriteRule ^api/ - [L]
+    RewriteRule ^health - [L]
 
     # 3. For everything else, if index.html exists, serve it
     # This handles the reload issue even if Node isn't properly proxying SPA routes
+    # Explicitly exclude /api and /health to ensure they are handled by the Node.js backend
+    RewriteCond %{REQUEST_URI} !^/api
+    RewriteCond %{REQUEST_URI} !^/health
     RewriteCond %{DOCUMENT_ROOT}/dist/index.html -f
     RewriteRule ^.*$ /dist/index.html [L]
     
     # Fallback to root index.html if dist/index.html isn't the structure
+    RewriteCond %{REQUEST_URI} !^/api
+    RewriteCond %{REQUEST_URI} !^/health
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule . /index.html [L]
