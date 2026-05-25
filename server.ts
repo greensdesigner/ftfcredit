@@ -8,7 +8,7 @@ import bcrypt from "bcryptjs";
 import Stripe from "stripe";
 import { GoogleGenAI } from "@google/genai";
 
-dotenv.config();
+dotenv.config({ override: true });
 
 // Register global exception boundaries to prevent Node.js from crashing 
 // on unhandled promise rejections or database/API dropouts
