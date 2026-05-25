@@ -1033,7 +1033,7 @@ export default function AdminDashboard() {
                   <div>
                     <h3 className="text-xl font-bold mb-4 font-display">Ad Payments & Billing</h3>
                     <p className="text-neutral-400 text-sm leading-relaxed mb-6 font-semibold">
-                       সিস্টেম সাবস্ক্রিপশন এবং পেইড ফেসবুক/ইনস্টাগ্রাম অ্যাড ক্যাম্পেইনের যাবতীয় পেমেন্ট একই ওয়ান-টাইম/রিকারিং স্ট্রাইপ (Stripe Checkout) এপিআই কীর মাধ্যমে রিয়েল-টাইমে লাইভ মোডে সম্পন্ন হয়।
+                       All payments for system subscriptions and paid Facebook/Instagram ad campaigns are securely processed in real-time Live Mode using the unified Stripe Checkout API key.
                     </p>
                     <ul className="space-y-3">
                        {[
