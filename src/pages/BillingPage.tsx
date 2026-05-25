@@ -7,9 +7,6 @@ import { useAuth } from '../context/AuthContext';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-// Initialize Stripe with public key from env
-const stripePromise = loadStripe((import.meta as any).env?.VITE_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder');
-
 function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, planName }: any) {
   const stripe = useStripe();
   const elements = useElements();
@@ -30,8 +27,17 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ uid: userId, email }),
       });
-      const { clientSecret, error: siError } = await siRes.json();
-      if (siError) throw new Error(siError);
+
+      const siContentType = siRes.headers.get('content-type');
+      if (!siContentType || !siContentType.includes('application/json')) {
+        const text = await siRes.text();
+        console.error("Non-JSON setup response:", text);
+        throw new Error("সার্ভার থেকে ত্রুটিপূর্ণ রেসপন্স এসেছে (ServerError 500 HTML)। অনুগ্রহ করে আপনার ডোমেন/সার্ভার কনফিগারেশন, .env ফাইলে ডাটাবেস পাসওয়ার্ড, এবং স্ট্রাইপ কি (STRIPE_SECRET_KEY) সঠিক কিনা যাচাই করুন।");
+      }
+
+      const siData = await siRes.json();
+      if (siData.error) throw new Error(siData.error);
+      const clientSecret = siData.clientSecret;
 
       // 2. Confirm Card Setup
       const cardElement = elements.getElement(CardElement);
@@ -57,6 +63,13 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
           paymentMethodId: setupIntent?.payment_method
         }),
       });
+
+      const subContentType = subRes.headers.get('content-type');
+      if (!subContentType || !subContentType.includes('application/json')) {
+        const text = await subRes.text();
+        console.error("Non-JSON subscription response:", text);
+        throw new Error("সার্ভার পেমেন্ট প্রসেস করতে ব্যর্থ হয়েছে। অনুগ্রহ করে নিশ্চিত হোন যে আপনার ডাটাবেস সচল রয়েছে এবং এডমিন স্ট্রাইপ কি ও হোস্টিং সঠিক আছে।");
+      }
 
       const subResult = await subRes.json();
       if (subResult.error) throw new Error(subResult.error);
@@ -130,6 +143,7 @@ export default function BillingPage() {
   const [showCardModal, setShowCardModal] = useState(false);
   const [isPlaidConnecting, setIsPlaidConnecting] = useState(false);
   const [systemSettings, setSystemSettings] = useState<any>(null);
+  const [stripePromise, setStripePromise] = useState<any>(null);
 
   const expiryDate = user?.sub_expiry ? new Date(user.sub_expiry) : null;
   const today = new Date();
@@ -143,6 +157,31 @@ export default function BillingPage() {
 
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(true);
+
+  const loadDynamicStripe = async () => {
+    try {
+      const res = await fetch('/api/stripe/publishable-key');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.publishableKey) {
+          console.log("Loaded Stripe publishable key dynamically from server");
+          setStripePromise(loadStripe(data.publishableKey));
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to fetch publishable key dynamically:", err);
+    }
+    
+    // Fallback to client-side environment variable if API is not available or empty
+    const envKey = (import.meta as any).env?.VITE_STRIPE_PUBLISHABLE_KEY;
+    if (envKey) {
+      console.log("Using environment variable fallback for Stripe publishable key");
+      setStripePromise(loadStripe(envKey));
+    } else {
+      console.error("No Stripe publishable key found! Payments will fail.");
+    }
+  };
 
   const fetchSystemSettings = async () => {
     try {
@@ -164,6 +203,7 @@ export default function BillingPage() {
       fetchSystemSettings();
       fetchInvoices();
       fetchPaymentMethods();
+      loadDynamicStripe();
     }
   }, [user]);
 
@@ -625,23 +665,30 @@ export default function BillingPage() {
                 </button>
               </div>
 
-              <Elements stripe={stripePromise}>
-                <AddCardForm 
-                  userId={user?.uid}
-                  email={user?.email}
-                  tenantId={user?.tenantId}
-                  amount={amount}
-                  planName={currentPlan}
-                  onCancel={() => setShowCardModal(false)} 
-                  onSuccess={(pmId: string) => {
-                    setShowCardModal(false);
-                    fetchPaymentMethods();
-                    fetchInvoices();
-                    refreshProfile();
-                    alert("Subscription activated and card saved successfully!");
-                  }} 
-                />
-              </Elements>
+              {stripePromise ? (
+                <Elements stripe={stripePromise}>
+                  <AddCardForm 
+                    userId={user?.uid}
+                    email={user?.email}
+                    tenantId={user?.tenantId}
+                    amount={amount}
+                    planName={currentPlan}
+                    onCancel={() => setShowCardModal(false)} 
+                    onSuccess={(pmId: string) => {
+                      setShowCardModal(false);
+                      fetchPaymentMethods();
+                      fetchInvoices();
+                      refreshProfile();
+                      alert("Subscription activated and card saved successfully!");
+                    }} 
+                  />
+                </Elements>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 space-y-3">
+                  <Loader2 className="animate-spin text-neutral-400" size={32} />
+                  <p className="text-xs text-neutral-400 font-medium animate-pulse">Loading secure payment portal...</p>
+                </div>
+              )}
             </motion.div>
           </div>
         )}

@@ -92,7 +92,15 @@ async function startServer() {
   // Maintenance Mode Cache Middleware
   app.use(async (req, res, next) => {
     // Exclude health check, static files, login/signup and admin routes from 503 check
-    const excludedPaths = ['/health', '/api/health', '/api/auth/login', '/api/auth/signup', '/api/admin', '/api/admin/system-settings'];
+    const excludedPaths = [
+      '/health', 
+      '/api/health', 
+      '/api/auth/login', 
+      '/api/auth/signup', 
+      '/api/admin', 
+      '/api/admin/system-settings', 
+      '/api/stripe/publishable-key'
+    ];
     const isExcluded = excludedPaths.some(path => req.path.startsWith(path));
     
     if (req.path.startsWith('/api/') && !isExcluded) {
@@ -422,6 +430,12 @@ async function startServer() {
       database: dbStatus,
       time: new Date().toISOString()
     });
+  });
+
+  // Stripe Publishable Key Route for frontend dynamic initialization
+  app.get("/api/stripe/publishable-key", (req, res) => {
+    const key = (process.env.VITE_STRIPE_PUBLISHABLE_KEY || "").trim();
+    res.json({ publishableKey: key });
   });
 
   // User Signup
