@@ -1365,7 +1365,7 @@ export default function AdminMarketing() {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleProcessManualPayment} className="space-y-5">
+              <div className="space-y-6">
                 <div>
                   <label className="block text-xs font-black uppercase tracking-wider text-neutral-700 mb-1.5">Selected Plan Price</label>
                   <div className="p-5 bg-neutral-50 rounded-2xl border border-neutral-150 flex items-center justify-between">
@@ -1404,104 +1404,19 @@ export default function AdminMarketing() {
                   </div>
                 </div>
 
-                <div className="relative flex items-center py-1">
-                  <div className="flex-grow border-t border-neutral-150"></div>
-                  <span className="flex-shrink mx-4 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Or Sandbox Credit Card</span>
-                  <div className="flex-grow border-t border-neutral-150"></div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-neutral-700 mb-1.5">Cardholder Full Name</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. John Doe"
-                    value={cardName}
-                    onChange={(e) => setCardName(e.target.value)}
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:border-neutral-950 focus:bg-white transition-all text-neutral-850 placeholder:text-neutral-400"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-black uppercase tracking-wider text-neutral-700 mb-1.5">Credit Card Number</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="4111 2222 3333 4444"
-                    maxLength={19}
-                    value={cardNumber}
-                    onChange={(e) => {
-                      // Apply basic card digit separator format
-                      const val = e.target.value.replace(/\D/g, '').replace(/(.{4})/g, '$1 ').trim();
-                      setCardNumber(val);
-                    }}
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:border-neutral-950 focus:bg-white transition-all text-neutral-850 placeholder:text-neutral-400"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-neutral-700 mb-1.5">Expiration date</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="MM/YY"
-                      maxLength={5}
-                      value={cardExpiry}
-                      onChange={(e) => {
-                        let val = e.target.value.replace(/\D/g, '');
-                        if (val.length > 2) {
-                          val = val.substring(0, 2) + '/' + val.substring(2, 4);
-                        }
-                        setCardExpiry(val);
-                      }}
-                      className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:border-neutral-950 focus:bg-white transition-all text-neutral-850 placeholder:text-neutral-400"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-black uppercase tracking-wider text-neutral-700 mb-1.5">Security Code (CVC)</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. 123"
-                      maxLength={4}
-                      value={cardCvc}
-                      onChange={(e) => setCardCvc(e.target.value.replace(/\D/g, ''))}
-                      className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl px-5 py-4 text-sm font-bold focus:outline-none focus:border-neutral-950 focus:bg-white transition-all text-neutral-850 placeholder:text-neutral-400"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-6 flex gap-4">
+                <div className="pt-2">
                   <button
                     type="button"
                     onClick={() => {
                       setShowPaymentModal(false);
                       setPaymentSuccessMessage(null);
                     }}
-                    className="flex-1 py-4.5 rounded-2xl bg-neutral-105 hover:bg-neutral-200 text-neutral-850 text-sm font-black uppercase tracking-wider transition-all cursor-pointer"
+                    className="w-full py-4 rounded-2xl bg-neutral-100 hover:bg-neutral-200 text-neutral-850 text-sm font-black uppercase tracking-wider transition-all cursor-pointer text-center"
                   >
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    disabled={isProcessingCard}
-                    className="flex-1 py-4.5 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-black uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
-                  >
-                    {isProcessingCard ? (
-                      <>
-                        <Loader2 size={16} className="animate-spin" />
-                        <span>Verifying...</span>
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 size={16} />
-                        <span>Authorize Payment</span>
-                      </>
-                    )}
-                  </button>
                 </div>
-              </form>
+              </div>
             )}
 
           </div>
