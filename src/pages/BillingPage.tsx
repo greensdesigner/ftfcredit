@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
-function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, planName }: any) {
+function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, planName, loadedPubKey, keySource }: any) {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -158,29 +158,45 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
         <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100 text-neutral-700 text-[11px] space-y-2.5 text-left animate-in fade-in duration-300">
           <div className="flex justify-between items-center font-bold text-xs pb-1.5 border-b border-neutral-200 text-neutral-900">
             <span>Stripe Connect Diagnostics</span>
-            <span className={debugInfo.match ? "text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full" : "text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full"}>
-              {debugInfo.match ? "✅ MATCHED" : "⚠️ MISMATCHED"}
+            <span className={(debugInfo.match && (!loadedPubKey || loadedPubKey.substring(0, 20) === debugInfo.publishable.raw.substring(0, 20))) ? "text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full" : "text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full"}>
+              {(debugInfo.match && (!loadedPubKey || loadedPubKey.substring(0, 20) === debugInfo.publishable.raw.substring(0, 20))) ? "✅ MATCHED" : "⚠️ MISMATCHED"}
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-3">
             <div>
-              <p className="font-bold text-neutral-400 uppercase text-[9px]">Publishable Key Prefix</p>
+              <p className="font-bold text-neutral-400 uppercase text-[9px]">Server Pub Key Prefix</p>
               <p className="font-mono text-neutral-800 text-[10px] break-all">{debugInfo.publishable.raw}</p>
               <p className="mt-0.5 text-[9px] text-neutral-500">
                 Mode: {debugInfo.publishable.isLive ? <span className="font-bold text-red-600 text-[10px]">LIVE</span> : <span className="font-bold text-amber-600 text-[10px]">TEST</span>} (Len: {debugInfo.publishable.length})
               </p>
             </div>
             <div>
-              <p className="font-bold text-neutral-400 uppercase text-[9px]">Secret Key Prefix</p>
+              <p className="font-bold text-neutral-400 uppercase text-[9px]">Server Secret Key Prefix</p>
               <p className="font-mono text-neutral-800 text-[10px] break-all">{debugInfo.secret.raw}</p>
               <p className="mt-0.5 text-[9px] text-neutral-500">
                 Mode: {debugInfo.secret.isLive ? <span className="font-bold text-red-600 text-[10px]">LIVE</span> : <span className="font-bold text-amber-600 text-[10px]">TEST</span>} (Len: {debugInfo.secret.length})
               </p>
             </div>
+            {loadedPubKey && (
+              <div className="col-span-2 pt-1 border-t border-dashed border-neutral-200">
+                <p className="font-bold text-neutral-400 uppercase text-[9px]">Browser's Loaded Pub Key</p>
+                <p className="font-mono text-neutral-800 text-[10px] break-all">
+                  {loadedPubKey.substring(0, 24)}... (Len: {loadedPubKey.length})
+                </p>
+                <p className="mt-0.5 text-[9px] text-neutral-500 font-medium">
+                  Source: <span className="text-neutral-900 font-bold">{keySource}</span> | matches Server Pub Key:{" "}
+                  {loadedPubKey.substring(0, 20) === debugInfo.publishable.raw.substring(0, 20) ? (
+                    <span className="font-bold text-emerald-600">Yes</span>
+                  ) : (
+                    <span className="font-bold text-red-600">No (Mismatch/Cache Issue)</span>
+                  )}
+                </p>
+              </div>
+            )}
           </div>
           <p className="italic text-[10px] text-neutral-500 leading-normal pt-1.5 border-t border-neutral-100">
-            {!debugInfo.match 
-              ? "ম্যাচিং সতর্কবার্তা: আপনার ব্রাউজার পাবলিশেবল কি এবং সার্ভার সিক্রেট কি আলাদা আলাদা একাউন্ট বা ভিন্ন মোড (Live vs Test) থেকে এসেছে! অনুগ্রহ করে আপনার .env ফাইলে STRIPE_SECRET_KEY এবং VITE_STRIPE_PUBLISHABLE_KEY একই একাউন্টের ব্যবহার নিশ্চিত করুন এবং পুনরায় বিল্ড করুন।"
+            {!(debugInfo.match && (!loadedPubKey || loadedPubKey.substring(0, 20) === debugInfo.publishable.raw.substring(0, 20))) 
+              ? "ম্যাচিং সতর্কবার্তা: আপনার ব্রাউজারের সাথে সার্ভারের কি-জোড় সঠিক মিলছে না। আপনার .env ফাইলে STRIPE_SECRET_KEY এবং VITE_STRIPE_PUBLISHABLE_KEY একই একাউন্ট হতে নিয়ে রিফ্রেশ দিন এবং ব্রাউজার ক্যাশ পরিষ্কার করুন।"
               : "একই একাউন্ট: পাবলিশেবল কি ও সিক্রেট কি একই একাউন্টের কি সাবসেট। অনুগ্রহ করে নিশ্চিত হোন যে আপনার Stripe Web Dashboard-এ কার্ড টাইপ ও কানেক্ট অপশনসমূহ সচল রয়েছে।"}
           </p>
         </div>
@@ -237,6 +253,8 @@ export default function BillingPage() {
 
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(true);
+  const [loadedPubKey, setLoadedPubKey] = useState<string>('');
+  const [keySource, setKeySource] = useState<string>('');
 
   const loadDynamicStripe = async () => {
     try {
@@ -244,7 +262,9 @@ export default function BillingPage() {
       if (res.ok) {
         const data = await res.json();
         if (data.publishableKey) {
-          console.log("Loaded Stripe publishable key dynamically from server");
+          console.log("Loaded Stripe publishable key dynamically from server:", data.publishableKey);
+          setLoadedPubKey(data.publishableKey);
+          setKeySource("Server API Gateway");
           setStripePromise(loadStripe(data.publishableKey));
           return;
         }
@@ -256,10 +276,13 @@ export default function BillingPage() {
     // Fallback to client-side environment variable if API is not available or empty
     const envKey = (import.meta as any).env?.VITE_STRIPE_PUBLISHABLE_KEY;
     if (envKey) {
-      console.log("Using environment variable fallback for Stripe publishable key");
+      console.log("Using environment variable fallback for Stripe publishable key:", envKey);
+      setLoadedPubKey(envKey);
+      setKeySource("Vite Bundle Fallback");
       setStripePromise(loadStripe(envKey));
     } else {
       console.error("No Stripe publishable key found! Payments will fail.");
+      setKeySource("None Found");
     }
   };
 
@@ -753,6 +776,8 @@ export default function BillingPage() {
                     tenantId={user?.tenantId}
                     amount={amount}
                     planName={currentPlan}
+                    loadedPubKey={loadedPubKey}
+                    keySource={keySource}
                     onCancel={() => setShowCardModal(false)} 
                     onSuccess={(pmId: string) => {
                       setShowCardModal(false);

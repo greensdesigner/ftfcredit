@@ -437,6 +437,7 @@ async function startServer() {
 
   // Stripe Publishable Key Route for frontend dynamic initialization
   app.get("/api/stripe/publishable-key", (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     const key = (process.env.VITE_STRIPE_PUBLISHABLE_KEY || "").trim();
     console.log(`[Stripe Debug] Frontend fetched publishable key: ${key.substring(0, 15)}... len: ${key.length}`);
     res.json({ publishableKey: key });
@@ -444,6 +445,7 @@ async function startServer() {
 
   // Safe Stripe keys debug route to analyze key mismatches
   app.get("/api/stripe/debug-keys", (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
     const pubKey = (process.env.VITE_STRIPE_PUBLISHABLE_KEY || "").trim();
     const secKey = (
       process.env.STRIPE_SECRET_KEY || 
