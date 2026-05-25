@@ -931,6 +931,90 @@ export default function AdminDashboard() {
                 {/* Stripe Connect Section */}
                 <StripeConnectSection user={user} />
 
+                {/* Client Subscription Pricing Configuration */}
+                <div className="p-8 bg-neutral-50 rounded-[32px] border border-neutral-100 mt-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h4 className="text-lg font-bold font-display text-neutral-900">ক্লায়েন্ট সাবস্ক্রিপশন প্ল্যানের মূল্য নির্ধারণ (Pricing)</h4>
+                      <p className="text-xs text-neutral-500">এখানে যে এমাউন্ট বসাবেন, ক্লায়েন্ট ড্যাশবোর্ডে প্ল্যানের মূল্য সেটিই দেখাবে এবং সেই এমাউন্টটি চার্জ হবে।</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                    <div className="space-y-2 bg-white p-5 rounded-2xl border border-neutral-150">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-extrabold text-neutral-600 uppercase tracking-widest">Standard Plan</label>
+                        {updatingId === 'planPriceStandard' && <span className="text-[9px] text-emerald-500 font-bold animate-pulse">SAVING...</span>}
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-neutral-400">$</span>
+                        <input 
+                          type="number" 
+                          min="1"
+                          step="1"
+                          value={systemSettings?.planPriceStandard !== undefined ? systemSettings.planPriceStandard : 99}
+                          onChange={(e) => setSystemSettings({ ...systemSettings, planPriceStandard: e.target.value })}
+                          onBlur={async (e) => {
+                            setUpdatingId('planPriceStandard');
+                            await handleUpdateSettings({ planPriceStandard: Math.max(1, parseFloat(e.target.value) || 99) });
+                            setUpdatingId(null);
+                          }}
+                          className="w-full pl-8 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-neutral-900 transition-all font-bold text-neutral-900"
+                        />
+                      </div>
+                      <p className="text-[10px] text-neutral-400 font-medium italic">Standard Credit Repair</p>
+                    </div>
+
+                    <div className="space-y-2 bg-white p-5 rounded-2xl border border-neutral-150">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-extrabold text-neutral-600 uppercase tracking-widest">Premium Plan</label>
+                        {updatingId === 'planPricePremium' && <span className="text-[9px] text-emerald-500 font-bold animate-pulse">SAVING...</span>}
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-neutral-400">$</span>
+                        <input 
+                          type="number" 
+                          min="1"
+                          step="1"
+                          value={systemSettings?.planPricePremium !== undefined ? systemSettings.planPricePremium : 149}
+                          onChange={(e) => setSystemSettings({ ...systemSettings, planPricePremium: e.target.value })}
+                          onBlur={async (e) => {
+                            setUpdatingId('planPricePremium');
+                            await handleUpdateSettings({ planPricePremium: Math.max(1, parseFloat(e.target.value) || 149) });
+                            setUpdatingId(null);
+                          }}
+                          className="w-full pl-8 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-neutral-900 transition-all font-bold text-neutral-900"
+                        />
+                      </div>
+                      <p className="text-[10px] text-neutral-400 font-medium italic">Premium Credit Repair</p>
+                    </div>
+
+                    <div className="space-y-2 bg-white p-5 rounded-2xl border border-neutral-150">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-extrabold text-neutral-600 uppercase tracking-widest">Elite Plan</label>
+                        {updatingId === 'planPriceElite' && <span className="text-[9px] text-emerald-500 font-bold animate-pulse">SAVING...</span>}
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-neutral-400">$</span>
+                        <input 
+                          type="number" 
+                          min="1"
+                          step="1"
+                          value={systemSettings?.planPriceElite !== undefined ? systemSettings.planPriceElite : 299}
+                          onChange={(e) => setSystemSettings({ ...systemSettings, planPriceElite: e.target.value })}
+                          onBlur={async (e) => {
+                            setUpdatingId('planPriceElite');
+                            await handleUpdateSettings({ planPriceElite: Math.max(1, parseFloat(e.target.value) || 299) });
+                            setUpdatingId(null);
+                          }}
+                          className="w-full pl-8 pr-4 py-3 bg-neutral-50 border border-neutral-200 rounded-xl outline-none focus:ring-2 focus:ring-neutral-900 transition-all font-bold text-neutral-900"
+                        />
+                      </div>
+                      <p className="text-[10px] text-neutral-400 font-medium italic">Elite Credit Sweep</p>
+                    </div>
+                  </div>
+                </div>
+
                <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100 mt-8">
                  <div>
                    <p className="font-bold">System Maintenance Mode</p>

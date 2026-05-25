@@ -235,6 +235,9 @@ async function startServer() {
           try { await pool.query("ALTER TABLE system_settings ADD COLUMN systemName VARCHAR(255) DEFAULT 'FTF Consulting'"); } catch (e) {}
           try { await pool.query("ALTER TABLE system_settings ADD COLUMN systemLogo LONGTEXT"); } catch (e) {}
           try { await pool.query("ALTER TABLE system_settings MODIFY COLUMN systemLogo LONGTEXT"); } catch (e) {}
+          try { await pool.query("ALTER TABLE system_settings ADD COLUMN planPriceStandard DECIMAL(10, 2) DEFAULT 99.00"); } catch (e) {}
+          try { await pool.query("ALTER TABLE system_settings ADD COLUMN planPricePremium DECIMAL(10, 2) DEFAULT 149.00"); } catch (e) {}
+          try { await pool.query("ALTER TABLE system_settings ADD COLUMN planPriceElite DECIMAL(10, 2) DEFAULT 299.00"); } catch (e) {}
 
           // Initialize system settings if not exists
           const [settings]: any = await pool.query("SELECT * FROM system_settings WHERE id = 1");
@@ -598,20 +601,45 @@ async function startServer() {
 
   app.post("/api/admin/system-settings/update", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured" });
-    const { maintenanceMode, emailAlerts, systemName, systemLogo } = req.body;
+    const { 
+      maintenanceMode, 
+      emailAlerts, 
+      systemName, 
+      systemLogo,
+      planPriceStandard,
+      planPricePremium,
+      planPriceElite
+    } = req.body;
     try {
       const [rows]: any = await pool.query("SELECT * FROM system_settings WHERE id = 1");
       if (!rows || rows.length === 0) {
         const nextMonth = new Date();
         nextMonth.setDate(nextMonth.getDate() + 30);
         await pool.query(
-          "INSERT INTO system_settings (id, subscriptionStatus, expiryDate, maintenanceMode, emailAlerts, systemName, systemLogo) VALUES (1, 'active', ?, ?, ?, ?, ?)",
-          [nextMonth, maintenanceMode === true, emailAlerts === true, systemName || 'FTF Consulting', systemLogo || null]
+          "INSERT INTO system_settings (id, subscriptionStatus, expiryDate, maintenanceMode, emailAlerts, systemName, systemLogo, planPriceStandard, planPricePremium, planPriceElite) VALUES (1, 'active', ?, ?, ?, ?, ?, ?, ?, ?)",
+          [
+            nextMonth, 
+            maintenanceMode === true, 
+            emailAlerts === true, 
+            systemName || 'FTF Consulting', 
+            systemLogo || null,
+            planPriceStandard !== undefined ? parseFloat(planPriceStandard) : 99.00,
+            planPricePremium !== undefined ? parseFloat(planPricePremium) : 149.00,
+            planPriceElite !== undefined ? parseFloat(planPriceElite) : 299.00
+          ]
         );
       } else {
         await pool.query(
-          "UPDATE system_settings SET maintenanceMode = ?, emailAlerts = ?, systemName = ?, systemLogo = ? WHERE id = 1",
-          [maintenanceMode === true, emailAlerts === true, systemName || 'FTF Consulting', systemLogo || null]
+          "UPDATE system_settings SET maintenanceMode = ?, emailAlerts = ?, systemName = ?, systemLogo = ?, planPriceStandard = ?, planPricePremium = ?, planPriceElite = ? WHERE id = 1",
+          [
+            maintenanceMode === true, 
+            emailAlerts === true, 
+            systemName || 'FTF Consulting', 
+            systemLogo || null,
+            planPriceStandard !== undefined ? parseFloat(planPriceStandard) : 99.00,
+            planPricePremium !== undefined ? parseFloat(planPricePremium) : 149.00,
+            planPriceElite !== undefined ? parseFloat(planPriceElite) : 299.00
+          ]
         );
       }
       cacheMaintenanceMode = maintenanceMode === true; // Update cache instantly

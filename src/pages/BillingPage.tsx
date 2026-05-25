@@ -129,6 +129,7 @@ export default function BillingPage() {
   const [showPlanModal, setShowPlanModal] = useState(false);
   const [showCardModal, setShowCardModal] = useState(false);
   const [isPlaidConnecting, setIsPlaidConnecting] = useState(false);
+  const [systemSettings, setSystemSettings] = useState<any>(null);
 
   const expiryDate = user?.sub_expiry ? new Date(user.sub_expiry) : null;
   const today = new Date();
@@ -143,11 +144,24 @@ export default function BillingPage() {
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(true);
 
+  const fetchSystemSettings = async () => {
+    try {
+      const res = await fetch('/api/admin/system-settings');
+      if (res.ok) {
+        const data = await res.json();
+        setSystemSettings(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch system settings in BillingPage:", e);
+    }
+  };
+
   useEffect(() => {
     if (user) {
       if (user.plan_name) setCurrentPlan(user.plan_name);
       if (user.sub_amount) setAmount(user.sub_amount);
       if (user.sub_status) setStatus(user.sub_status as any);
+      fetchSystemSettings();
       fetchInvoices();
       fetchPaymentMethods();
     }
@@ -563,9 +577,9 @@ export default function BillingPage() {
               
               <div className="space-y-3">
                 {[
-                  { name: 'Standard Credit Repair', price: 99, desc: 'Basic dispute handling' },
-                  { name: 'Premium Credit Repair', price: 149, desc: 'Advanced batch processing' },
-                  { name: 'Elite Credit Sweep', price: 299, desc: 'Full legal credit protection' }
+                  { name: 'Standard Credit Repair', price: systemSettings?.planPriceStandard !== undefined ? parseFloat(systemSettings.planPriceStandard) : 99, desc: 'Basic dispute handling' },
+                  { name: 'Premium Credit Repair', price: systemSettings?.planPricePremium !== undefined ? parseFloat(systemSettings.planPricePremium) : 149, desc: 'Advanced batch processing' },
+                  { name: 'Elite Credit Sweep', price: systemSettings?.planPriceElite !== undefined ? parseFloat(systemSettings.planPriceElite) : 299, desc: 'Full legal credit protection' }
                 ].map((p) => (
                   <button
                     key={p.name}
