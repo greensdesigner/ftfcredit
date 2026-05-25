@@ -39,23 +39,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const [systemName, setSystemName] = useState('FTF Consulting');
   const [systemLogo, setSystemLogo] = useState<string | null>(null);
+  const [subscriptionDays, setSubscriptionDays] = useState<number | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
 
   React.useEffect(() => {
     const loadBranding = async () => {
-      // 1. Always check system settings for the platform branding (GM, etc.)
+      let isGlobalBrandingApplied = false;
+      // 1. Always check system settings for the platform branding and subscription
       try {
         const res = await fetch('/api/admin/system-settings');
         const data = await res.json();
         if (data.systemLogo) {
           setSystemLogo(data.systemLogo);
         }
+        if (data.expiryDate) {
+          const expiry = new Date(data.expiryDate);
+          const now = new Date();
+          const diffTime = expiry.getTime() - now.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          setSubscriptionDays(diffDays > 0 ? diffDays : 0);
+        }
+        if (data.subscriptionStatus) {
+          setSubscriptionStatus(data.subscriptionStatus);
+        }
         // If an explicit system name is set, use it. 
         if (data.systemName && data.systemName !== 'FTF Consulting') {
           setSystemName(data.systemName);
-          return;
+          isGlobalBrandingApplied = true;
         }
       } catch (e) {
         console.error("Failed to fetch system settings branding:", e);
+      }
+
+      if (isGlobalBrandingApplied) {
+        return;
       }
 
       // 2. Fallback to Agency Name for white-labeling if no global platform name is set
@@ -186,6 +203,28 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
              <h2 className="text-sm font-medium text-neutral-500">Welcome back, {user?.fullName}</h2>
           </div>
           <div className="flex items-center gap-4">
+            {(user?.role === UserRole.ADMIN || isAdminAuthorized) && subscriptionStatus !== null && (
+              <div className={cn(
+                "flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold border transition-all shadow-sm",
+                subscriptionStatus === 'active' 
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-800" 
+                  : "bg-red-50 border-red-250 text-red-800"
+              )}>
+                <span className={cn(
+                  "size-2 rounded-full shrink-0",
+                  subscriptionStatus === 'active' ? "bg-emerald-500 animate-pulse" : "bg-red-500"
+                )} />
+                <span>
+                  {subscriptionStatus === 'active' ? (
+                    <>
+                      Subscription: <span className="font-bold">{subscriptionDays} {subscriptionDays === 1 ? 'Day' : 'Days'}</span> Left
+                    </>
+                  ) : (
+                    <span className="font-bold">Subscription Expired</span>
+                  )}
+                </span>
+              </div>
+            )}
             {/* Icons removed per user request */}
           </div>
         </header>
