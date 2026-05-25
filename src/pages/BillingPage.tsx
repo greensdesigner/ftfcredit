@@ -130,6 +130,16 @@ export default function BillingPage() {
   const [showCardModal, setShowCardModal] = useState(false);
   const [isPlaidConnecting, setIsPlaidConnecting] = useState(false);
 
+  const expiryDate = user?.sub_expiry ? new Date(user.sub_expiry) : null;
+  const today = new Date();
+  const isExpired = !user?.sub_status || user?.sub_status !== 'active' || (expiryDate ? today > expiryDate : true);
+  
+  let daysLeft = 0;
+  if (expiryDate && !isExpired) {
+    const diffTime = expiryDate.getTime() - today.getTime();
+    daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  }
+
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loadingInvoices, setLoadingInvoices] = useState(true);
 
@@ -217,26 +227,15 @@ export default function BillingPage() {
     }
   };
 
-  const handlePlanChange = async (newPlan: string, newAmount: number) => {
-    setIsProcessing(true);
+  const handlePlanChange = (newPlan: string, newAmount: number) => {
+    setCurrentPlan(newPlan);
+    setAmount(newAmount);
     setShowPlanModal(false);
-    const success = await updateSubscriptionInDB(newPlan, newAmount, 'active');
-    if (success) {
-      setCurrentPlan(newPlan);
-      setAmount(newAmount);
-      setStatus('active');
-      alert(`Plan successfully upgraded to ${newPlan}`);
-    }
-    setIsProcessing(false);
+    setShowCardModal(true);
   };
 
-  const handleReactivate = async () => {
-    setIsProcessing(true);
-    const success = await updateSubscriptionInDB(currentPlan, amount, 'active');
-    if (success) {
-      setStatus('active');
-    }
-    setIsProcessing(false);
+  const handleReactivate = () => {
+    setShowCardModal(true);
   };
 
   const handleConnectBank = () => {
@@ -271,6 +270,24 @@ export default function BillingPage() {
   return (
     <DashboardLayout>
       <div className="space-y-10 max-w-5xl mx-auto">
+        {isExpired && (
+          <div className="p-6 rounded-[24px] bg-red-50 border border-red-200 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="space-y-1">
+              <span className="font-extrabold text-[10px] bg-red-650 bg-red-500 text-white rounded-full px-2.5 py-0.5 uppercase tracking-widest leading-none">
+                LOCKED / EXPIRED
+              </span>
+              <h3 className="text-lg font-bold text-red-950 font-display mt-2">আপনার মেয়াদের মেয়াদ শেষ হয়েছে!</h3>
+              <p className="text-xs text-red-700 font-medium leading-relaxed">ড্যাশবোর্ড আনলক করার জন্য অনুগ্রহ করে কার্ডের মাধ্যমে পেমেন্ট সম্পন্ন করুন। যেকোনো একটি প্ল্যান বাছাই করে সাথে সাথে ৩০ দিনের এক্সেস গ্রহণ করুন।</p>
+            </div>
+            <button
+              onClick={() => setShowPlanModal(true)}
+              className="px-5 py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-md transition-all uppercase shrink-0"
+            >
+              Subscription Plans
+            </button>
+          </div>
+        )}
+
         <div className="flex flex-col gap-1">
           <h1 className="font-display text-4xl font-bold tracking-tight text-neutral-900">Billing & Payments</h1>
           <p className="text-neutral-500">Manage your subscription and view payment history.</p>
@@ -290,15 +307,15 @@ export default function BillingPage() {
                   <div>
                     <span className={cn(
                       "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-tight",
-                      status === 'active' ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
+                      !isExpired ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
                     )}>
-                      {status === 'active' ? 'Active Plan' : 'Cancelled'}
+                      {!isExpired ? `${daysLeft} days active` : 'Expired / Locked'}
                     </span>
                     <h2 className="mt-4 font-display text-2xl font-bold text-neutral-900">{currentPlan}</h2>
                     <p className="text-neutral-500">
-                      {status === 'active' 
-                        ? 'Your next billing date is May 24, 2026.' 
-                        : 'Your service will end on the current billing cycle.'}
+                      {!isExpired 
+                        ? `Your next billing date is ${expiryDate ? expiryDate.toLocaleDateString() : 'N/A'}.` 
+                        : 'পেমেন্ট সম্পন্ন করে আপনার ড্যাশবোর্ডটি ৩০ দিনের জন্য সচল করুন।'}
                     </p>
                   </div>
                   <div className="text-right">
@@ -330,13 +347,12 @@ export default function BillingPage() {
 
                 <div className="mt-8 flex flex-wrap gap-4 pt-8 border-t border-neutral-100">
                    <button 
-                    disabled={status !== 'active'}
                     onClick={() => setShowPlanModal(true)}
-                    className="rounded-xl bg-neutral-900 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="rounded-xl bg-neutral-900 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-neutral-800"
                    >
-                    Change Plan
+                    Change Plan / Subscribe
                    </button>
-                   {status === 'active' ? (
+                   {status === 'active' && !isExpired ? (
                      <button 
                       onClick={handleCancelSubscription}
                       className="rounded-xl border border-neutral-200 px-6 py-2.5 text-sm font-bold text-neutral-600 transition-all hover:bg-neutral-50 hover:text-neutral-900"
@@ -348,7 +364,7 @@ export default function BillingPage() {
                       onClick={handleReactivate}
                       className="rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-2.5 text-sm font-bold text-emerald-600 transition-all hover:bg-emerald-100"
                      >
-                      Reactive Account
+                      Pay & Activate Account
                      </button>
                    )}
                 </div>

@@ -25,6 +25,7 @@ export interface UserProfile {
   plan_name?: string;
   sub_status?: 'active' | 'pending' | 'failed' | 'paused' | 'canceled';
   sub_amount?: number;
+  sub_expiry?: string;
 }
 
 export enum SubscriptionPlan {

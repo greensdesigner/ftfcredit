@@ -470,7 +470,7 @@ async function startServer() {
     const { email, password } = req.body;
     try {
       const [rows]: any = await pool.query(`
-        SELECT u.*, s.planName as plan_name, s.status as sub_status, s.amount as sub_amount,
+        SELECT u.*, s.planName as plan_name, s.status as sub_status, s.amount as sub_amount, s.nextBillingDate as sub_expiry,
                u.plaidConnected, u.achAuthorized
         FROM users u
         LEFT JOIN subscriptions s ON u.uid = s.userId
@@ -508,7 +508,7 @@ async function startServer() {
     if (!pool) return res.status(500).json({ error: "Database not configured" });
     try {
       const [rows]: any = await pool.query(`
-        SELECT u.*, s.planName as plan_name, s.status as sub_status, s.amount as sub_amount
+        SELECT u.*, s.planName as plan_name, s.status as sub_status, s.amount as sub_amount, s.nextBillingDate as sub_expiry
         FROM users u
         LEFT JOIN subscriptions s ON u.uid = s.userId
         WHERE u.uid = ?
@@ -1004,7 +1004,7 @@ async function startServer() {
 
       // 4. Record in Subscriptions table
       const nextMonth = new Date();
-      nextMonth.setMonth(nextMonth.getMonth() + 1);
+      nextMonth.setDate(nextMonth.getDate() + 30);
       
       await pool.query(
         `INSERT INTO subscriptions (userId, planName, amount, status, nextBillingDate, tenantId) 

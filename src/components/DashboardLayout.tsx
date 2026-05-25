@@ -43,6 +43,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState<number>(0);
 
+  const isClient = user?.role === UserRole.CLIENT;
+  const isSubscriptionExpired = React.useMemo(() => {
+    if (!isClient) return false;
+    if (!user?.sub_status || user?.sub_status !== 'active') return true;
+    if (!user?.sub_expiry) return true;
+    
+    const expiry = new Date(user.sub_expiry);
+    const now = new Date();
+    return now > expiry;
+  }, [user, isClient]);
+
   React.useEffect(() => {
     if (!user?.tenantId || !user?.uid || !user?.role) return;
 
@@ -265,7 +276,39 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-6 lg:p-10">
-          {children}
+          {isSubscriptionExpired && location.pathname !== '/dashboard/billing' ? (
+            <div className="flex h-full min-h-[60vh] items-center justify-center p-4">
+              <div className="w-full max-w-xl bg-white rounded-[32px] border border-neutral-150 p-8 text-center shadow-xl relative overflow-hidden flex flex-col items-center animate-in fade-in zoom-in-95 duration-300">
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-red-650 bg-red-500"></div>
+                
+                <div className="size-16 rounded-3xl bg-red-50 text-red-500 flex items-center justify-center mb-6 shrink-0 animate-pulse">
+                  <CreditCard size={28} />
+                </div>
+                
+                <h2 className="text-xl md:text-2xl font-bold font-display text-neutral-900 mb-3 text-center">
+                  আপনার ড্যাশবোর্ডটি বর্তমানে লক করা আছে!
+                </h2>
+                
+                <p className="text-neutral-500 leading-relaxed mb-6 text-xs md:text-sm text-center max-w-md">
+                  সেবার মেয়াদের ৩০ দিন উত্তীর্ণ হয়েছে অথবা পেমেন্ট সফলভাবে শেষ হয়নি। অনুগ্রহ করে ড্যাশবোর্ডটি পুনরায় সক্রিয় ও সচল করতে নিচের বাটনে ক্লিক করে কার্ডের মাধ্যমে পেমেন্ট সম্পন্ন করুন।
+                </p>
+                
+                <button
+                  onClick={() => navigate('/dashboard/billing')}
+                  className="w-full sm:w-auto px-6 py-3.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-2xl font-bold text-xs shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2"
+                >
+                  <CreditCard size={16} />
+                  পেমেন্ট করুন এবং ড্যাশবোর্ড সক্রিয় করুন
+                </button>
+                
+                <div className="mt-6 pt-5 border-t border-neutral-100 w-full italic text-[9px] text-neutral-400 font-extrabold uppercase tracking-widest text-center">
+                  Secure Connection & Payments via Stripe
+                </div>
+              </div>
+            </div>
+          ) : (
+            children
+          )}
         </main>
       </div>
     </div>
