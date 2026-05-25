@@ -217,10 +217,12 @@ export default function AdminDashboard() {
       if (response.ok) {
         setSystemSettings(newSettings);
       } else {
-        alert("Failed to update settings");
+        const errData = await response.json().catch(() => ({}));
+        alert("Failed to update settings: " + (errData.error || errData.message || response.statusText || "Unknown backend error"));
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Settings update failed:", e);
+      alert("Settings update failed: " + e.message);
     }
   };
 

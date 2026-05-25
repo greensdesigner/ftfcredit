@@ -234,6 +234,7 @@ async function startServer() {
           try { await pool.query("ALTER TABLE system_settings ADD COLUMN emailAlerts BOOLEAN DEFAULT TRUE"); } catch (e) {}
           try { await pool.query("ALTER TABLE system_settings ADD COLUMN systemName VARCHAR(255) DEFAULT 'FTF Consulting'"); } catch (e) {}
           try { await pool.query("ALTER TABLE system_settings ADD COLUMN systemLogo LONGTEXT"); } catch (e) {}
+          try { await pool.query("ALTER TABLE system_settings MODIFY COLUMN systemLogo LONGTEXT"); } catch (e) {}
 
           // Initialize system settings if not exists
           const [settings]: any = await pool.query("SELECT * FROM system_settings WHERE id = 1");
@@ -552,8 +553,16 @@ async function startServer() {
   app.get("/api/admin/system-settings", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured" });
     try {
-      const [rows]: any = await pool.query("SELECT * FROM system_settings WHERE id = 1");
-      const settings = rows[0];
+      let [rows]: any = await pool.query("SELECT * FROM system_settings WHERE id = 1");
+      if (!rows || rows.length === 0) {
+        // Table exists but row is missing! Create it with active state and 30-day trial/active limit
+        const nextMonth = new Date();
+        nextMonth.setDate(nextMonth.getDate() + 30);
+        await pool.query("INSERT INTO system_settings (id, subscriptionStatus, expiryDate) VALUES (1, 'active', ?)", [nextMonth]);
+        // Refetch
+        [rows] = await pool.query("SELECT * FROM system_settings WHERE id = 1");
+      }
+      const settings = rows[0] || {};
       
       // Auto-expire check
       const now = new Date();
@@ -564,6 +573,7 @@ async function startServer() {
       
       res.json(settings);
     } catch (error: any) {
+      console.error("GET /api/admin/system-settings error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -578,6 +588,7 @@ async function startServer() {
       );
       res.json({ status: "success", message: "Agency settings updated" });
     } catch (error: any) {
+      console.error("POST /api/admin/agency-settings/update error:", error);
       res.status(500).json({ error: error.message });
     }
   });
@@ -586,13 +597,24 @@ async function startServer() {
     if (!pool) return res.status(500).json({ error: "Database not configured" });
     const { maintenanceMode, emailAlerts, systemName, systemLogo } = req.body;
     try {
-      await pool.query(
-        "UPDATE system_settings SET maintenanceMode = ?, emailAlerts = ?, systemName = ?, systemLogo = ? WHERE id = 1",
-        [maintenanceMode === true, emailAlerts === true, systemName || 'FTF Consulting', systemLogo || null]
-      );
+      const [rows]: any = await pool.query("SELECT * FROM system_settings WHERE id = 1");
+      if (!rows || rows.length === 0) {
+        const nextMonth = new Date();
+        nextMonth.setDate(nextMonth.getDate() + 30);
+        await pool.query(
+          "INSERT INTO system_settings (id, subscriptionStatus, expiryDate, maintenanceMode, emailAlerts, systemName, systemLogo) VALUES (1, 'active', ?, ?, ?, ?, ?)",
+          [nextMonth, maintenanceMode === true, emailAlerts === true, systemName || 'FTF Consulting', systemLogo || null]
+        );
+      } else {
+        await pool.query(
+          "UPDATE system_settings SET maintenanceMode = ?, emailAlerts = ?, systemName = ?, systemLogo = ? WHERE id = 1",
+          [maintenanceMode === true, emailAlerts === true, systemName || 'FTF Consulting', systemLogo || null]
+        );
+      }
       cacheMaintenanceMode = maintenanceMode === true; // Update cache instantly
       res.json({ status: "success", message: "Settings updated successfully" });
     } catch (error: any) {
+      console.error("POST /api/admin/system-settings/update error:", error);
       res.status(500).json({ error: error.message });
     }
   });
