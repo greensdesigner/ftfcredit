@@ -58,6 +58,7 @@ async function startServer() {
 
   // Stripe lazy init
   let stripe: Stripe | null = null;
+  let lastStripeKeySecret: string | null = null;
   const getStripe = () => {
     // Check multiple possible env var names
     const key = (
@@ -72,12 +73,13 @@ async function startServer() {
       return null;
     }
 
-    if (!stripe) {
+    if (!stripe || lastStripeKeySecret !== key) {
       try {
         stripe = new Stripe(key, {
           apiVersion: '2023-10-16' as any, // Use a widely supported version
         });
-        console.log("✅ Stripe successfully initialized with provided Secret Key");
+        lastStripeKeySecret = key;
+        console.log(`✅ Stripe successfully initialized/re-initialized with Secret Key: ${key.substring(0, 15)}... len: ${key.length}`);
       } catch (e: any) {
         console.error("❌ Stripe initialization ERROR:", e.message);
         return null;
