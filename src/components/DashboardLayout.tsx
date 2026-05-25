@@ -195,36 +195,41 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-16 items-center justify-between border-b border-neutral-100 bg-white px-6 lg:px-10">
+        <header className="relative flex h-16 items-center justify-between border-b border-neutral-100 bg-white px-6 lg:px-10">
           <button className="text-neutral-500 lg:hidden" onClick={() => setSidebarOpen(true)}>
             <Menu />
           </button>
           <div className="hidden lg:block">
              <h2 className="text-sm font-medium text-neutral-500">Welcome back, {user?.fullName}</h2>
           </div>
-          <div className="flex items-center gap-4">
-            {(user?.role === UserRole.ADMIN || isAdminAuthorized) && subscriptionStatus !== null && (
+
+          {/* Centered Big Uppercase Subscription Message */}
+          {(user?.role === UserRole.ADMIN || isAdminAuthorized) && subscriptionStatus !== null && (
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
               <div className={cn(
-                "flex items-center gap-2 rounded-full px-3.5 py-1.5 text-xs font-semibold border transition-all shadow-sm",
+                "flex items-center gap-2.5 rounded-full px-5 py-2 text-xs md:text-sm font-black uppercase tracking-widest border transition-all shadow-sm",
                 subscriptionStatus === 'active' 
-                  ? "bg-emerald-50 border-emerald-200 text-emerald-800" 
-                  : "bg-red-50 border-red-250 text-red-800"
+                  ? "bg-emerald-50 border-emerald-300 text-emerald-900" 
+                  : "bg-red-50 border-red-300 text-red-900"
               )}>
                 <span className={cn(
-                  "size-2 rounded-full shrink-0",
+                  "size-2 px-1 rounded-full shrink-0",
                   subscriptionStatus === 'active' ? "bg-emerald-500 animate-pulse" : "bg-red-500"
                 )} />
                 <span>
                   {subscriptionStatus === 'active' ? (
                     <>
-                      Subscription: <span className="font-bold">{subscriptionDays} {subscriptionDays === 1 ? 'Day' : 'Days'}</span> Left
+                      SUBSCRIPTION: <span className="font-extrabold text-emerald-600">{subscriptionDays} {subscriptionDays === 1 ? 'DAY' : 'DAYS'}</span> LEFT
                     </>
                   ) : (
-                    <span className="font-bold">Subscription Expired</span>
+                    <span className="font-extrabold text-red-600">SUBSCRIPTION EXPIRED</span>
                   )}
                 </span>
               </div>
-            )}
+            </div>
+          )}
+
+          <div className="flex items-center gap-4">
             {/* Icons removed per user request */}
           </div>
         </header>
