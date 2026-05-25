@@ -13,6 +13,29 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Stripe mismatch/cache troubleshooter state
+  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [showTroubleshooter, setShowTroubleshooter] = useState(false);
+  const [checkingDebug, setCheckingDebug] = useState(false);
+
+  const runDiagnostics = async () => {
+    setCheckingDebug(true);
+    try {
+      const res = await fetch('/api/stripe/debug-keys');
+      if (res.ok) {
+        const data = await res.json();
+        setDebugInfo(data);
+        setShowTroubleshooter(true);
+      } else {
+        throw new Error("Failed to reach debug route");
+      }
+    } catch (e: any) {
+      alert("Error: " + e.message);
+    } finally {
+      setCheckingDebug(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!stripe || !elements) return;
@@ -100,9 +123,66 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
       </div>
 
       {error && (
-        <div className="p-3 rounded-xl bg-red-50 text-red-600 text-xs font-bold flex items-center gap-2">
-          <AlertCircle size={14} />
-          {error}
+        <div className="space-y-4">
+          <div className="p-3.5 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-xs font-semibold flex flex-col gap-2">
+            <div className="flex items-center gap-2 font-bold">
+              <AlertCircle size={15} />
+              <span>ত্রুটি ঘটেছে (Stripe Validation Error)</span>
+            </div>
+            <p className="text-neutral-600 leading-relaxed text-[11px]">
+              {error}
+            </p>
+            <div className="mt-1 pt-2 border-t border-red-100 flex flex-col gap-1 text-[11px] text-neutral-500 font-normal">
+              <p className="font-semibold text-red-600">সম্ভাব্য সমাধান সমুহ:</p>
+              <ul className="list-disc pl-4 space-y-1">
+                <li>দয়া করে ব্রাউজার রিফ্রেশ (Ctrl + F5 অথবা Shift + Reload) দিয়ে পুনরায় চেষ্টা করুন। ক্যাশে থাকা পূর্বের ভুল কী (Stripe Key) রিমুভ হতে পারে।</li>
+                <li>আপনার হোস্টিং/সার্ভার ডোমেন কনফিগারেশন এবং ডাটাবেস সংযোগ সঠিক আছে কিনা নিশ্চিত করুন।</li>
+                <li>আপনার এডমিন ড্যাশবোর্ডে ও .env ফাইলে Stripe এর "Live Key-জোড়" সঠিক রয়েছে কিনা আমাদের ট্রাবলশুটার দিয়ে দেখে নিন।</li>
+              </ul>
+            </div>
+          </div>
+          
+          <button
+            type="button"
+            onClick={runDiagnostics}
+            disabled={checkingDebug}
+            className="w-full flex items-center justify-center gap-2 p-3 text-xs font-bold text-neutral-700 bg-neutral-100 hover:bg-neutral-250 hover:bg-neutral-200 transition-all rounded-xl"
+          >
+            {checkingDebug ? <Loader2 className="animate-spin" size={13} /> : <AlertCircle size={13} />}
+            সার্ভার স্ট্রাইপ কি (Verify Stripe Setup) যাচাই করুন
+          </button>
+        </div>
+      )}
+
+      {showTroubleshooter && debugInfo && (
+        <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100 text-neutral-700 text-[11px] space-y-2.5 text-left animate-in fade-in duration-300">
+          <div className="flex justify-between items-center font-bold text-xs pb-1.5 border-b border-neutral-200 text-neutral-900">
+            <span>Stripe Connect Diagnostics</span>
+            <span className={debugInfo.match ? "text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full" : "text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full"}>
+              {debugInfo.match ? "✅ MATCHED" : "⚠️ MISMATCHED"}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <p className="font-bold text-neutral-400 uppercase text-[9px]">Publishable Key Prefix</p>
+              <p className="font-mono text-neutral-800 text-[10px] break-all">{debugInfo.publishable.raw}</p>
+              <p className="mt-0.5 text-[9px] text-neutral-500">
+                Mode: {debugInfo.publishable.isLive ? <span className="font-bold text-red-600 text-[10px]">LIVE</span> : <span className="font-bold text-amber-600 text-[10px]">TEST</span>} (Len: {debugInfo.publishable.length})
+              </p>
+            </div>
+            <div>
+              <p className="font-bold text-neutral-400 uppercase text-[9px]">Secret Key Prefix</p>
+              <p className="font-mono text-neutral-800 text-[10px] break-all">{debugInfo.secret.raw}</p>
+              <p className="mt-0.5 text-[9px] text-neutral-500">
+                Mode: {debugInfo.secret.isLive ? <span className="font-bold text-red-600 text-[10px]">LIVE</span> : <span className="font-bold text-amber-600 text-[10px]">TEST</span>} (Len: {debugInfo.secret.length})
+              </p>
+            </div>
+          </div>
+          <p className="italic text-[10px] text-neutral-500 leading-normal pt-1.5 border-t border-neutral-100">
+            {!debugInfo.match 
+              ? "ম্যাচিং সতর্কবার্তা: আপনার ব্রাউজার পাবলিশেবল কি এবং সার্ভার সিক্রেট কি আলাদা আলাদা একাউন্ট বা ভিন্ন মোড (Live vs Test) থেকে এসেছে! অনুগ্রহ করে আপনার .env ফাইলে STRIPE_SECRET_KEY এবং VITE_STRIPE_PUBLISHABLE_KEY একই একাউন্টের ব্যবহার নিশ্চিত করুন এবং পুনরায় বিল্ড করুন।"
+              : "একই একাউন্ট: পাবলিশেবল কি ও সিক্রেট কি একই একাউন্টের কি সাবসেট। অনুগ্রহ করে নিশ্চিত হোন যে আপনার Stripe Web Dashboard-এ কার্ড টাইপ ও কানেক্ট অপশনসমূহ সচল রয়েছে।"}
+          </p>
         </div>
       )}
 

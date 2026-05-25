@@ -99,7 +99,8 @@ async function startServer() {
       '/api/auth/signup', 
       '/api/admin', 
       '/api/admin/system-settings', 
-      '/api/stripe/publishable-key'
+      '/api/stripe/publishable-key',
+      '/api/stripe/debug-keys'
     ];
     const isExcluded = excludedPaths.some(path => req.path.startsWith(path));
     
@@ -435,7 +436,34 @@ async function startServer() {
   // Stripe Publishable Key Route for frontend dynamic initialization
   app.get("/api/stripe/publishable-key", (req, res) => {
     const key = (process.env.VITE_STRIPE_PUBLISHABLE_KEY || "").trim();
+    console.log(`[Stripe Debug] Frontend fetched publishable key: ${key.substring(0, 15)}... len: ${key.length}`);
     res.json({ publishableKey: key });
+  });
+
+  // Safe Stripe keys debug route to analyze key mismatches
+  app.get("/api/stripe/debug-keys", (req, res) => {
+    const pubKey = (process.env.VITE_STRIPE_PUBLISHABLE_KEY || "").trim();
+    const secKey = (
+      process.env.STRIPE_SECRET_KEY || 
+      process.env.VITE_STRIPE_SECRET_KEY ||
+      process.env.STRIPE_API_KEY
+    )?.trim() || "";
+
+    res.json({
+      publishable: {
+        raw: pubKey.substring(0, 20) + "...",
+        length: pubKey.length,
+        isLive: pubKey.startsWith("pk_live"),
+        isTest: pubKey.startsWith("pk_test")
+      },
+      secret: {
+        raw: secKey.substring(0, 20) + "...",
+        length: secKey.length,
+        isLive: secKey.startsWith("sk_live"),
+        isTest: secKey.startsWith("sk_test")
+      },
+      match: pubKey.length > 0 && secKey.length > 0 && pubKey.substring(3, 10) === secKey.substring(3, 10)
+    });
   });
 
   // User Signup
@@ -963,6 +991,13 @@ async function startServer() {
     if (!stripeInst) return res.status(500).json({ error: "Stripe not configured" });
     if (!pool) return res.status(500).json({ error: "Database not configured" });
 
+    // Retrieve active secret key to verify mismatch issues
+    const key = (
+      process.env.STRIPE_SECRET_KEY || 
+      process.env.VITE_STRIPE_SECRET_KEY ||
+      process.env.STRIPE_API_KEY
+    )?.trim() || "";
+
     const { uid, email } = req.body;
     try {
       const [rows]: any = await pool.query("SELECT stripeCustomerId FROM users WHERE uid = ?", [uid]);
@@ -979,8 +1014,10 @@ async function startServer() {
         payment_method_types: ['card'],
       });
 
+      console.log(`[Stripe Debug] Created SetupIntent. ID: ${setupIntent.id}, SecretKeyPrefix: ${key.substring(0, 15)}... len: ${key.length}`);
       res.json({ clientSecret: setupIntent.client_secret });
     } catch (error: any) {
+      console.error("[Stripe Debug ERROR] create-setup-intent failed:", error.message);
       res.status(500).json({ error: error.message });
     }
   });
