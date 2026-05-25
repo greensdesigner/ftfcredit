@@ -333,6 +333,9 @@ async function startServer() {
             )
           `);
 
+          try { await pool.query("ALTER TABLE messages ADD COLUMN fileUrl LONGTEXT"); } catch (e) {}
+          try { await pool.query("ALTER TABLE messages ADD COLUMN fileName VARCHAR(255)"); } catch (e) {}
+
           // Organic posts table for marketing
           await pool.query(`
             CREATE TABLE IF NOT EXISTS organic_posts (
@@ -1174,28 +1177,62 @@ async function startServer() {
     }
   });
 
-  // 3. Send a new message
-  app.post("/api/messages", async (req, res) => {
+  // 2.5. Get unread messages count for layout sidebar
+  app.get("/api/messages/unread-count", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured" });
-    const { senderId, receiverId, message, tenantId } = req.body;
+    const { tenantId, uid, role } = req.query;
 
-    if (!senderId || !receiverId || !message || !tenantId) {
-      return res.status(400).json({ error: "Missing required fields: senderId, receiverId, message, tenantId" });
+    if (!tenantId || !uid || !role) {
+      return res.status(400).json({ error: "Missing required parameters: tenantId, uid, role" });
     }
 
     try {
+      let count = 0;
+      if (role === 'admin' || role === 'super_admin') {
+        const [rows]: any = await pool.query(
+          "SELECT COUNT(*) as count FROM messages WHERE tenantId = ? AND receiverId = 'admin' AND isRead = FALSE",
+          [tenantId]
+        );
+        count = rows[0]?.count || 0;
+      } else {
+        const [rows]: any = await pool.query(
+          "SELECT COUNT(*) as count FROM messages WHERE tenantId = ? AND receiverId = ? AND isRead = FALSE",
+          [tenantId, uid]
+        );
+        count = rows[0]?.count || 0;
+      }
+      res.json({ count });
+    } catch (error: any) {
+      console.error("Fetch Unread Count Error:", error.message);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // 3. Send a new message
+  app.post("/api/messages", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { senderId, receiverId, message, tenantId, fileUrl, fileName } = req.body;
+
+    if (!senderId || !receiverId || !tenantId || (!message && !fileUrl)) {
+      return res.status(400).json({ error: "Missing required fields: senderId, receiverId, tenantId" });
+    }
+
+    try {
+      const dbMessage = message || '';
       const [result]: any = await pool.query(
-        "INSERT INTO messages (senderId, receiverId, message, tenantId, isRead) VALUES (?, ?, ?, ?, FALSE)",
-        [senderId, receiverId, message, tenantId]
+        "INSERT INTO messages (senderId, receiverId, message, tenantId, isRead, fileUrl, fileName) VALUES (?, ?, ?, ?, FALSE, ?, ?)",
+        [senderId, receiverId, dbMessage, tenantId, fileUrl || null, fileName || null]
       );
 
       res.json({
         id: result.insertId,
         senderId,
         receiverId,
-        message,
+        message: dbMessage,
         tenantId,
         isRead: false,
+        fileUrl: fileUrl || null,
+        fileName: fileName || null,
         createdAt: new Date().toISOString()
       });
     } catch (error: any) {

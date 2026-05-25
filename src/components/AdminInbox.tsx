@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Send, RefreshCw, User, MessageSquare, Clock } from 'lucide-react';
+import { Search, Send, RefreshCw, User, MessageSquare, Clock, Paperclip, FileText, Download, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { cn } from '../lib/utils';
 
@@ -25,6 +25,8 @@ interface Message {
   senderName?: string;
   senderAvatar?: string;
   senderRole?: string;
+  fileUrl?: string | null;
+  fileName?: string | null;
 }
 
 export default function AdminInbox() {
@@ -39,10 +41,37 @@ export default function AdminInbox() {
   const [typedMessage, setTypedMessage] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [sending, setSending] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [selectedFileName, setSelectedFileName] = useState<string>('');
 
   const messageEndRef = useRef<HTMLDivElement>(null);
   const pollingContactsInterval = useRef<any>(null);
   const pollingMessagesInterval = useRef<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) { // Limit to 10MB
+        alert("ফাইলসাইজ ১০ মেগাবাইটের কম হতে হবে।");
+        return;
+      }
+      setSelectedFileName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedFile(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleClearFile = () => {
+    setSelectedFile(null);
+    setSelectedFileName('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
 
   // Fetch all chat contacts
   const fetchContacts = async (showLoading = false) => {
@@ -110,7 +139,7 @@ export default function AdminInbox() {
   // Send message
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!typedMessage.trim() || !selectedContact || !tenantId || !user) return;
+    if ((!typedMessage.trim() && !selectedFile) || !selectedContact || !tenantId || !user) return;
 
     const messageText = typedMessage.trim();
     setTypedMessage('');
@@ -124,7 +153,9 @@ export default function AdminInbox() {
           senderId: user.uid,
           receiverId: selectedContact.uid,
           message: messageText,
-          tenantId
+          tenantId,
+          fileUrl: selectedFile || null,
+          fileName: selectedFileName || null
         })
       });
 
@@ -132,6 +163,7 @@ export default function AdminInbox() {
         const newMsg = await res.json();
         // Append message and scroll
         setMessages(prev => [...prev, newMsg]);
+        handleClearFile();
         // Fast refresh contacts in background to update "last message"
         fetchContacts();
       }
@@ -345,7 +377,32 @@ export default function AdminInbox() {
                               : "bg-neutral-100 text-neutral-900 rounded-bl-none border border-neutral-200/50"
                           )}
                         >
-                          {msg.message}
+                          {msg.message && <div className="break-words whitespace-pre-line">{msg.message}</div>}
+                          {msg.fileUrl && (
+                            <div className={cn(
+                              "flex items-center gap-2 rounded-xl p-2.5 mt-1 border text-[11px] font-semibold break-all select-none hover:opacity-95 transition-all",
+                              isAdminSender 
+                                ? "bg-neutral-800 border-neutral-700 text-white mt-1" 
+                                : "bg-neutral-50 border-neutral-250 text-neutral-800 mt-1"
+                            )}>
+                              <FileText size={16} className="shrink-0 text-red-500" />
+                              <div className="flex-1 min-w-0">
+                                <p className="truncate font-bold leading-none">{msg.fileName || 'Attached File'}</p>
+                              </div>
+                              <a
+                                href={msg.fileUrl}
+                                download={msg.fileName || 'attached_file'}
+                                className={cn(
+                                  "p-1 rounded-md shrink-0 transition-colors",
+                                  isAdminSender ? "hover:bg-neutral-700 text-neutral-200" : "hover:bg-neutral-200 text-neutral-600"
+                                )}
+                                title="Download File"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Download size={14} />
+                              </a>
+                            </div>
+                          )}
                         </div>
                         <span className="text-[9px] font-bold text-neutral-400 mt-1 uppercase tracking-tight">
                           {isAdminSender ? 'You' : selectedContact.fullName} • {formatTime(msg.createdAt)}
@@ -358,8 +415,41 @@ export default function AdminInbox() {
               )}
             </div>
 
+            {/* Selected File Area */}
+            {selectedFile && (
+              <div className="mx-6 mb-2 p-2 rounded-xl bg-neutral-100/80 border border-neutral-200 flex items-center justify-between text-xs animate-in slide-in-from-bottom-2 duration-200">
+                <div className="flex items-center gap-2 text-neutral-800 font-bold max-w-[85%]">
+                  <FileText size={16} className="text-neutral-600 shrink-0" />
+                  <span className="truncate">{selectedFileName}</span>
+                </div>
+                <button 
+                  type="button" 
+                  onClick={handleClearFile} 
+                  className="p-1 hover:bg-neutral-200 rounded-lg text-neutral-500 hover:text-neutral-900 transition-all shrink-0"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            )}
+
             {/* Input Form */}
-            <form onSubmit={handleSendMessage} className="p-4 border-t border-neutral-100 flex gap-2">
+            <form onSubmit={handleSendMessage} className="p-4 border-t border-neutral-100 flex items-center gap-2 bg-white">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileChange} 
+                className="hidden" 
+              />
+              
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="p-3 bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-neutral-500 hover:text-neutral-950 transition-all rounded-2xl flex items-center justify-center shrink-0"
+                title="Attach file"
+              >
+                <Paperclip size={18} />
+              </button>
+
               <input
                 type="text"
                 placeholder={`Reply to ${selectedContact.fullName.split(' ')[0]}...`}
@@ -369,7 +459,7 @@ export default function AdminInbox() {
               />
               <button
                 type="submit"
-                disabled={sending || !typedMessage.trim()}
+                disabled={sending || (!typedMessage.trim() && !selectedFile)}
                 className="size-11 rounded-2xl bg-neutral-900 hover:bg-neutral-800 disabled:opacity-20 text-white flex items-center justify-center shrink-0 shadow-md hover:shadow-lg transition-all"
               >
                 <Send size={16} />

@@ -41,6 +41,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [systemLogo, setSystemLogo] = useState<string | null>(null);
   const [subscriptionDays, setSubscriptionDays] = useState<number | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+
+  React.useEffect(() => {
+    if (!user?.tenantId || !user?.uid || !user?.role) return;
+
+    const fetchUnreadCount = async () => {
+      try {
+        const res = await fetch(`/api/messages/unread-count?tenantId=${user.tenantId}&uid=${user.uid}&role=${user.role}`);
+        if (res.ok) {
+          const data = await res.json();
+          setUnreadCount(data.count || 0);
+        }
+      } catch (e) {
+        console.error("Failed to fetch unread count:", e);
+      }
+    };
+
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 4000); // Poll every 4 seconds
+    return () => clearInterval(interval);
+  }, [user]);
 
   React.useEffect(() => {
     const loadBranding = async () => {
@@ -124,7 +145,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   )}
                 >
                   <item.icon size={20} />
-                  {item.label}
+                  <span className="flex-1">{item.label}</span>
+                  {item.label === 'Inbox' && unreadCount > 0 && (
+                    <span className="bg-red-500 text-white font-extrabold rounded-full text-[10px] px-2 py-0.5 animate-pulse shrink-0">
+                      {unreadCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -177,7 +203,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                       )}
                     >
                       <item.icon size={20} />
-                      {item.label}
+                      <span className="flex-1">{item.label}</span>
+                      {item.label === 'Inbox' && unreadCount > 0 && (
+                        <span className="bg-red-500 text-white font-extrabold rounded-full text-[10px] px-2 py-0.5 animate-pulse shrink-0">
+                          {unreadCount}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}
