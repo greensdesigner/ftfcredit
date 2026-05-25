@@ -1070,7 +1070,6 @@ async function startServer() {
       // Otherwise, charge directly to the main Platform Stripe owner account (using STRIPE_SECRET_KEY)
       if (destinationAccount && destinationAccount.startsWith('acct_')) {
         try {
-          const applicationFeeAmount = Math.round(amount * 100 * 0.1); 
           paymentIntent = await stripeInst.paymentIntents.create({
             amount: Math.round(amount * 100),
             currency: 'usd',
@@ -1078,7 +1077,6 @@ async function startServer() {
             payment_method: paymentMethodId,
             off_session: true,
             confirm: true,
-            application_fee_amount: applicationFeeAmount,
             transfer_data: {
               destination: destinationAccount,
             },
