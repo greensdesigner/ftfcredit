@@ -1154,8 +1154,130 @@ async function startServer() {
         type: 'card',
       });
 
-      res.json(paymentMethods.data);
+      let bankSources: any = { data: [] };
+      try {
+        bankSources = await stripeInst.customers.listSources(customerId, {
+          object: 'bank_account',
+        });
+      } catch (bankErr: any) {
+        console.warn("Failed to retrieve bank sources for customer, continuing:", bankErr.message);
+      }
+
+      const formatted = [
+        ...paymentMethods.data.map((pm: any) => ({
+          id: pm.id,
+          type: 'card',
+          brand: pm.card?.brand,
+          last4: pm.card?.last4,
+          name: pm.billing_details?.name || 'Card'
+        })),
+        ...bankSources.data.map((bank: any) => ({
+          id: bank.id,
+          type: 'bank',
+          brand: bank.bank_name || 'Bank Account',
+          last4: bank.last4,
+          name: bank.account_holder_name || 'ACH'
+        }))
+      ];
+
+      res.json(formatted);
     } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Connect Bank via ACH routing and account number Token
+  app.post("/api/client/connect-bank-ach", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { userId, email, tenantId, token, amount, planName } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ error: "Stripe Bank Account Token is required" });
+    }
+
+    let tenantSecretKey: string | undefined;
+    if (tenantId) {
+      try {
+        const [admins]: any = await pool.query("SELECT stripeSecretKey FROM users WHERE uid = ?", [tenantId]);
+        if (admins[0]?.stripeSecretKey && admins[0]?.stripeSecretKey.trim()) {
+          tenantSecretKey = admins[0].stripeSecretKey.trim();
+        }
+      } catch (e: any) {
+        console.error("Failed to query tenant stripe secret key:", e.message);
+      }
+    }
+
+    const stripeInst = getStripe(tenantSecretKey);
+    if (!stripeInst) return res.status(500).json({ error: "Stripe not configured or keys missing" });
+
+    try {
+      // 1. Get or Create Customer ID
+      const [rows]: any = await pool.query("SELECT stripeCustomerId FROM users WHERE uid = ?", [userId]);
+      let stripeCustomerId = rows[0]?.stripeCustomerId;
+
+      let customerExists = false;
+      if (stripeCustomerId) {
+        try {
+          await stripeInst.customers.retrieve(stripeCustomerId);
+          customerExists = true;
+        } catch (e) {
+          customerExists = false;
+        }
+      }
+
+      if (!stripeCustomerId || !customerExists) {
+        const customer = await stripeInst.customers.create({ email, metadata: { userId } });
+        stripeCustomerId = customer.id;
+        await pool.query("UPDATE users SET stripeCustomerId = ? WHERE uid = ?", [stripeCustomerId, userId]);
+      }
+
+      // 2. Attach bank account token as a funding source to the Customer
+      console.log(`[Stripe ACH] Attaching bank token ${token.substring(0, 10)}... to customer ${stripeCustomerId}`);
+      const bankSource = (await stripeInst.customers.createSource(stripeCustomerId, {
+        source: token,
+      })) as any;
+
+      console.log(`[Stripe ACH] Successfully attached source: ${bankSource.id} (${bankSource.bank_name} ending in ${bankSource.last4})`);
+
+      // 3. Initiate PaymentIntent or ACH charge using this source
+      const paymentIntent = await stripeInst.paymentIntents.create({
+        amount: Math.round(amount * 100),
+        currency: 'usd',
+        customer: stripeCustomerId,
+        payment_method: bankSource.id,
+        confirm: true,
+        off_session: true,
+        metadata: { userId, planName, paymentType: 'ACH_BANK' }
+      } as any);
+
+      console.log(`[Stripe ACH] PaymentIntent created: ${paymentIntent.id}, Status: ${paymentIntent.status}`);
+
+      // 4. Record in Subscriptions table
+      const nextMonth = new Date();
+      nextMonth.setDate(nextMonth.getDate() + 30);
+      
+      await pool.query(
+        `INSERT INTO subscriptions (userId, planName, amount, status, nextBillingDate, tenantId) 
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE planName = VALUES(planName), amount = VALUES(amount), status = VALUES(status), nextBillingDate = VALUES(nextBillingDate)`,
+        [userId, planName, amount, 'active', nextMonth, tenantId]
+      );
+
+      // 5. Record Payment in payments table
+      await pool.query(
+        "INSERT INTO payments (id, userId, amount, status, paymentType) VALUES (?, ?, ?, ?, ?)",
+        [paymentIntent.id, userId, amount, 'success', 'ACH']
+      );
+
+      res.json({ 
+        status: "success", 
+        paymentIntentId: paymentIntent.id,
+        bankName: bankSource.bank_name || 'Bank Account',
+        last4: bankSource.last4,
+        paymentStatus: paymentIntent.status
+      });
+    } catch (error: any) {
+      console.error("[Stripe ACH Connect Error] failed:", error.message);
       res.status(500).json({ error: error.message });
     }
   });

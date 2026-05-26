@@ -10,8 +10,15 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, planName, loadedPubKey, keySource }: any) {
   const stripe = useStripe();
   const elements = useElements();
+  const [activeTab, setActiveTab] = useState<'card' | 'ach'>('card');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // ACH bank states
+  const [achName, setAchName] = useState('');
+  const [achRouting, setAchRouting] = useState('');
+  const [achAccount, setAchAccount] = useState('');
+  const [achType, setAchType] = useState<'individual' | 'company'>('individual');
 
   // Stripe mismatch/cache troubleshooter state
   const [debugInfo, setDebugInfo] = useState<any>(null);
@@ -38,66 +45,119 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!stripe || !elements) return;
+    if (!stripe) return;
 
     setIsProcessing(true);
     setError(null);
 
     try {
-      // 1. Create Setup Intent
-      const siRes = await fetch('/api/client/create-setup-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: userId, email, tenantId }),
-      });
+      if (activeTab === 'card') {
+        if (!elements) return;
 
-      const siContentType = siRes.headers.get('content-type');
-      if (!siContentType || !siContentType.includes('application/json')) {
-        const text = await siRes.text();
-        console.error("Non-JSON setup response:", text);
-        throw new Error("সার্ভার থেকে ত্রুটিপূর্ণ রেসপন্স এসেছে (ServerError 500 HTML)। অনুগ্রহ করে আপনার ডোমেন/সার্ভার কনফিগারেশন, .env ফাইলে ডাটাবেস পাসওয়ার্ড, এবং স্ট্রাইপ কি (STRIPE_SECRET_KEY) সঠিক কিনা যাচাই করুন।");
+        // 1. Create Setup Intent
+        const siRes = await fetch('/api/client/create-setup-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid: userId, email, tenantId }),
+        });
+
+        const siContentType = siRes.headers.get('content-type');
+        if (!siContentType || !siContentType.includes('application/json')) {
+          const text = await siRes.text();
+          console.error("Non-JSON setup response:", text);
+          throw new Error("সার্ভার থেকে ত্রুটিপূর্ণ রেসপন্স এসেছে (ServerError 500 HTML)। অনুগ্রহ করে আপনার ডোমেন/সার্ভার কনফিগারেশন, .env ফাইলে ডাটাবেস পাসওয়ার্ড, এবং স্ট্রাইপ কি (STRIPE_SECRET_KEY) সঠিক কিনা যাচাই করুন।");
+        }
+
+        const siData = await siRes.json();
+        if (siData.error) throw new Error(siData.error);
+        const clientSecret = siData.clientSecret;
+
+        // 2. Confirm Card Setup
+        const cardElement = elements.getElement(CardElement);
+        if (!cardElement) throw new Error("Card element not found");
+
+        const { setupIntent, error: confirmError } = await stripe.confirmCardSetup(clientSecret, {
+          payment_method: {
+            card: cardElement as any,
+          },
+        });
+
+        if (confirmError) throw new Error(confirmError.message);
+
+        // 3. Initiate Subscription Charge via Connect
+        const subRes = await fetch('/api/client/subscribe-connect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            tenantId,
+            planName,
+            amount,
+            paymentMethodId: setupIntent?.payment_method
+          }),
+        });
+
+        const subContentType = subRes.headers.get('content-type');
+        if (!subContentType || !subContentType.includes('application/json')) {
+          const text = await subRes.text();
+          console.error("Non-JSON subscription response:", text);
+          throw new Error("সার্ভার পেমেন্ট প্রসেস করতে ব্যর্থ হয়েছে। অনুগ্রহ করে নিশ্চিত হোন যে আপনার ডাটাবেস সচল রয়েছে এবং এডমিন স্ট্রাইপ কি ও হোস্টিং সঠিক আছে।");
+        }
+
+        const subResult = await subRes.json();
+        if (subResult.error) throw new Error(subResult.error);
+
+        onSuccess(setupIntent?.payment_method);
+      } else {
+        // ACH Bank Account integration
+        if (!achName.trim()) throw new Error("অনুগ্রহ করে অ্যাকাউন্ট হোল্ডারের নাম প্রদান করুন।");
+        if (!achRouting.trim() || achRouting.trim().length !== 9) throw new Error("অনুগ্রহ করে ৯-ডিজিট সঠিক রাউটিং নাম্বার প্রদান করুন।");
+        if (!achAccount.trim()) throw new Error("অনুগ্রহ করে ব্যাংক অ্যাকাউন্ট নাম্বার প্রদান করুন।");
+
+        // 1. Create Token via stripe.js
+        console.log("[Stripe ACH] Creating bank token...");
+        const result = await stripe.createToken('bank_account', {
+          country: 'US',
+          currency: 'usd',
+          routing_number: achRouting.trim(),
+          account_number: achAccount.trim(),
+          account_holder_name: achName.trim(),
+          account_holder_type: achType,
+        });
+
+        if (result.error) {
+          throw new Error(result.error.message);
+        }
+
+        const token = result.token?.id;
+        if (!token) throw new Error("Stripe bank token generation failed.");
+
+        // 2. Charge and connect bank on backend
+        const achRes = await fetch('/api/client/connect-bank-ach', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            email,
+            tenantId,
+            token,
+            amount,
+            planName
+          }),
+        });
+
+        const achContentType = achRes.headers.get('content-type');
+        if (!achContentType || !achContentType.includes('application/json')) {
+          const text = await achRes.text();
+          console.error("Non-JSON ACH response:", text);
+          throw new Error("ব্যাংক পেমেন্ট প্রসেস করতে ব্যর্থ হয়েছে। দয়া করে আপনার রাউটিং এবং একাউন্ট নাম্বার চেক করে পুনরায় চেষ্টা করুন।");
+        }
+
+        const achResult = await achRes.json();
+        if (achResult.error) throw new Error(achResult.error);
+
+        onSuccess('bank', achResult);
       }
-
-      const siData = await siRes.json();
-      if (siData.error) throw new Error(siData.error);
-      const clientSecret = siData.clientSecret;
-
-      // 2. Confirm Card Setup
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) throw new Error("Card element not found");
-
-      const { setupIntent, error: confirmError } = await stripe.confirmCardSetup(clientSecret, {
-        payment_method: {
-          card: cardElement as any,
-        },
-      });
-
-      if (confirmError) throw new Error(confirmError.message);
-
-      // 3. Initiate Subscription Charge via Connect
-      const subRes = await fetch('/api/client/subscribe-connect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          tenantId,
-          planName,
-          amount,
-          paymentMethodId: setupIntent?.payment_method
-        }),
-      });
-
-      const subContentType = subRes.headers.get('content-type');
-      if (!subContentType || !subContentType.includes('application/json')) {
-        const text = await subRes.text();
-        console.error("Non-JSON subscription response:", text);
-        throw new Error("সার্ভার পেমেন্ট প্রসেস করতে ব্যর্থ হয়েছে। অনুগ্রহ করে নিশ্চিত হোন যে আপনার ডাটাবেস সচল রয়েছে এবং এডমিন স্ট্রাইপ কি ও হোস্টিং সঠিক আছে।");
-      }
-
-      const subResult = await subRes.json();
-      if (subResult.error) throw new Error(subResult.error);
-
-      onSuccess(setupIntent?.payment_method);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -107,20 +167,112 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="space-y-2">
-        <label className="text-xs font-bold text-neutral-400 uppercase tracking-widest">Secure Credit or Debit Card</label>
-        <div className="p-4 rounded-2xl border border-neutral-200 bg-neutral-50 focus-within:border-neutral-900 transition-all">
-          <CardElement options={{
-            style: {
-              base: {
-                fontSize: '16px',
-                color: '#171717',
-                '::placeholder': { color: '#a3a3a3' },
-              },
-            }
-          }} />
-        </div>
+      {/* Tab Selection */}
+      <div className="flex border-b border-neutral-150 pb-1 gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('card');
+            setError(null);
+          }}
+          className={cn(
+            "flex-1 pb-3 text-xs font-bold uppercase tracking-wider border-b-2 text-center transition-all cursor-pointer",
+            activeTab === 'card' ? "border-neutral-900 text-neutral-900 font-bold" : "border-transparent text-neutral-400 hover:text-neutral-600 font-semibold"
+          )}
+        >
+          Credit / Debit Card
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('ach');
+            setError(null);
+          }}
+          className={cn(
+            "flex-1 pb-3 text-xs font-bold uppercase tracking-wider border-b-2 text-center transition-all cursor-pointer",
+            activeTab === 'ach' ? "border-neutral-900 text-neutral-900 font-bold" : "border-transparent text-neutral-400 hover:text-neutral-600"
+          )}
+        >
+          Bank Account (ACH)
+        </button>
       </div>
+
+      {activeTab === 'card' ? (
+        <div className="space-y-2 animate-in fade-in duration-200">
+          <label className="text-xs font-bold text-neutral-400 uppercase tracking-widest">Secure Credit or Debit Card</label>
+          <div className="p-4 rounded-2xl border border-neutral-200 bg-neutral-50 focus-within:border-neutral-900 transition-all">
+            <CardElement options={{
+              style: {
+                base: {
+                  fontSize: '16px',
+                  color: '#171717',
+                  '::placeholder': { color: '#a3a3a3' },
+                },
+              }
+            }} />
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4 text-left animate-in fade-in duration-200">
+          <div>
+            <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5 font-display font-semibold text-left">
+              Account Holder Name (হোল্ডারের নাম)
+            </label>
+            <input
+              type="text"
+              required
+              placeholder="e.g. John Doe"
+              value={achName}
+              onChange={(e) => setAchName(e.target.value)}
+              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs outline-none focus:ring-1 focus:ring-neutral-900 transition-all text-neutral-800 font-medium"
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5 font-display font-semibold text-left">
+                Routing Number (রাউটিং)
+              </label>
+              <input
+                type="text"
+                required
+                maxLength={9}
+                placeholder="9-digit routing"
+                value={achRouting}
+                onChange={(e) => setAchRouting(e.target.value.replace(/\D/g, ''))}
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs outline-none focus:ring-1 focus:ring-neutral-900 transition-all text-neutral-800 font-mono"
+              />
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5 font-display font-semibold text-left">
+                Account Number (অ্যাকাউন্ট)
+              </label>
+              <input
+                type="text"
+                required
+                placeholder="Bank account number"
+                value={achAccount}
+                onChange={(e) => setAchAccount(e.target.value.replace(/\D/g, ''))}
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs outline-none focus:ring-1 focus:ring-neutral-900 transition-all text-neutral-800 font-mono"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5 font-display font-semibold text-left">
+              Account Type (অ্যাকাউন্টের ধরন)
+            </label>
+            <select
+              value={achType}
+              onChange={(e: any) => setAchType(e.target.value)}
+              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs outline-none focus:ring-1 focus:ring-neutral-900 transition-all text-neutral-800 font-medium font-sans"
+            >
+              <option value="individual">Personal / Individual (ব্যক্তিগত)</option>
+              <option value="company">Business / Company (ব্যবসায়িক)</option>
+            </select>
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="space-y-4">
@@ -779,12 +931,16 @@ export default function BillingPage() {
                     loadedPubKey={loadedPubKey}
                     keySource={keySource}
                     onCancel={() => setShowCardModal(false)} 
-                    onSuccess={(pmId: string) => {
+                    onSuccess={(typeOrPmId: string, details?: any) => {
                       setShowCardModal(false);
                       fetchPaymentMethods();
                       fetchInvoices();
                       refreshProfile();
-                      alert("Subscription activated and card saved successfully!");
+                      if (typeOrPmId === 'bank') {
+                        alert(`ACH পেমেন্ট সফল হয়েছে! আপনার ব্যাংক অ্যাকাউন্ট (${details?.bankName || 'Bank'} ending in ${details?.last4 || ''}) কানেক্ট ও চার্জ করা হয়েছে।`);
+                      } else {
+                        alert("Subscription activated and card saved successfully!");
+                      }
                     }} 
                   />
                 </Elements>
