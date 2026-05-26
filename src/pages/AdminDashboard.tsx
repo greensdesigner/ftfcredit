@@ -1283,14 +1283,26 @@ export default function AdminDashboard() {
 }
 
 function StripeConnectSection({ user }: { user: any }) {
-  const [connectStatus, setConnectStatus] = useState<{ isConnected: boolean; stripeAccountId: string | null; isManual?: boolean } | null>(null);
+  const [connectStatus, setConnectStatus] = useState<{ 
+    isConnected: boolean; 
+    stripeAccountId: string | null; 
+    isManual?: boolean; 
+    stripePublishableKey?: string; 
+    stripeSecretKey?: string; 
+  } | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [pubKey, setPubKey] = useState("");
+  const [secKey, setSecKey] = useState("");
 
   useEffect(() => {
     if (user?.uid) {
       fetch(`/api/admin/stripe/status?uid=${user.uid}`)
         .then(res => res.json())
-        .then(data => setConnectStatus(data))
+        .then(data => {
+          setConnectStatus(data);
+          if (data.stripePublishableKey) setPubKey(data.stripePublishableKey);
+          if (data.stripeSecretKey) setSecKey(data.stripeSecretKey);
+        })
         .catch(console.error);
     }
   }, [user]);
@@ -1446,9 +1458,130 @@ function StripeConnectSection({ user }: { user: any }) {
         </div>
       </div>
       
-      {!connectStatus?.isConnected && (
+      {/* Direct API Keys Integration (Alternative) */}
+      <div className="mt-8 border-t border-neutral-100 pt-8">
+        <div>
+          <h5 className="text-sm font-bold text-neutral-800 tracking-tight flex items-center gap-2">
+            <span className="inline-block size-2 bg-neutral-900 rounded-full animate-pulse"></span>
+            Direct Stripe Keys Integration (সরাসরি স্ট্রাইপ কী সংযোগ)
+          </h5>
+          <p className="text-xs text-neutral-500 mt-1">
+            বিকল্প পদ্ধতি: আপনি চাইলে এখানে সরাসরি আপনার নিজস্ব Stripe Publishable Key এবং Secret Key ইনপুট করতে পারেন। এর মাধ্যমে ক্লায়েন্টদের বিলিং ড্যাশবোর্ড অপশন থেকে সরাসরি আপনার একাউন্টে অটোমেটিক পেমেন্ট/বিলিং ট্রান্সফার সম্পন্ন হবে।
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+          <div>
+            <label className="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-2">
+              Stripe Publishable Key
+            </label>
+            <input
+              type="text"
+              placeholder="e.g. pk_live_..."
+              value={pubKey}
+              onChange={(e) => setPubKey(e.target.value)}
+              className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-3 text-xs outline-none focus:ring-1 focus:ring-neutral-900 font-mono transition-all text-neutral-800"
+            />
+          </div>
+
+          <div>
+            <label className="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider mb-2">
+              Stripe Secret Key
+            </label>
+            <input
+              type="password"
+              placeholder={connectStatus?.stripeSecretKey ? "••••••••••••••••" : "e.g. sk_live_..."}
+              value={secKey}
+              onChange={(e) => setSecKey(e.target.value)}
+              className="w-full bg-white border border-neutral-200 rounded-xl px-4 py-3 text-xs outline-none focus:ring-1 focus:ring-neutral-900 font-mono transition-all text-neutral-800"
+            />
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-4">
+          <p className="text-[10px] text-neutral-400">
+            * আপনার Secret Key সার্ভারে সম্পূর্ণ সুরক্ষিত অবস্থায় সংরক্ষণ করা হবে এবং কখনো ক্লায়েন্ট সাইডে উন্মুক্ত করা হবে না।
+          </p>
+          <div className="flex items-center gap-2">
+            {connectStatus?.stripePublishableKey && (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (window.confirm("আপনি কি নিশ্চিত যে আপনি আপনার ম্যানুয়াল Stripe API Keys মুছে ফেলতে চান?")) {
+                    setConnecting(true);
+                    try {
+                      const res = await fetch('/api/admin/update-settings', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          uid: user.uid,
+                          updates: {
+                            stripePublishableKey: "",
+                            stripeSecretKey: ""
+                          }
+                        }),
+                      });
+                      if (res.ok) {
+                        alert("সফলভাবে API Keys মুছে ফেলা হয়েছে!");
+                        window.location.reload();
+                      }
+                    } catch (err: any) {
+                      alert("মুছে ফেলতে ব্যর্থ হয়েছে: " + err.message);
+                    } finally {
+                      setConnecting(false);
+                    }
+                  }
+                }}
+                className="bg-neutral-100 hover:bg-neutral-200 text-red-600 rounded-xl px-5 py-2.5 text-xs font-bold cursor-pointer transition-all disabled:opacity-50"
+                disabled={connecting}
+              >
+                Clear Keys
+              </button>
+            )}
+            <button
+              onClick={async () => {
+                if (!pubKey.trim() || !secKey.trim()) {
+                  alert("অনুগ্রহ করে উভয় কি (Publishable এবং Secret Key) পূরণ করুন।");
+                  return;
+                }
+                setConnecting(true);
+                try {
+                  const res = await fetch('/api/admin/update-settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      uid: user.uid,
+                      updates: {
+                        stripePublishableKey: pubKey.trim(),
+                        stripeSecretKey: secKey.trim()
+                      }
+                    }),
+                  });
+                  if (res.ok) {
+                    alert("Stripe API Keys সফলভাবে সংরক্ষিত হয়েছে!");
+                    window.location.reload();
+                  } else {
+                    const errData = await res.json();
+                    alert("ত্রুটি: " + errData.error);
+                  }
+                } catch (e: any) {
+                  alert("ব্যর্থ হয়েছে: " + e.message);
+                } finally {
+                  setConnecting(false);
+                }
+              }}
+              disabled={connecting}
+              className="bg-neutral-900 text-white rounded-xl px-5 py-2.5 text-xs font-bold hover:bg-neutral-800 cursor-pointer transition-all disabled:opacity-50"
+            >
+              {connecting ? "সংরক্ষণ করা হচ্ছে..." : "Save Direct Keys"}
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      {!connectStatus?.isConnected && !connectStatus?.stripePublishableKey && (
         <p className="mt-4 text-[10px] text-neutral-400 uppercase font-bold tracking-widest text-center">
-          Note: You must complete onboarding to receive client payments.
+          Note: You must complete onboarding or configure Direct Keys to receive client payments.
         </p>
       )}
     </div>

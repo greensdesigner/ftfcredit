@@ -48,7 +48,7 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
       const siRes = await fetch('/api/client/create-setup-intent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: userId, email }),
+        body: JSON.stringify({ uid: userId, email, tenantId }),
       });
 
       const siContentType = siRes.headers.get('content-type');
@@ -258,7 +258,7 @@ export default function BillingPage() {
 
   const loadDynamicStripe = async () => {
     try {
-      const res = await fetch('/api/stripe/publishable-key');
+      const res = await fetch(`/api/stripe/publishable-key?tenantId=${user?.tenantId || ""}`);
       if (res.ok) {
         const data = await res.json();
         if (data.publishableKey) {

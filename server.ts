@@ -59,7 +59,19 @@ async function startServer() {
   // Stripe lazy init
   let stripe: Stripe | null = null;
   let lastStripeKeySecret: string | null = null;
-  const getStripe = () => {
+  const getStripe = (customSecretKey?: string) => {
+    if (customSecretKey) {
+      const trimmedCustom = customSecretKey.trim();
+      try {
+        return new Stripe(trimmedCustom, {
+          apiVersion: '2023-10-16' as any,
+        });
+      } catch (e: any) {
+        console.error("❌ Custom Stripe initialization ERROR:", e.message);
+        return null;
+      }
+    }
+
     // Check multiple possible env var names
     const key = (
       process.env.STRIPE_SECRET_KEY || 
@@ -219,6 +231,8 @@ async function startServer() {
           try { await pool.query("ALTER TABLE users ADD COLUMN agencyName VARCHAR(255)"); } catch (e) {}
           try { await pool.query("ALTER TABLE users ADD COLUMN stripeAccountId VARCHAR(255)"); } catch (e) {}
           try { await pool.query("ALTER TABLE users ADD COLUMN stripeCustomerId VARCHAR(255)"); } catch (e) {}
+          try { await pool.query("ALTER TABLE users ADD COLUMN stripePublishableKey VARCHAR(255)"); } catch (e) {}
+          try { await pool.query("ALTER TABLE users ADD COLUMN stripeSecretKey VARCHAR(255)"); } catch (e) {}
           try { await pool.query("ALTER TABLE users MODIFY COLUMN role ENUM('client', 'admin', 'super_admin') DEFAULT 'client'"); } catch (e) {}
 
           // System settings table for platform subscription
@@ -436,11 +450,26 @@ async function startServer() {
   });
 
   // Stripe Publishable Key Route for frontend dynamic initialization
-  app.get("/api/stripe/publishable-key", (req, res) => {
+  app.get("/api/stripe/publishable-key", async (req, res) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+    const { tenantId } = req.query;
+
+    if (tenantId && pool) {
+      try {
+        const [rows]: any = await pool.query("SELECT stripePublishableKey FROM users WHERE uid = ?", [tenantId]);
+        const customKey = rows[0]?.stripePublishableKey;
+        if (customKey && customKey.trim()) {
+          console.log(`[Stripe Sync] serving tenant standard Publishable Key: ${customKey.substring(0, 15)}...`);
+          return res.json({ publishableKey: customKey.trim(), isCustom: true });
+        }
+      } catch (e: any) {
+        console.error("Failed to query tenant publishable key:", e.message);
+      }
+    }
+
     const key = (process.env.VITE_STRIPE_PUBLISHABLE_KEY || "").trim();
     console.log(`[Stripe Debug] Frontend fetched publishable key: ${key.substring(0, 15)}... len: ${key.length}`);
-    res.json({ publishableKey: key });
+    res.json({ publishableKey: key, isCustom: false });
   });
 
   // Safe Stripe keys debug route to analyze key mismatches
@@ -877,12 +906,30 @@ async function startServer() {
     if (!pool) return res.status(500).json({ error: "Database not configured" });
     const { uid } = req.query;
     try {
-      const [rows]: any = await pool.query("SELECT stripeAccountId FROM users WHERE uid = ?", [uid]);
+      const [rows]: any = await pool.query(
+        "SELECT stripeAccountId, stripePublishableKey, stripeSecretKey FROM users WHERE uid = ?", 
+        [uid]
+      );
+      if (rows.length === 0) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
       const stripeAccountId = rows[0]?.stripeAccountId;
+      const stripePublishableKey = rows[0]?.stripePublishableKey || "";
+      const rawSecret = rows[0]?.stripeSecretKey || "";
+      let stripeSecretKey = "";
+      if (rawSecret) {
+        // Safe mask: do not leak raw secret key to frontend
+        stripeSecretKey = rawSecret.substring(0, 7) + "••••••••" + rawSecret.substring(Math.max(7, rawSecret.length - 4));
+      }
       
       let isConnected = false;
       let isManual = false;
-      if (stripeAccountId) {
+      
+      if (stripePublishableKey.trim() && stripeSecretKey.trim()) {
+        isConnected = true;
+        isManual = true; // Manual direct API keys are active
+      } else if (stripeAccountId) {
         const stripeInst = getStripe();
         if (stripeInst) {
           try {
@@ -900,13 +947,20 @@ async function startServer() {
         }
       }
       
-      res.json({ isConnected, stripeAccountId, isManual });
+      res.json({ 
+        isConnected, 
+        stripeAccountId, 
+        isManual,
+        stripePublishableKey,
+        stripeSecretKey,
+        hasKeys: !!rawSecret.trim()
+      });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }
   });
 
-  // Handle manual Stripe Account ID update
+  // Handle manual Stripe Account ID update and manual Stripe API keys update
   app.post("/api/admin/update-settings", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured" });
     const { uid, updates } = req.body;
@@ -914,13 +968,34 @@ async function startServer() {
       return res.status(400).json({ error: "Missing uid or updates" });
     }
     try {
+      const setFields: string[] = [];
+      const params: any[] = [];
+
       if (updates.stripeAccountId !== undefined) {
-        await pool.query(
-          "UPDATE users SET stripeAccountId = ? WHERE uid = ?",
-          [updates.stripeAccountId, uid]
-        );
-        return res.json({ status: "success", message: "Stripe ID updated manually" });
+        setFields.push("stripeAccountId = ?");
+        params.push(updates.stripeAccountId);
       }
+      if (updates.stripePublishableKey !== undefined) {
+        setFields.push("stripePublishableKey = ?");
+        params.push(updates.stripePublishableKey);
+      }
+      if (updates.stripeSecretKey !== undefined) {
+        // If they provided "••••••••" (meaning they didn't modify the existing masked key), don't update it!
+        if (!updates.stripeSecretKey.includes("••••••••")) {
+          setFields.push("stripeSecretKey = ?");
+          params.push(updates.stripeSecretKey);
+        }
+      }
+
+      if (setFields.length > 0) {
+        params.push(uid);
+        await pool.query(
+          `UPDATE users SET ${setFields.join(", ")} WHERE uid = ?`,
+          params
+        );
+        return res.json({ status: "success", message: "Stripe settings updated successfully" });
+      }
+      
       res.status(400).json({ error: "No valid updates provided" });
     } catch (error: any) {
       console.error("Error saving manual settings:", error);
@@ -991,23 +1066,47 @@ async function startServer() {
 
   // --- Client Billing (Stripe) ---
   app.post("/api/client/create-setup-intent", async (req, res) => {
-    const stripeInst = getStripe();
-    if (!stripeInst) return res.status(500).json({ error: "Stripe not configured" });
     if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { uid, email, tenantId } = req.body;
 
-    // Retrieve active secret key to verify mismatch issues
-    const key = (
+    let tenantSecretKey: string | undefined;
+    if (tenantId) {
+      try {
+        const [admins]: any = await pool.query("SELECT stripeSecretKey FROM users WHERE uid = ?", [tenantId]);
+        if (admins[0]?.stripeSecretKey && admins[0]?.stripeSecretKey.trim()) {
+          tenantSecretKey = admins[0].stripeSecretKey.trim();
+        }
+      } catch (e: any) {
+        console.error("Failed to query tenant stripe secret key:", e.message);
+      }
+    }
+
+    const stripeInst = getStripe(tenantSecretKey);
+    if (!stripeInst) return res.status(500).json({ error: "Stripe not configured or keys missing" });
+
+    // Retrieve active secret key prefix to verify
+    const key = tenantSecretKey || (
       process.env.STRIPE_SECRET_KEY || 
       process.env.VITE_STRIPE_SECRET_KEY ||
       process.env.STRIPE_API_KEY
     )?.trim() || "";
 
-    const { uid, email } = req.body;
     try {
       const [rows]: any = await pool.query("SELECT stripeCustomerId FROM users WHERE uid = ?", [uid]);
       let stripeCustomerId = rows[0]?.stripeCustomerId;
 
-      if (!stripeCustomerId) {
+      // In custom/multi-stripe, custom stripeCustomer may fail to load if configured key changes or is different
+      let customerExists = false;
+      if (stripeCustomerId) {
+        try {
+          await stripeInst.customers.retrieve(stripeCustomerId);
+          customerExists = true;
+        } catch (e) {
+          customerExists = false;
+        }
+      }
+
+      if (!stripeCustomerId || !customerExists) {
         const customer = await stripeInst.customers.create({ email, metadata: { userId: uid } });
         stripeCustomerId = customer.id;
         await pool.query("UPDATE users SET stripeCustomerId = ? WHERE uid = ?", [stripeCustomerId, uid]);
@@ -1027,14 +1126,28 @@ async function startServer() {
   });
 
   app.get("/api/client/payment-methods/:uid", async (req, res) => {
-    const stripeInst = getStripe();
-    if (!stripeInst) return res.status(500).json({ error: "Stripe not configured" });
     if (!pool) return res.status(500).json({ error: "Database not configured" });
 
     try {
-      const [rows]: any = await pool.query("SELECT stripeCustomerId FROM users WHERE uid = ?", [req.params.uid]);
+      const [rows]: any = await pool.query("SELECT stripeCustomerId, tenantId FROM users WHERE uid = ?", [req.params.uid]);
       const customerId = rows[0]?.stripeCustomerId;
+      const tenantId = rows[0]?.tenantId;
       if (!customerId) return res.json([]);
+
+      let tenantSecretKey: string | undefined;
+      if (tenantId) {
+        try {
+          const [admins]: any = await pool.query("SELECT stripeSecretKey FROM users WHERE uid = ?", [tenantId]);
+          if (admins[0]?.stripeSecretKey && admins[0]?.stripeSecretKey.trim()) {
+            tenantSecretKey = admins[0].stripeSecretKey.trim();
+          }
+        } catch (e) {
+          console.error("Failed to fetch tenant stripeSecretKey for payment-methods:", e);
+        }
+      }
+
+      const stripeInst = getStripe(tenantSecretKey);
+      if (!stripeInst) return res.status(500).json({ error: "Stripe not configured" });
 
       const paymentMethods = await stripeInst.paymentMethods.list({
         customer: customerId,
@@ -1049,15 +1162,17 @@ async function startServer() {
 
   // Process Subscription Charge (Manual Monthly for Demo)
   app.post("/api/client/subscribe-connect", async (req, res) => {
-    const stripeInst = getStripe();
-    if (!stripeInst) return res.status(500).json({ error: "Stripe not configured" });
     if (!pool) return res.status(500).json({ error: "Database not configured" });
 
     const { userId, planName, amount, paymentMethodId, tenantId } = req.body;
     try {
-      // 1. Get Admin's Stripe Account ID (if using Stripe Connect)
-      const [admins]: any = await pool.query("SELECT stripeAccountId FROM users WHERE uid = ?", [tenantId]);
+      // 1. Get Admin's custom stripe configuration OR stripeAccountId
+      const [admins]: any = await pool.query("SELECT stripeAccountId, stripeSecretKey FROM users WHERE uid = ?", [tenantId]);
       const destinationAccount = admins[0]?.stripeAccountId;
+      const tenantSecretKey = admins[0]?.stripeSecretKey?.trim() || undefined;
+
+      const stripeInst = getStripe(tenantSecretKey);
+      if (!stripeInst) return res.status(500).json({ error: "Stripe not configured" });
 
       // 2. Get Client's Customer ID
       const [clients]: any = await pool.query("SELECT stripeCustomerId FROM users WHERE uid = ?", [userId]);
@@ -1066,9 +1181,19 @@ async function startServer() {
       let paymentIntent;
 
       // 3. Create Payment Intent
-      // If there is a destination Stripe Connect account configured, pay through Stripe Connect (split/destination charge)
-      // Otherwise, charge directly to the main Platform Stripe owner account (using STRIPE_SECRET_KEY)
-      if (destinationAccount && destinationAccount.startsWith('acct_')) {
+      if (tenantSecretKey) {
+        // Direct charge: Payment lands directly into the Admin account configured via tenant's custom private keys
+        paymentIntent = await stripeInst.paymentIntents.create({
+          amount: Math.round(amount * 100),
+          currency: 'usd',
+          customer: customerId,
+          payment_method: paymentMethodId,
+          off_session: true,
+          confirm: true,
+          metadata: { userId, planName }
+        });
+      } else if (destinationAccount && destinationAccount.startsWith('acct_')) {
+        // If there is a destination Stripe Connect account configured, pay through Stripe Connect (split/destination charge)
         try {
           paymentIntent = await stripeInst.paymentIntents.create({
             amount: Math.round(amount * 100),
