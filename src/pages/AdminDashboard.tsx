@@ -935,8 +935,8 @@ export default function AdminDashboard() {
                 <div className="p-8 bg-neutral-50 rounded-[32px] border border-neutral-100 mt-8">
                   <div className="flex items-center justify-between mb-6">
                     <div>
-                      <h4 className="text-lg font-bold font-display text-neutral-900">ক্লায়েন্ট সাবস্ক্রিপশন প্ল্যানের মূল্য নির্ধারণ (Pricing)</h4>
-                      <p className="text-xs text-neutral-500">এখানে যে এমাউন্ট বসাবেন, ক্লায়েন্ট ড্যাশবোর্ডে প্ল্যানের মূল্য সেটিই দেখাবে এবং সেই এমাউন্টটি চার্জ হবে।</p>
+                      <h4 className="text-lg font-bold font-display text-neutral-900">Configure Client Subscription Plans Pricing</h4>
+                      <p className="text-xs text-neutral-500">The amount set here will determine the pricing shown on client dashboards and the actual amount processed during charges.</p>
                     </div>
                   </div>
                   
@@ -1463,10 +1463,10 @@ function StripeConnectSection({ user }: { user: any }) {
         <div>
           <h5 className="text-sm font-bold text-neutral-800 tracking-tight flex items-center gap-2">
             <span className="inline-block size-2 bg-neutral-900 rounded-full animate-pulse"></span>
-            Direct Stripe Keys Integration (সরাসরি স্ট্রাইপ কী সংযোগ)
+            Direct Stripe Keys Integration
           </h5>
           <p className="text-xs text-neutral-500 mt-1">
-            বিকল্প পদ্ধতি: আপনি চাইলে এখানে সরাসরি আপনার নিজস্ব Stripe Publishable Key এবং Secret Key ইনপুট করতে পারেন। এর মাধ্যমে ক্লায়েন্টদের বিলিং ড্যাশবোর্ড অপশন থেকে সরাসরি আপনার একাউন্টে অটোমেটিক পেমেন্ট/বিলিং ট্রান্সফার সম্পন্ন হবে।
+            Alternative Method: You can enter your own Stripe Publishable Key and Secret Key here. This will route automated payments from client billing option directly into your Stripe account custom flow.
           </p>
         </div>
 
@@ -1500,14 +1500,14 @@ function StripeConnectSection({ user }: { user: any }) {
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-4">
           <p className="text-[10px] text-neutral-400">
-            * আপনার Secret Key সার্ভারে সম্পূর্ণ সুরক্ষিত অবস্থায় সংরক্ষণ করা হবে এবং কখনো ক্লায়েন্ট সাইডে উন্মুক্ত করা হবে না।
+            * Your Secret Key will be securely kept on the server and will never be exposed to the client-facing browser.
           </p>
           <div className="flex items-center gap-2">
             {connectStatus?.stripePublishableKey && (
               <button
                 type="button"
                 onClick={async () => {
-                  if (window.confirm("আপনি কি নিশ্চিত যে আপনি আপনার ম্যানুয়াল Stripe API Keys মুছে ফেলতে চান?")) {
+                  if (window.confirm("Are you sure you want to remove your manual Stripe API Keys?")) {
                     setConnecting(true);
                     try {
                       const res = await fetch('/api/admin/update-settings', {
@@ -1522,11 +1522,11 @@ function StripeConnectSection({ user }: { user: any }) {
                         }),
                       });
                       if (res.ok) {
-                        alert("সফলভাবে API Keys মুছে ফেলা হয়েছে!");
+                        alert("API Keys cleared successfully!");
                         window.location.reload();
                       }
                     } catch (err: any) {
-                      alert("মুছে ফেলতে ব্যর্থ হয়েছে: " + err.message);
+                      alert("Failed to delete settings: " + err.message);
                     } finally {
                       setConnecting(false);
                     }
@@ -1541,7 +1541,7 @@ function StripeConnectSection({ user }: { user: any }) {
             <button
               onClick={async () => {
                 if (!pubKey.trim() || !secKey.trim()) {
-                  alert("অনুগ্রহ করে উভয় কি (Publishable এবং Secret Key) পূরণ করুন।");
+                  alert("Please supply both Stripe Publishable Key and Stripe Secret Key.");
                   return;
                 }
                 setConnecting(true);
@@ -1558,14 +1558,14 @@ function StripeConnectSection({ user }: { user: any }) {
                     }),
                   });
                   if (res.ok) {
-                    alert("Stripe API Keys সফলভাবে সংরক্ষিত হয়েছে!");
+                    alert("Stripe API Keys saved successfully!");
                     window.location.reload();
                   } else {
                     const errData = await res.json();
-                    alert("ত্রুটি: " + errData.error);
+                    alert("Error: " + errData.error);
                   }
-                } catch (e: any) {
-                  alert("ব্যর্থ হয়েছে: " + e.message);
+                } catch (error: any) {
+                  alert("Failed to save settings: " + error.message);
                 } finally {
                   setConnecting(false);
                 }
@@ -1573,7 +1573,7 @@ function StripeConnectSection({ user }: { user: any }) {
               disabled={connecting}
               className="bg-neutral-900 text-white rounded-xl px-5 py-2.5 text-xs font-bold hover:bg-neutral-800 cursor-pointer transition-all disabled:opacity-50"
             >
-              {connecting ? "সংরক্ষণ করা হচ্ছে..." : "Save Direct Keys"}
+              {connecting ? "Saving..." : "Save Direct Keys"}
             </button>
           </div>
         </div>

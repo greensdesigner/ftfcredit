@@ -53,7 +53,7 @@ export default function AdminInbox() {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 10 * 1024 * 1024) { // Limit to 10MB
-        alert("ফাইলসাইজ ১০ মেগাবাইটের কম হতে হবে।");
+        alert("File size must be under 10 megabytes (10MB).");
         return;
       }
       setSelectedFileName(file.name);
