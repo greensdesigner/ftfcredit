@@ -384,7 +384,7 @@ export default function BillingPage() {
   const { user, updateProfile, refreshProfile } = useAuth();
   const [currentPlan, setCurrentPlan] = useState(user?.plan_name || 'Credit Repair Subscription');
   const [amount, setAmount] = useState(user?.sub_amount || 149);
-  const [paymentMethod, setPaymentMethod] = useState('Chase •••• 1234 (ACH)');
+  const [paymentMethod, setPaymentMethod] = useState('লোড হচ্ছে... (Loading...)');
   const [status, setStatus] = useState<'active' | 'cancelled' | 'pending'>(user?.sub_status as any || 'active');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
@@ -469,12 +469,21 @@ export default function BillingPage() {
       if (response.ok) {
         const data = await response.json();
         if (data && data.length > 0) {
-          const card = data[0].card;
-          setPaymentMethod(`${card.brand.toUpperCase()} •••• ${card.last4}`);
+          const pm = data[0];
+          if (pm.type === 'bank') {
+            setPaymentMethod(`${pm.brand || 'Bank Account'} •••• ${pm.last4} (ACH)`);
+          } else {
+            setPaymentMethod(`${(pm.brand || 'Card').toUpperCase()} •••• ${pm.last4}`);
+          }
+        } else {
+          setPaymentMethod('কোনো পেমেন্ট মেথড যুক্ত করা হয়নি (No payment method connected)');
         }
+      } else {
+        setPaymentMethod('কোনো পেমেন্ট মেথড যুক্ত করা হয়নি (No payment method connected)');
       }
     } catch (e) {
       console.error("Failed to fetch payment methods:", e);
+      setPaymentMethod('কোনো পেমেন্ট মেথড যুক্ত করা হয়নি (No payment method connected)');
     }
   };
 
