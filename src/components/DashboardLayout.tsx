@@ -285,12 +285,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <CreditCard size={28} />
                 </div>
                 
-                <h2 className="text-xl md:text-2xl font-bold font-display text-neutral-900 mb-3 text-center">
-                  আপনার ড্যাশবোর্ডটি বর্তমানে লক করা আছে!
+                 <h2 className="text-xl md:text-2xl font-bold font-display text-neutral-900 mb-3 text-center">
+                  Your Dashboard is Currently Locked!
                 </h2>
                 
                 <p className="text-neutral-500 leading-relaxed mb-6 text-xs md:text-sm text-center max-w-md">
-                  সেবার মেয়াদের ৩০ দিন উত্তীর্ণ হয়েছে অথবা পেমেন্ট সফলভাবে শেষ হয়নি। অনুগ্রহ করে ড্যাশবোর্ডটি পুনরায় সক্রিয় ও সচল করতে নিচের বাটনে ক্লিক করে কার্ডের মাধ্যমে পেমেন্ট সম্পন্ন করুন।
+                  Your 30-day subscription has expired or the payment was not successfully completed. To reactivate and unlock your dashboard, please click the button below to complete your payment securely.
                 </p>
                 
                 <button
@@ -298,7 +298,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   className="w-full sm:w-auto px-6 py-3.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-2xl font-bold text-xs shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2"
                 >
                   <CreditCard size={16} />
-                  পেমেন্ট করুন এবং ড্যাশবোর্ড সক্রিয় করুন
+                  Make Payment & Activate Dashboard
                 </button>
                 
                 <div className="mt-6 pt-5 border-t border-neutral-100 w-full italic text-[9px] text-neutral-400 font-extrabold uppercase tracking-widest text-center">

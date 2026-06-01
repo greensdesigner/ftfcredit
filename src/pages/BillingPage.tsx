@@ -65,7 +65,7 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
         if (!siContentType || !siContentType.includes('application/json')) {
           const text = await siRes.text();
           console.error("Non-JSON setup response:", text);
-          throw new Error("সার্ভার থেকে ত্রুটিপূর্ণ রেসপন্স এসেছে (ServerError 500 HTML)। অনুগ্রহ করে আপনার ডোমেন/সার্ভার কনফিগারেশন, .env ফাইলে ডাটাবেস পাসওয়ার্ড, এবং স্ট্রাইপ কি (STRIPE_SECRET_KEY) সঠিক কিনা যাচাই করুন।");
+          throw new Error("An invalid response was received from the server (ServerError 500 HTML). Please check your domain/server configuration, your database password in the .env file, and ensure that your Stripe keys (STRIPE_SECRET_KEY) are correct.");
         }
 
         const siData = await siRes.json();
@@ -101,7 +101,7 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
         if (!subContentType || !subContentType.includes('application/json')) {
           const text = await subRes.text();
           console.error("Non-JSON subscription response:", text);
-          throw new Error("সার্ভার পেমেন্ট প্রসেস করতে ব্যর্থ হয়েছে। অনুগ্রহ করে নিশ্চিত হোন যে আপনার ডাটাবেস সচল রয়েছে এবং এডমিন স্ট্রাইপ কি ও হোস্টিং সঠিক আছে।");
+          throw new Error("The server failed to process the payment. Please ensure your database is running and that the administrator's Stripe keys and hosting are correctly configured.");
         }
 
         const subResult = await subRes.json();
@@ -110,9 +110,9 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
         onSuccess(setupIntent?.payment_method);
       } else {
         // ACH Bank Account integration
-        if (!achName.trim()) throw new Error("অনুগ্রহ করে অ্যাকাউন্ট হোল্ডারের নাম প্রদান করুন।");
-        if (!achRouting.trim() || achRouting.trim().length !== 9) throw new Error("অনুগ্রহ করে ৯-ডিজিট সঠিক রাউটিং নাম্বার প্রদান করুন।");
-        if (!achAccount.trim()) throw new Error("অনুগ্রহ করে ব্যাংক অ্যাকাউন্ট নাম্বার প্রদান করুন।");
+        if (!achName.trim()) throw new Error("Please enter the account holder name.");
+        if (!achRouting.trim() || achRouting.trim().length !== 9) throw new Error("Please enter a valid 9-digit routing number.");
+        if (!achAccount.trim()) throw new Error("Please enter your bank account number.");
 
         // 1. Create Token via stripe.js
         console.log("[Stripe ACH] Creating bank token...");
@@ -150,7 +150,7 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
         if (!achContentType || !achContentType.includes('application/json')) {
           const text = await achRes.text();
           console.error("Non-JSON ACH response:", text);
-          throw new Error("ব্যাংক পেমেন্ট প্রসেস করতে ব্যর্থ হয়েছে। দয়া করে আপনার রাউটিং এবং একাউন্ট নাম্বার চেক করে পুনরায় চেষ্টা করুন।");
+          throw new Error("Failed to process bank payment. Please verify your routing and account numbers, and try again.");
         }
 
         const achResult = await achRes.json();
@@ -216,7 +216,7 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
         <div className="space-y-4 text-left animate-in fade-in duration-200">
           <div>
             <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5 font-display font-semibold text-left">
-              Account Holder Name (হোল্ডারের নাম)
+              Account Holder Name
             </label>
             <input
               type="text"
@@ -231,7 +231,7 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5 font-display font-semibold text-left">
-                Routing Number (রাউটিং)
+                Routing Number
               </label>
               <input
                 type="text"
@@ -245,7 +245,7 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
             </div>
             <div>
               <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5 font-display font-semibold text-left">
-                Account Number (অ্যাকাউন্ট)
+                Account Number
               </label>
               <input
                 type="text"
@@ -260,15 +260,15 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
 
           <div>
             <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5 font-display font-semibold text-left">
-              Account Type (অ্যাকাউন্টের ধরন)
+              Account Type
             </label>
             <select
               value={achType}
               onChange={(e: any) => setAchType(e.target.value)}
               className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs outline-none focus:ring-1 focus:ring-neutral-900 transition-all text-neutral-800 font-medium font-sans"
             >
-              <option value="individual">Personal / Individual (ব্যক্তিগত)</option>
-              <option value="company">Business / Company (ব্যবসায়িক)</option>
+              <option value="individual">Personal / Individual</option>
+              <option value="company">Business / Company</option>
             </select>
           </div>
         </div>
@@ -279,17 +279,17 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
           <div className="p-3.5 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-xs font-semibold flex flex-col gap-2">
             <div className="flex items-center gap-2 font-bold">
               <AlertCircle size={15} />
-              <span>ত্রুটি ঘটেছে (Stripe Validation Error)</span>
+              <span>An Error Occurred (Stripe Validation Error)</span>
             </div>
             <p className="text-neutral-600 leading-relaxed text-[11px]">
               {error}
             </p>
             <div className="mt-1 pt-2 border-t border-red-100 flex flex-col gap-1 text-[11px] text-neutral-500 font-normal">
-              <p className="font-semibold text-red-600">সম্ভাব্য সমাধান সমুহ:</p>
+              <p className="font-semibold text-red-600">Potential Solutions:</p>
               <ul className="list-disc pl-4 space-y-1">
-                <li>দয়া করে ব্রাউজার রিফ্রেশ (Ctrl + F5 অথবা Shift + Reload) দিয়ে পুনরায় চেষ্টা করুন। ক্যাশে থাকা পূর্বের ভুল কী (Stripe Key) রিমুভ হতে পারে।</li>
-                <li>আপনার হোস্টিং/সার্ভার ডোমেন কনফিগারেশন এবং ডাটাবেস সংযোগ সঠিক আছে কিনা নিশ্চিত করুন।</li>
-                <li>আপনার এডমিন ড্যাশবোর্ডে ও .env ফাইলে Stripe এর "Live Key-জোড়" সঠিক রয়েছে কিনা আমাদের ট্রাবলশুটার দিয়ে দেখে নিন।</li>
+                <li>Please hard refresh the browser (Ctrl + F5 or Shift + Reload) and try again. This will clear any cached or incorrect Stripe keys.</li>
+                <li>Verify that your hosting/server domain configuration and database connection are working correctly.</li>
+                <li>Ensure that your live Stripe key pair is properly configured in both the Admin Dashboard and the server's .env file using our troubleshooter below.</li>
               </ul>
             </div>
           </div>
@@ -301,7 +301,7 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
             className="w-full flex items-center justify-center gap-2 p-3 text-xs font-bold text-neutral-700 bg-neutral-100 hover:bg-neutral-250 hover:bg-neutral-200 transition-all rounded-xl"
           >
             {checkingDebug ? <Loader2 className="animate-spin" size={13} /> : <AlertCircle size={13} />}
-            সার্ভার স্ট্রাইপ কি (Verify Stripe Setup) যাচাই করুন
+            Verify Server Stripe Keys Setup
           </button>
         </div>
       )}
@@ -348,8 +348,8 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
           </div>
           <p className="italic text-[10px] text-neutral-500 leading-normal pt-1.5 border-t border-neutral-100">
             {!(debugInfo.match && (!loadedPubKey || loadedPubKey.substring(0, 20) === debugInfo.publishable.raw.substring(0, 20))) 
-              ? "ম্যাচিং সতর্কবার্তা: আপনার ব্রাউজারের সাথে সার্ভারের কি-জোড় সঠিক মিলছে না। আপনার .env ফাইলে STRIPE_SECRET_KEY এবং VITE_STRIPE_PUBLISHABLE_KEY একই একাউন্ট হতে নিয়ে রিফ্রেশ দিন এবং ব্রাউজার ক্যাশ পরিষ্কার করুন।"
-              : "একই একাউন্ট: পাবলিশেবল কি ও সিক্রেট কি একই একাউন্টের কি সাবসেট। অনুগ্রহ করে নিশ্চিত হোন যে আপনার Stripe Web Dashboard-এ কার্ড টাইপ ও কানেক্ট অপশনসমূহ সচল রয়েছে।"}
+              ? "Matching Warning: The key pair used by the browser does not match the server's key pair. Please update STRIPE_SECRET_KEY and VITE_STRIPE_PUBLISHABLE_KEY in your .env file from the same Stripe account, hard refresh your browser, and clear the browser cache."
+              : "Valid Match: The Publishable Key and Secret Key belong to the same Stripe account pair. Please ensure that card payments and connect options are active on your Stripe Web Dashboard."}
           </p>
         </div>
       )}
@@ -384,7 +384,7 @@ export default function BillingPage() {
   const { user, updateProfile, refreshProfile } = useAuth();
   const [currentPlan, setCurrentPlan] = useState(user?.plan_name || 'Credit Repair Subscription');
   const [amount, setAmount] = useState(user?.sub_amount || 149);
-  const [paymentMethod, setPaymentMethod] = useState('লোড হচ্ছে... (Loading...)');
+  const [paymentMethod, setPaymentMethod] = useState('Loading...');
   const [status, setStatus] = useState<'active' | 'cancelled' | 'pending'>(user?.sub_status as any || 'active');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPlanModal, setShowPlanModal] = useState(false);
@@ -476,14 +476,14 @@ export default function BillingPage() {
             setPaymentMethod(`${(pm.brand || 'Card').toUpperCase()} •••• ${pm.last4}`);
           }
         } else {
-          setPaymentMethod('কোনো পেমেন্ট মেথড যুক্ত করা হয়নি (No payment method connected)');
+          setPaymentMethod('No payment method connected');
         }
       } else {
-        setPaymentMethod('কোনো পেমেন্ট মেথড যুক্ত করা হয়নি (No payment method connected)');
+        setPaymentMethod('No payment method connected');
       }
     } catch (e) {
       console.error("Failed to fetch payment methods:", e);
-      setPaymentMethod('কোনো পেমেন্ট মেথড যুক্ত করা হয়নি (No payment method connected)');
+      setPaymentMethod('No payment method connected');
     }
   };
 
@@ -594,8 +594,8 @@ export default function BillingPage() {
               <span className="font-extrabold text-[10px] bg-red-650 bg-red-500 text-white rounded-full px-2.5 py-0.5 uppercase tracking-widest leading-none">
                 LOCKED / EXPIRED
               </span>
-              <h3 className="text-lg font-bold text-red-950 font-display mt-2">আপনার মেয়াদের মেয়াদ শেষ হয়েছে!</h3>
-              <p className="text-xs text-red-700 font-medium leading-relaxed">ড্যাশবোর্ড আনলক করার জন্য অনুগ্রহ করে কার্ডের মাধ্যমে পেমেন্ট সম্পন্ন করুন। যেকোনো একটি প্ল্যান বাছাই করে সাথে সাথে ৩০ দিনের এক্সেস গ্রহণ করুন।</p>
+              <h3 className="text-lg font-bold text-red-950 font-display mt-2">Your subscription has expired!</h3>
+              <p className="text-xs text-red-700 font-medium leading-relaxed">Please complete payment using a credit card or bank account to unlock your dashboard. Choose a plan to regain full access for 30 days instantly.</p>
             </div>
             <button
               onClick={() => setShowPlanModal(true)}
@@ -633,7 +633,7 @@ export default function BillingPage() {
                     <p className="text-neutral-500">
                       {!isExpired 
                         ? `Your next billing date is ${expiryDate ? expiryDate.toLocaleDateString() : 'N/A'}.` 
-                        : 'পেমেন্ট সম্পন্ন করে আপনার ড্যাশবোর্ডটি ৩০ দিনের জন্য সচল করুন।'}
+                        : 'Complete your payment to reactivate your dashboard for 30 days.'}
                     </p>
                   </div>
                   <div className="text-right">
@@ -946,7 +946,7 @@ export default function BillingPage() {
                       fetchInvoices();
                       refreshProfile();
                       if (typeOrPmId === 'bank') {
-                        alert(`ACH পেমেন্ট সফল হয়েছে! আপনার ব্যাংক অ্যাকাউন্ট (${details?.bankName || 'Bank'} ending in ${details?.last4 || ''}) কানেক্ট ও চার্জ করা হয়েছে।`);
+                        alert(`ACH Payment successful! Your bank account (${details?.bankName || 'Bank'} ending in ${details?.last4 || ''}) has been connected and charged successfully.`);
                       } else {
                         alert("Subscription activated and card saved successfully!");
                       }

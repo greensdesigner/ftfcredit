@@ -20,12 +20,10 @@ async function handleFetchResponse(response: Response, actionName: string): Prom
     const text = await response.text().catch(() => "");
     if (text.includes("<!DOCTYPE") || text.includes("<html") || text.includes("<body")) {
       throw new Error(
-        `সার্ভার থেকে JSON এর পরিবর্তে HTML ডকুমেন্ট পাওয়া গেছে। এর কারণ হতে পারেঃ\n\n` +
-        `১. আপনার হোস্টিংয়ে (যেমন Hostinger/cPanel) Node.js ব্যাকএন্ড সার্ভারটি এখনো চালু করা হয়নি বা বন্ধ হয়ে আছে।\n` +
-        `২. Nginx, Apache বা .htaccess রিরাইট রুল রিকুয়েস্টটিকে ব্যাকএন্ড প্রক্সি (/api) তে পাঠানোর পরিবর্তে সরাসরি ইন্ডেক্স ফাইলে পাঠিয়ে দিচ্ছে।\n\n` +
-        `দয়া করে নিশ্চিত করুন আপনার Node.js সার্ভারটি (পোর্ট ৩০০০) চালু আছে এবং রিভার্স প্রক্সি কনফিগারেশন ঠিক আছে।\n\n` +
-        `----------------\n` +
-        `English: Server returned HTML instead of JSON. This usually means that your Node.js backend (Port 3000) is either not running on Hostinger/cPanel, or the Reverse Proxy routing for '/api' is missing or misconfigured in your .htaccess / Nginx server blocks.`
+        `Server returned an HTML document instead of JSON. Possible reasons:\n\n` +
+        `1. Your Node.js backend server (Port 3000) is either not running or stopped on your hosting provider (e.g., Hostinger/cPanel).\n` +
+        `2. Nginx, Apache, or .htaccess rewrite rules are redirecting '/api' requests to the index file instead of proxying them to the backend.\n\n` +
+        `Please ensure that your Node.js server is started on Port 3000 and that the reverse proxy configuration is working correctly.`
       );
     }
     throw new Error(`Server returned non-JSON response (${contentType || "unknown text"}): ${text.substring(0, 150)}`);
