@@ -713,52 +713,7 @@ export default function BillingPage() {
         </div>
 
         {/* Payment Methods Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          {/* Active Method */}
-          <div className="bg-white rounded-[32px] border border-neutral-100 p-8 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold font-display text-neutral-900">Payment Sources</h3>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-bold text-emerald-600 uppercase tracking-wider">
-                <ShieldCheck size={12} />
-                Secure Autopay
-              </span>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-6 rounded-2xl border-2 border-neutral-900 bg-neutral-50/50">
-                 <div className="flex items-center gap-4">
-                    <div className="size-12 rounded-xl bg-neutral-900 flex items-center justify-center text-white">
-                       {paymentMethod.includes('Bank') ? <Building2 size={24} /> : <CreditCard size={24} />}
-                    </div>
-                    <div>
-                       <p className="font-bold text-neutral-900">{paymentMethod}</p>
-                       <p className="text-xs text-neutral-400 capitalize">Default payment source</p>
-                    </div>
-                 </div>
-                 <div className="text-emerald-500">
-                    <CheckCircle2 size={24} />
-                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                 <button 
-                  onClick={() => setShowCardModal(true)}
-                  className="flex items-center justify-center gap-2 rounded-2xl border border-neutral-200 p-4 font-bold text-sm text-neutral-900 hover:bg-neutral-50 transition-all"
-                 >
-                   <Plus size={18} /> Add Card
-                 </button>
-                 <button 
-                  onClick={handleConnectBank}
-                  disabled={isPlaidConnecting}
-                  className="flex items-center justify-center gap-2 rounded-2xl border border-neutral-200 p-4 font-bold text-sm text-neutral-900 hover:bg-neutral-50 transition-all disabled:opacity-50"
-                 >
-                   {isPlaidConnecting ? <Loader2 className="animate-spin" size={18} /> : <Building2 size={18} />}
-                   Connect Bank
-                 </button>
-              </div>
-            </div>
-          </div>
-
+        <div className="grid grid-cols-1 gap-8 mb-12">
           {/* Billing Protection */}
           <div className="bg-neutral-900 rounded-[32px] p-8 text-white shadow-xl relative overflow-hidden flex flex-col justify-between">
              <div className="relative z-10">
