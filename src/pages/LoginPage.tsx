@@ -98,7 +98,6 @@ export default function LoginPage() {
         </form>
 
         <p className="mt-8 text-center text-sm text-neutral-500">
-          New to FTF Consulting?{' '}
           <Link to="/signup" className="font-semibold text-neutral-900 hover:underline decoration-neutral-900 underline-offset-4">Create an account</Link>
         </p>
       </motion.div>
