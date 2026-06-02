@@ -30,15 +30,19 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-50 px-4">
+    <div 
+      className="flex min-h-screen items-center justify-center bg-cover bg-center bg-no-repeat px-4 relative"
+      style={{ backgroundImage: `url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=2000')` }}
+    >
+      <div className="absolute inset-0 bg-neutral-950/65 backdrop-blur-[2px]"></div>
+
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full max-w-md space-y-8 rounded-3xl bg-white p-10 border border-neutral-100 shadow-sm"
+        className="relative z-10 w-full max-w-md space-y-8 rounded-3xl bg-white/95 backdrop-blur p-10 border border-neutral-200 shadow-2xl"
       >
         <div className="text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-900 text-white font-display text-2xl font-bold">FTF</div>
-          <h1 className="mt-6 font-display text-3xl font-bold tracking-tight text-neutral-900">Welcome back</h1>
+          <h1 className="font-display text-3xl font-bold tracking-tight text-neutral-900">Welcome back</h1>
           <p className="mt-2 text-neutral-500">Sign in to manage your credit repair journey</p>
         </div>
 
