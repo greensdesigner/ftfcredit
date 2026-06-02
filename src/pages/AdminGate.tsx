@@ -121,9 +121,6 @@ export default function AdminGate() {
         </div>
 
         <div className="mt-10 pt-10 border-t border-neutral-800/50 text-center flex flex-col gap-2">
-          <Link to="/creator-portal" className="text-[10px] text-neutral-500 hover:text-white font-bold transition-all mb-1 uppercase tracking-widest">
-            ⚡ Open Creator Portal (Key Factory)
-          </Link>
           <p className="text-[9px] text-neutral-600 uppercase tracking-[0.3em] font-black italic">Restricted Asset • ID: 155-XP-FTF</p>
           <p className="text-[8px] text-neutral-700 font-bold leading-relaxed px-4">Unauthorized access to this portal is a violation of the FTF Security Protocol. All connection attempts are logged.</p>
         </div>
