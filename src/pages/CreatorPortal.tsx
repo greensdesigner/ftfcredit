@@ -343,8 +343,8 @@ export default function CreatorPortal() {
               <ShieldAlert size={36} />
             </div>
             <div>
-              <h1 className="text-2xl font-black text-white tracking-widest uppercase">Creator Command Hub</h1>
-              <p className="text-[10px] text-neutral-500 font-extrabold tracking-wider uppercase">App Developer & Builder Administrative Panel.</p>
+              <h1 className="text-3xl font-black text-white tracking-widest uppercase">Creator Command Hub</h1>
+              <p className="text-xs md:text-sm text-neutral-500 font-extrabold tracking-wider uppercase">App Developer & Builder Administrative Panel.</p>
             </div>
           </div>
           
@@ -359,7 +359,7 @@ export default function CreatorPortal() {
             </button>
             <Link 
               to="/admin-portal" 
-              className="flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-neutral-800 hover:bg-neutral-750 text-neutral-300 font-bold text-xs border border-neutral-700/50 transition-all text-center uppercase tracking-wider"
+              className="flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-neutral-800 hover:bg-neutral-750 text-neutral-300 font-bold text-sm border border-neutral-700/50 transition-all text-center uppercase tracking-widest"
             >
               <LogOut size={14} /> Back to Gate
             </Link>
@@ -370,7 +370,7 @@ export default function CreatorPortal() {
         <div className="flex border-b border-neutral-800 gap-2 mb-8">
           <button
             onClick={() => setActiveTab('users')}
-            className={`px-6 py-3 font-bold text-xs uppercase tracking-widest transition-all border-b-2 ${
+            className={`px-6 py-4 font-black text-sm md:text-base uppercase tracking-widest transition-all border-b-2 ${
               activeTab === 'users' 
                 ? 'border-indigo-500 text-white' 
                 : 'border-transparent text-neutral-500 hover:text-neutral-350'
@@ -380,7 +380,7 @@ export default function CreatorPortal() {
           </button>
           <button
             onClick={() => setActiveTab('keys')}
-            className={`px-6 py-3 font-bold text-xs uppercase tracking-widest transition-all border-b-2 ${
+            className={`px-6 py-4 font-black text-sm md:text-base uppercase tracking-widest transition-all border-b-2 ${
               activeTab === 'keys' 
                 ? 'border-indigo-500 text-white' 
                 : 'border-transparent text-neutral-500 hover:text-neutral-350'
@@ -456,20 +456,20 @@ export default function CreatorPortal() {
             {/* Filtering Controls */}
             <div className="bg-neutral-900 border border-neutral-800 p-6 rounded-[24px] flex flex-col md:flex-row items-center gap-4">
               <div className="relative w-full md:flex-1">
-                <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500" />
+                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400" />
                 <input
                   type="text"
                   placeholder="Search by name, email, agency or UID..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-xl py-3 pl-11 pr-4 text-xs font-bold focus:outline-none focus:border-indigo-500 transition-all uppercase placeholder-neutral-600"
+                  className="w-full bg-neutral-950 border border-neutral-800 text-white rounded-xl py-3.5 pl-12 pr-4 text-sm font-bold focus:outline-none focus:border-indigo-500 transition-all uppercase placeholder-neutral-500"
                 />
               </div>
 
               <div className="flex gap-2 w-full md:w-auto shrink-0 justify-end">
                 <button
                   onClick={() => setRoleFilter('all')}
-                  className={`px-4 py-3 rounded-xl font-extrabold text-[10px] uppercase tracking-wider transition-all border ${
+                  className={`px-5 py-3.5 rounded-xl font-black text-xs md:text-sm uppercase tracking-wider transition-all border ${
                     roleFilter === 'all' 
                       ? 'bg-white text-neutral-950 border-white' 
                       : 'bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white'
@@ -479,23 +479,23 @@ export default function CreatorPortal() {
                 </button>
                 <button
                   onClick={() => setRoleFilter('admin')}
-                  className={`px-4 py-3 rounded-xl font-extrabold text-[10px] uppercase tracking-wider transition-all border ${
+                  className={`px-5 py-3.5 rounded-xl font-black text-xs md:text-sm uppercase tracking-wider transition-all border ${
                     roleFilter === 'admin' 
                       ? 'bg-indigo-500 text-white border-indigo-500' 
                       : 'bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white'
                   }`}
                 >
-                  Admins Only
+                  Admins
                 </button>
                 <button
                   onClick={() => setRoleFilter('client')}
-                  className={`px-4 py-3 rounded-xl font-extrabold text-[10px] uppercase tracking-wider transition-all border ${
+                  className={`px-5 py-3.5 rounded-xl font-black text-xs md:text-sm uppercase tracking-wider transition-all border ${
                     roleFilter === 'client' 
                       ? 'bg-emerald-500 text-neutral-950 border-emerald-500' 
                       : 'bg-neutral-950 text-neutral-400 border-neutral-800 hover:text-white'
                   }`}
                 >
-                  Clients Only
+                  Clients
                 </button>
               </div>
             </div>
@@ -503,8 +503,8 @@ export default function CreatorPortal() {
             {/* Users List */}
             <div className="bg-neutral-900 border border-neutral-800 rounded-[24px] overflow-hidden">
               <div className="p-6 border-b border-neutral-800 flex items-center justify-between">
-                <h3 className="text-xs font-black text-neutral-200 tracking-widest uppercase">System Users Catalog</h3>
-                <span className="text-[10px] text-neutral-500 font-extrabold uppercase">Showing {filteredUsers.length} of {users.length} Records</span>
+                <h3 className="text-sm md:text-base font-black text-neutral-200 tracking-widest uppercase">System Users Catalog</h3>
+                <span className="text-xs md:text-sm text-neutral-400 font-extrabold uppercase">Showing {filteredUsers.length} of {users.length} Records</span>
               </div>
 
               {loading ? (
@@ -526,92 +526,81 @@ export default function CreatorPortal() {
                     const isSuspended = u.isSuspended === 1 || u.isSuspended === true;
                     return (
                       <div key={u.uid} className="p-6 hover:bg-neutral-850/80 transition-all duration-300 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-                        <div className="space-y-3 flex-1">
+                        <div className="space-y-3.5 flex-1">
                           <div className="flex flex-wrap items-center gap-3">
-                            <span className="font-extrabold text-sm text-white">{u.fullName}</span>
+                            <span className="font-extrabold text-base md:text-lg text-white">{u.fullName}</span>
                             
-                            {/* Role Badge */}
-                            {u.role === 'admin' ? (
-                              <span className="inline-flex items-center text-[9px] font-black text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2 py-0.5 rounded-md uppercase tracking-wider">
-                                ADMIN (Agency)
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center text-[9px] font-black text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2 py-0.5 rounded-md uppercase tracking-wider">
-                                CLIENT (User)
-                              </span>
-                            )}
-
-                            {/* Status Badge */}
+                             {/* Status Badge */}
                             {isSuspended ? (
-                              <span className="inline-flex items-center gap-1 text-[9px] font-black text-red-500 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-md uppercase tracking-wider animate-pulse">
-                                <Lock size={10} /> SUSPENDED (UNPAID)
+                              <span className="inline-flex items-center gap-1.5 text-xs font-black text-red-500 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-md uppercase tracking-wider animate-pulse">
+                                <Lock size={12} /> SUSPENDED (UNPAID)
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2 py-0.5 rounded-md uppercase tracking-wider">
-                                <Unlock size={10} /> ACTIVE / PAID
+                              <span className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                                <Unlock size={12} /> ACTIVE / PAID
                               </span>
                             )}
                           </div>
 
                           {/* Details Metadata */}
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-4 gap-y-2 text-[10px] text-neutral-400 tracking-normal">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-2.5 text-xs md:text-sm text-neutral-300 tracking-normal">
                             <div className="flex items-center gap-2">
-                              <Mail size={12} className="text-neutral-500 shrink-0" />
+                              <Mail size={14} className="text-neutral-400 shrink-0" />
                               <span className="truncate">{u.email}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Phone size={12} className="text-neutral-500 shrink-0" />
+                              <Phone size={14} className="text-neutral-400 shrink-0" />
                               <span>{u.phone || 'No phone'}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Building size={12} className="text-neutral-500 shrink-0" />
+                              <Building size={14} className="text-neutral-400 shrink-0" />
                               <span className="truncate">{u.agencyName || 'No Agency Link'}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Calendar size={12} className="text-neutral-500 shrink-0" />
+                              <Calendar size={14} className="text-neutral-400 shrink-0" />
                               <span>Registered: {new Date(u.createdAt).toLocaleDateString()}</span>
                             </div>
                           </div>
 
                           {u.streetAddress && (
-                            <p className="text-[9px] text-neutral-500 uppercase tracking-widest leading-relaxed">
+                            <p className="text-xs text-neutral-400 uppercase tracking-widest leading-relaxed">
                               📍 Address: {u.streetAddress}, {u.city || ''}, {u.state || ''} {u.zipCode || ''}
                             </p>
                           )}
 
                           {/* Monthly Fee Indicator & Editor */}
-                          <div className="mt-3 pt-3 border-t border-neutral-800/40 flex flex-wrap items-center gap-4">
-                            <span className="text-[10px] text-neutral-400 font-extrabold uppercase tracking-wider flex items-center gap-1.5">
-                              <Coins size={12} className="text-amber-500" />
+                          <div className="mt-3.5 pt-3.5 border-t border-neutral-800/40 flex flex-wrap items-center gap-4">
+                            <span className="text-xs md:text-sm text-neutral-300 font-extrabold uppercase tracking-wider flex items-center gap-2">
+                              <Coins size={14} className="text-amber-500" />
                               Monthly Fee / মাসিক ফি:
                             </span>
                             
                             {editingFeeUserId === u.uid ? (
-                              <div className="flex items-center gap-2">
-                                <span className="text-sm font-bold text-neutral-400">$</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-base font-bold text-neutral-300">$</span>
                                 <input
                                   type="text"
                                   value={newFeeValue}
                                   onChange={(e) => setNewFeeValue(e.target.value)}
-                                  className="w-20 bg-neutral-950 border border-neutral-800 text-white rounded-lg px-2.5 py-1 text-xs font-mono font-bold focus:outline-none focus:border-indigo-500"
+                                  className="w-24 bg-neutral-950 border border-neutral-800 text-white rounded-lg px-2.5 py-1.5 text-sm font-mono font-bold focus:outline-none focus:border-indigo-500"
                                   placeholder="100.00"
                                 />
                                 <button
                                   onClick={() => handleUpdateFee(u.uid, newFeeValue)}
-                                  className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-black uppercase rounded-lg transition-all"
+                                  className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-black uppercase rounded-lg transition-all"
                                 >
                                   Save / পেমেন্ট সেভ
                                 </button>
                                 <button
                                   onClick={() => setEditingFeeUserId(null)}
-                                  className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-750 text-neutral-400 hover:text-white text-[10px] font-black uppercase rounded-lg transition-all"
+                                  className="px-4 py-2 bg-neutral-800 hover:bg-neutral-750 text-neutral-400 hover:text-white text-xs font-black uppercase rounded-lg transition-all"
                                 >
                                   Cancel
                                 </button>
                               </div>
                             ) : (
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono text-xs text-white font-extrabold bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg">
+                              <div className="flex items-center gap-3">
+                                <span className="font-mono text-sm text-white font-extrabold bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-lg">
                                   ${u.sub_amount !== null && u.sub_amount !== undefined ? Number(u.sub_amount).toFixed(2) : '100.00'}
                                 </span>
                                 <button
@@ -619,7 +608,7 @@ export default function CreatorPortal() {
                                     setEditingFeeUserId(u.uid);
                                     setNewFeeValue(String(u.sub_amount !== null && u.sub_amount !== undefined ? u.sub_amount : '100'));
                                   }}
-                                  className="text-[9px] font-black text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/25 px-2.5 py-1 rounded uppercase tracking-wider transition-all"
+                                  className="text-xs font-black text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/25 px-3 py-1.5 rounded uppercase tracking-wider transition-all"
                                 >
                                   Change / পরিবর্তন করুন
                                 </button>
@@ -633,18 +622,18 @@ export default function CreatorPortal() {
                           {isSuspended ? (
                             <button
                               onClick={() => handleToggleSuspension(u.uid, u.isSuspended)}
-                              className="flex items-center gap-1 px-4 py-2.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-550 hover:text-neutral-950 text-emerald-400 font-extrabold text-[10px] uppercase tracking-wider rounded-xl transition-all"
+                              className="flex items-center gap-2 px-5 py-3.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500 hover:text-neutral-950 text-emerald-400 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all"
                               title="Click to Activate User Dashboard"
                             >
-                              <Unlock size={12} /> Activate Admin Dashboard
+                              <Unlock size={14} /> Activate Admin Dashboard
                             </button>
                           ) : (
                             <button
                               onClick={() => handleToggleSuspension(u.uid, u.isSuspended)}
-                              className="flex items-center gap-1 px-4 py-2.5 bg-red-950/20 border border-red-950/40 hover:bg-red-950 text-red-400 font-extrabold text-[10px] uppercase tracking-wider rounded-xl transition-all"
+                              className="flex items-center gap-2 px-5 py-3.5 bg-red-950/20 border border-red-950/40 hover:bg-red-950 text-red-400 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all"
                               title="Click to Block/Suspend User Dashboard"
                             >
-                              <Lock size={12} /> Suspend Admin (Unpaid)
+                              <Lock size={14} /> Suspend Admin (Unpaid)
                             </button>
                           )}
                         </div>
@@ -661,9 +650,9 @@ export default function CreatorPortal() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-2 bg-gradient-to-r from-indigo-950/40 via-purple-950/20 to-neutral-900 border border-neutral-800 p-8 rounded-[32px] flex flex-col justify-between">
                 <div>
-                  <span className="text-[9px] font-black tracking-[0.25em] text-indigo-400 uppercase">Authorization Factory</span>
-                  <h2 className="text-xl font-bold tracking-tighter text-white mt-1 mb-3 uppercase">Instant Bypass Creator</h2>
-                  <p className="text-[11px] text-neutral-400 font-bold leading-normal lowercase normal-case tracking-normal">
+                  <span className="text-xs md:text-sm font-black tracking-[0.25em] text-indigo-400 uppercase">Authorization Factory</span>
+                  <h2 className="text-2xl font-black mt-1 mb-3 uppercase text-white">Instant Bypass Creator</h2>
+                  <p className="text-sm text-neutral-300 font-bold leading-relaxed">
                     Generate high-entropy activation keys to instantly unlock standard command center encryption. Each key created here persists inside the database until revoked.
                   </p>
                 </div>
@@ -671,15 +660,15 @@ export default function CreatorPortal() {
                   <button
                     onClick={handleGenerateKey}
                     disabled={generating}
-                    className="flex items-center gap-2 px-6 py-4 bg-white hover:bg-neutral-100 disabled:opacity-40 text-neutral-950 font-black text-xs rounded-2xl transition-all shadow-xl shadow-white/5 active:scale-[0.98]"
+                    className="flex items-center gap-2.5 px-7 py-4.5 bg-white hover:bg-neutral-100 disabled:opacity-40 text-neutral-950 font-black text-sm rounded-2xl transition-all shadow-xl shadow-white/5 active:scale-[0.98]"
                   >
                     {generating ? (
                       <>
-                        <RefreshCw className="animate-spin" size={16} /> Creating Entry Key...
+                        <RefreshCw className="animate-spin" size={18} /> Creating Entry Key...
                       </>
                     ) : (
                       <>
-                        <Plus size={16} /> Generate Activation Key
+                        <Plus size={18} /> Generate Activation Key
                       </>
                     )}
                   </button>
@@ -688,18 +677,18 @@ export default function CreatorPortal() {
 
               <div className="bg-neutral-900 border border-neutral-800 p-8 rounded-[32px] flex flex-col justify-between">
                 <div>
-                  <span className="text-[9px] font-black tracking-[0.25em] text-emerald-400 uppercase">Bypass Stats</span>
-                  <h2 className="text-xl font-bold tracking-tighter text-white mt-1 mb-3 uppercase font-black">Total Keys</h2>
-                  <p className="text-[11px] text-neutral-500 font-normal leading-relaxed lowercase normal-case tracking-normal">
+                  <span className="text-xs md:text-sm font-black tracking-[0.25em] text-emerald-400 uppercase">Bypass Stats</span>
+                  <h2 className="text-2xl font-black mt-1 mb-3 uppercase text-white">Total Keys</h2>
+                  <p className="text-sm text-neutral-450 leading-relaxed">
                     Check database connectivity and manage current live tokens easily. Total registered security keys shown below.
                   </p>
                 </div>
 
                 <div className="flex items-center justify-between mt-6 pt-4 border-t border-neutral-800/80">
-                  <div className="flex items-center gap-2 text-xs font-bold text-neutral-400">
-                    <Database size={14} /> Pool Connected
+                  <div className="flex items-center gap-2 text-sm font-bold text-neutral-300">
+                    <Database size={16} /> Pool Connected
                   </div>
-                  <span className="text-xs font-black text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                  <span className="text-sm font-black text-emerald-500 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-full uppercase tracking-wider">
                     {keys.length} Key{keys.length !== 1 ? 's' : ''}
                   </span>
                 </div>
@@ -709,20 +698,20 @@ export default function CreatorPortal() {
             {/* Keys Inventory */}
             <div className="bg-neutral-900 border border-neutral-800 rounded-[32px] overflow-hidden">
               <div className="p-6 border-b border-neutral-800 flex items-center justify-between">
-                <h3 className="text-sm font-black text-neutral-200 tracking-widest uppercase">Active Keys Registry</h3>
-                <span className="text-[10px] text-neutral-500 font-extrabold uppercase">Generated License Keys</span>
+                <h3 className="text-base font-black text-neutral-200 tracking-widest uppercase">Active Keys Registry</h3>
+                <span className="text-xs md:text-sm text-neutral-400 font-extrabold uppercase">Generated License Keys</span>
               </div>
 
               {loading && keys.length === 0 ? (
                 <div className="p-12 text-center text-neutral-500 flex flex-col items-center justify-center gap-3">
                   <RefreshCw className="animate-spin text-neutral-600" size={32} />
-                  <p className="text-xs font-black uppercase">Scanning database indices...</p>
+                  <p className="text-sm font-black uppercase">Scanning database indices...</p>
                 </div>
               ) : keys.length === 0 ? (
                 <div className="p-16 text-center text-neutral-600 space-y-2">
-                  <Key size={40} strokeWidth={1} className="mx-auto text-neutral-700" />
-                  <p className="text-xs font-black tracking-widest uppercase mb-1">No keys found</p>
-                  <p className="text-[10px] lowercase normal-case text-neutral-500 tracking-normal max-w-xs mx-auto">
+                  <Key size={44} strokeWidth={1} className="mx-auto text-neutral-700" />
+                  <p className="text-sm font-black tracking-widest uppercase mb-1">No keys found</p>
+                  <p className="text-xs md:text-sm lowercase normal-case text-neutral-400 tracking-normal max-w-xs mx-auto">
                     Press "Generate Activation Key" to populate entry points for onboarding standard administrators.
                   </p>
                 </div>
@@ -730,23 +719,23 @@ export default function CreatorPortal() {
                 <div className="divide-y divide-neutral-800/60 max-h-[450px] overflow-y-auto">
                   {keys.map((k) => (
                     <div key={k.id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-neutral-850 transition-all duration-300">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-3">
-                          <span className="font-mono text-lg font-black tracking-[0.2em] text-white">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-3.5">
+                          <span className="font-mono text-xl md:text-2xl font-black tracking-[0.2em] text-white">
                             {k.keyCode}
                           </span>
                           {k.isUsed ? (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-black text-red-500 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                            <span className="inline-flex items-center gap-1.5 text-xs font-black text-red-500 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-md uppercase tracking-wider">
                               Used
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-black text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                            <span className="inline-flex items-center gap-1.5 text-xs font-black text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-md uppercase tracking-wider">
                               Active / Available
                             </span>
                           )}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[9px] text-neutral-500 font-extrabold tracking-wider uppercase">
+                        <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-neutral-400 font-bold tracking-wider uppercase">
                           <span>Created On: {new Date(k.createdAt).toLocaleString()}</span>
                           {k.isUsed && k.usedByEmail && (
                             <span className="text-indigo-400 lowercase normal-case tracking-normal">
