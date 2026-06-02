@@ -530,6 +530,17 @@ export default function CreatorPortal() {
                           <div className="flex flex-wrap items-center gap-3">
                             <span className="font-extrabold text-base md:text-lg text-white">{u.fullName}</span>
                             
+                            {/* Role Badge */}
+                            {u.role === 'admin' ? (
+                              <span className="inline-flex items-center text-xs font-black text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                                ADMIN (Agency)
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center text-xs font-black text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                                CLIENT (User)
+                              </span>
+                            )}
+                            
                              {/* Status Badge */}
                             {isSuspended ? (
                               <span className="inline-flex items-center gap-1.5 text-xs font-black text-red-500 bg-red-500/10 border border-red-500/20 px-2.5 py-1 rounded-md uppercase tracking-wider animate-pulse">
@@ -625,7 +636,7 @@ export default function CreatorPortal() {
                               className="flex items-center gap-2 px-5 py-3.5 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500 hover:text-neutral-950 text-emerald-400 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all"
                               title="Click to Activate User Dashboard"
                             >
-                              <Unlock size={14} /> Activate Admin Dashboard
+                              <Unlock size={14} /> Activate {u.role === 'admin' ? 'Admin' : 'Client'} Dashboard
                             </button>
                           ) : (
                             <button
@@ -633,7 +644,7 @@ export default function CreatorPortal() {
                               className="flex items-center gap-2 px-5 py-3.5 bg-red-950/20 border border-red-950/40 hover:bg-red-950 text-red-400 font-extrabold text-xs uppercase tracking-wider rounded-xl transition-all"
                               title="Click to Block/Suspend User Dashboard"
                             >
-                              <Lock size={14} /> Suspend Admin (Unpaid)
+                              <Lock size={14} /> Suspend {u.role === 'admin' ? 'Admin (Unpaid)' : 'Client'}
                             </button>
                           )}
                         </div>

@@ -566,47 +566,6 @@ async function startServer() {
         [uid, email, fullName, hashedPassword, assignedRole, phone, finalTenantId, assignedRole === 'admin' ? agencyName : null, streetAddress]
       );
 
-      // Reset system settings and clear old data for a pristine demo experience if this is a newly registered admin!
-      if (assignedRole === 'admin') {
-        try {
-          console.log(`🧹 Processing fresh reset for newly registered admin: ${email} (${uid})`);
-          
-          // 1. Delete all other users (which cascades to deletions in subscriptions, payments, service_progress)
-          await pool.query("DELETE FROM users WHERE uid != ?", [uid]);
-          
-          // 2. Clear other standalone tables to make sure everything is completely fresh
-          await pool.query("DELETE FROM messages");
-          await pool.query("DELETE FROM organic_posts");
-          await pool.query("DELETE FROM social_connectors");
-          await pool.query("DELETE FROM marketing_campaigns");
-          
-          // 3. Reset system settings to defaults with a 7-day trial subscription (exactly 7 days left)
-          const trialExpiry = new Date();
-          trialExpiry.setDate(trialExpiry.getDate() + 7);
-          
-          await pool.query("DELETE FROM system_settings WHERE id = 1");
-          await pool.query(`
-            INSERT INTO system_settings (
-              id, 
-              subscriptionStatus, 
-              expiryDate, 
-              maintenanceMode, 
-              emailAlerts, 
-              systemName, 
-              systemLogo,
-              planPriceStandard,
-              planPricePremium,
-              planPriceElite
-            ) VALUES (1, 'active', ?, false, true, ?, null, 99.00, 149.00, 299.00)
-          `, [trialExpiry, agencyName || 'FTF Consulting']);
-          
-          console.log(`✅ Fresh database cleanup completed successfully for new admin.`);
-        } catch (resetErr: any) {
-          console.error("❌ Failed to perform fresh database reset on signup:", resetErr);
-          // Don't fail the signup process if cleanup has an error, but log it
-        }
-      }
-
       console.log(`✅ User created successfully: ${email} (${uid}) [Tenant: ${finalTenantId}]`);
       res.json({ status: "success", message: "User created in DB", tenantId: finalTenantId });
     } catch (error: any) {
