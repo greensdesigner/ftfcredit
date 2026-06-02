@@ -408,6 +408,29 @@ async function startServer() {
             )
           `);
 
+          // Creator Activation Keys Table
+          await pool.query(`
+            CREATE TABLE IF NOT EXISTS activation_keys (
+              id INT AUTO_INCREMENT PRIMARY KEY,
+              keyCode VARCHAR(100) NOT NULL UNIQUE,
+              isUsed BOOLEAN DEFAULT FALSE,
+              usedByEmail VARCHAR(255),
+              createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              usedAt TIMESTAMP NULL
+            )
+          `);
+
+          // Seed a default key if none exist
+          try {
+            const [existingKeys]: any = await pool.query("SELECT * FROM activation_keys");
+            if (existingKeys.length === 0) {
+              await pool.query("INSERT INTO activation_keys (keyCode) VALUES ('FTF-8899')");
+              console.log("🔑 Seeded default activation key 'FTF-8899'.");
+            }
+          } catch (seedErr: any) {
+            console.error("error seeding activation key:", seedErr.message);
+          }
+
           console.log("✅ All database tables verified/created successfully.");
         } catch (dbErr: any) {
           console.error("❌ Error initializing tables:", dbErr.message);
@@ -620,6 +643,85 @@ async function startServer() {
     } catch (error: any) {
       console.error("Login Error:", error.message);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Creator Activation Keys - GET List
+  app.get("/api/creator/keys", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    try {
+      const [rows]: any = await pool.query("SELECT * FROM activation_keys ORDER BY id DESC");
+      res.json({ keys: rows });
+    } catch (error: any) {
+      console.error("Error retrieving keys:", error.message);
+      res.status(500).json({ error: "Failed to retrieve activation keys." });
+    }
+  });
+
+  // Creator Activation Keys - Generate New Key
+  app.post("/api/creator/keys/generate", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    try {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      const part1 = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+      const part2 = Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+      const keyCode = `FTF-${part1}-${part2}`;
+
+      await pool.query("INSERT INTO activation_keys (keyCode) VALUES (?)", [keyCode]);
+      res.json({ status: "success", keyCode });
+    } catch (error: any) {
+      console.error("Error generating key:", error.message);
+      res.status(500).json({ error: "Failed to generate dynamic activation key." });
+    }
+  });
+
+  // Creator Activation Keys - Delete Key
+  app.post("/api/creator/keys/delete", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { id } = req.body;
+    try {
+      await pool.query("DELETE FROM activation_keys WHERE id = ?", [id]);
+      res.json({ status: "success" });
+    } catch (error: any) {
+      console.error("Error deleting key:", error.message);
+      res.status(500).json({ error: "Failed to delete activation key." });
+    }
+  });
+
+  // Verification from Admin Gate
+  app.post("/api/admin/verify-gate", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { passcode, email } = req.body;
+    
+    if (!passcode) {
+      return res.status(400).json({ error: "Passcode is required." });
+    }
+
+    try {
+      const [rows]: any = await pool.query("SELECT * FROM activation_keys WHERE keyCode = ?", [passcode]);
+      
+      if (rows.length === 0) {
+        return res.status(400).json({ error: "Access Denied. Signature Mismatch (Invalid Code)." });
+      }
+
+      const key = rows[0];
+
+      if (key.isUsed) {
+        if (key.usedByEmail === email) {
+          // Re-logins/bypass for the same administrator who registered with this code
+          return res.json({ status: "success", message: "Bypass granted (previously unlocked by your account)" });
+        }
+        return res.status(400).json({ error: "Access Denied. This code has already been utilized by another administrator." });
+      }
+
+      // Mark the key as utilized by current admin
+      const now = new Date();
+      await pool.query("UPDATE activation_keys SET isUsed = TRUE, usedByEmail = ?, usedAt = ? WHERE id = ?", [email || 'unknown', now, key.id]);
+      
+      res.json({ status: "success", message: "Bypass granted successfully." });
+    } catch (error: any) {
+      console.error("Error verifying passcode:", error.message);
+      res.status(500).json({ error: "Server authentication error." });
     }
   });
 

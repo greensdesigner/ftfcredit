@@ -6,8 +6,6 @@ import { UserRole } from '../types';
 import { Link } from 'react-router-dom';
 import AdminDashboard from './AdminDashboard';
 
-const SECRET_CODE = "FTF-8899"; // Your Secret Access Code
-
 export default function AdminGate() {
   const { user } = useAuth();
   const [passcode, setPasscode] = useState('');
@@ -15,24 +13,38 @@ export default function AdminGate() {
     return sessionStorage.getItem('admin_authorized') === 'true';
   });
   const [errorType, setErrorType] = useState<'none' | 'invalid_code' | 'unauthorized'>('none');
+  const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setErrorType('none');
+    setErrorMessage('');
     
-    setTimeout(() => {
-      if (passcode === SECRET_CODE) {
+    try {
+      const res = await fetch('/api/admin/verify-gate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ passcode, email: user?.email })
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
         setIsAuthorized(true);
         sessionStorage.setItem('admin_authorized', 'true');
         setErrorType('none');
       } else {
         setErrorType('invalid_code');
+        setErrorMessage(data.error || 'Access Denied. Signature Mismatch.');
         setPasscode('');
       }
+    } catch (err: any) {
+      setErrorType('invalid_code');
+      setErrorMessage('Server connection error. Please try again.');
+    } finally {
       setLoading(false);
-    }, 800);
+    }
   };
 
   // If authorized via code, show dashboard
@@ -84,9 +96,9 @@ export default function AdminGate() {
                   exit={{ opacity: 0, height: 0 }}
                   className="flex flex-col items-center gap-2 text-red-400 text-[10px] font-black justify-center tracking-widest uppercase text-center"
                 >
-                  <div className="flex items-center gap-2">
-                    <AlertCircle size={14} />
-                    Access Denied. Signature Mismatch.
+                  <div className="flex items-center gap-2 px-2 py-1 bg-red-500/10 border border-red-500/20 rounded-xl">
+                    <AlertCircle size={14} className="shrink-0 text-red-500" />
+                    <span>{errorMessage || 'Access Denied. Signature Mismatch.'}</span>
                   </div>
                 </motion.div>
               )}
@@ -109,6 +121,9 @@ export default function AdminGate() {
         </div>
 
         <div className="mt-10 pt-10 border-t border-neutral-800/50 text-center flex flex-col gap-2">
+          <Link to="/creator-portal" className="text-[10px] text-neutral-500 hover:text-white font-bold transition-all mb-1 uppercase tracking-widest">
+            ⚡ Open Creator Portal (Key Factory)
+          </Link>
           <p className="text-[9px] text-neutral-600 uppercase tracking-[0.3em] font-black italic">Restricted Asset • ID: 155-XP-FTF</p>
           <p className="text-[8px] text-neutral-700 font-bold leading-relaxed px-4">Unauthorized access to this portal is a violation of the FTF Security Protocol. All connection attempts are logged.</p>
         </div>

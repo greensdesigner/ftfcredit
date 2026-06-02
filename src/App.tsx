@@ -8,6 +8,7 @@ import ClientDashboard from './pages/ClientDashboard';
 import AdminGate from './pages/AdminGate';
 import BillingPage from './pages/BillingPage';
 import ProfilePage from './pages/ProfilePage';
+import CreatorPortal from './pages/CreatorPortal';
 import { ProtectedRoute, PublicRoute } from './components/AuthGuards';
 import { UserRole } from './types';
 import DashboardLayout from './components/DashboardLayout';
@@ -90,6 +91,7 @@ function AppContent() {
 
         {/* Admin Entry Gate */}
         <Route path="/admin-portal" element={<AdminGate />} />
+        <Route path="/creator-portal" element={<CreatorPortal />} />
         
         {/* Protected Admin Sub-routes */}
         <Route element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]} />}>
