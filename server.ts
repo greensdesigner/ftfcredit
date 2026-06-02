@@ -420,6 +420,14 @@ async function startServer() {
             )
           `);
 
+          // Migration to add isSuspended column to users table
+          try {
+            await pool.query("ALTER TABLE users ADD COLUMN isSuspended BOOLEAN DEFAULT FALSE");
+            console.log("🛠️ Successfully checked/added isSuspended column to users table.");
+          } catch (e: any) {
+            // Already exists or table not ready, ignorable
+          }
+
           // Seed a default key if none exist
           try {
             const [existingKeys]: any = await pool.query("SELECT * FROM activation_keys");
@@ -655,6 +663,36 @@ async function startServer() {
     } catch (error: any) {
       console.error("Error retrieving keys:", error.message);
       res.status(500).json({ error: "Failed to retrieve activation keys." });
+    }
+  });
+
+  // Creator Portal - GET All Registered Users (Admins and Clients)
+  app.get("/api/creator/users", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    try {
+      const [rows]: any = await pool.query(`
+        SELECT uid, email, fullName, role, phone, agencyName, streetAddress, city, state, zipCode, isSuspended, createdAt, tenantId
+        FROM users
+        ORDER BY createdAt DESC
+      `);
+      res.json({ users: rows });
+    } catch (error: any) {
+      console.error("Error retrieving users for creator portal:", error.message);
+      res.status(500).json({ error: "Failed to retrieve system users info." });
+    }
+  });
+
+  // Creator Portal - Toggle Suspension/Monthly Fee Paid Status of an Admin or Client
+  app.post("/api/creator/users/toggle-suspension", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { uid, isSuspended } = req.body;
+    try {
+      await pool.query("UPDATE users SET isSuspended = ? WHERE uid = ?", [isSuspended ? 1 : 0, uid]);
+      console.log(`🔒 User suspension status updated. UID: ${uid}, isSuspended: ${isSuspended}`);
+      res.json({ status: "success", message: "User status updated successfully." });
+    } catch (error: any) {
+      console.error("Error toggling user suspension status:", error.message);
+      res.status(500).json({ error: "Failed to update user status status." });
     }
   });
 

@@ -124,6 +124,51 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     loadBranding();
   }, [user]);
 
+  const isSuspended = user?.isSuspended === 1 || user?.isSuspended === true;
+
+  if (isSuspended) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-neutral-950 text-white p-4 md:p-8 font-sans">
+        <div className="w-full max-w-xl bg-neutral-900 border border-neutral-800 rounded-[32px] p-8 md:p-10 text-center shadow-2xl relative overflow-hidden flex flex-col items-center">
+          <div className="absolute top-0 left-0 w-full h-[3px] bg-red-500 animate-pulse"></div>
+          
+          <div className="size-20 rounded-3xl bg-red-500/10 border border-red-500/20 text-red-500 flex items-center justify-center mb-6 shrink-0 animate-pulse">
+            <CreditCard size={36} />
+          </div>
+          
+          <h2 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white mb-2">
+            ড্যাশবোর্ড সাময়িকভাবে বন্ধ!
+          </h2>
+          <h3 className="text-neutral-400 text-xs tracking-widest uppercase font-extrabold mb-6">
+            Dashboard Temporarily Suspended
+          </h3>
+          
+          <div className="space-y-4 text-center max-w-md mx-auto mb-8">
+            <p className="text-neutral-300 text-sm leading-relaxed font-semibold">
+              আপনার মাসিক সাবস্ক্রিপশন ফি পরিশোধ না করায় ড্যাশবোর্ডটি সাময়িকভাবে বন্ধ করা হয়েছে। সফটওয়্যারটি পুনরায় সচল এবং আনলক করতে দয়া করে আপনার বকেয়া মাসিক ফি পরিশোধ করুন।
+            </p>
+            <p className="text-neutral-400 text-xs leading-relaxed lowercase normal-case tracking-normal border-t border-neutral-800/80 pt-4">
+              Your access has been suspended because the monthly subscription payment is pending. Please make the outstanding payment to reactivate and unlock your software instantly.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+            <button
+              onClick={handleLogout}
+              className="px-6 py-3.5 rounded-2xl bg-neutral-800 hover:bg-neutral-750 text-neutral-300 hover:text-white font-bold text-xs tracking-wider uppercase border border-neutral-700/50 transition-all flex items-center justify-center gap-2"
+            >
+              <LogOut size={14} /> Logout / লগআউট করুন
+            </button>
+          </div>
+
+          <div className="mt-8 pt-5 border-t border-neutral-850 w-full italic text-[9px] text-neutral-500 font-extrabold uppercase tracking-[0.25em] text-center">
+            FTF Platform Security Protocol
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-screen bg-neutral-50 text-neutral-900">
       {/* Sidebar Desktop */}
