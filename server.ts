@@ -666,19 +666,54 @@ async function startServer() {
     }
   });
 
-  // Creator Portal - GET All Registered Users (Admins and Clients)
+  // Creator Portal - GET All Registered Users (Admins and Clients) with Subscription Amount
   app.get("/api/creator/users", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured" });
     try {
       const [rows]: any = await pool.query(`
-        SELECT uid, email, fullName, role, phone, agencyName, streetAddress, city, state, zipCode, isSuspended, createdAt, tenantId
-        FROM users
-        ORDER BY createdAt DESC
+        SELECT u.uid, u.email, u.fullName, u.role, u.phone, u.agencyName, u.streetAddress, u.city, u.state, u.zipCode, u.isSuspended, u.createdAt, u.tenantId,
+               s.amount as sub_amount
+        FROM users u
+        LEFT JOIN subscriptions s ON u.uid = s.userId
+        ORDER BY u.createdAt DESC
       `);
       res.json({ users: rows });
     } catch (error: any) {
       console.error("Error retrieving users for creator portal:", error.message);
       res.status(500).json({ error: "Failed to retrieve system users info." });
+    }
+  });
+
+  // Creator Portal - Update Subscription Fee of an Admin
+  app.post("/api/creator/users/update-fee", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    const { uid, amount } = req.body;
+    
+    if (!uid || amount === undefined || isNaN(Number(amount))) {
+      return res.status(400).json({ error: "Invalid parameters" });
+    }
+
+    try {
+      const nextMonth = new Date();
+      nextMonth.setMonth(nextMonth.getMonth() + 1);
+
+      // Check if sub exists
+      const [existing]: any = await pool.query("SELECT * FROM subscriptions WHERE userId = ?", [uid]);
+      if (existing.length > 0) {
+        await pool.query("UPDATE subscriptions SET amount = ? WHERE userId = ?", [amount, uid]);
+      } else {
+        await pool.query(
+          `INSERT INTO subscriptions (userId, planName, amount, status, nextBillingDate) 
+           VALUES (?, ?, ?, ?, ?)`
+          , [uid, "Standard Plan", amount, "active", nextMonth]
+        );
+      }
+      
+      console.log(`💰 Updated subscription fee for UID: ${uid} to $${amount}`);
+      res.json({ status: "success", message: `Subscription fee updated to $${amount}` });
+    } catch (error: any) {
+      console.error("Error updating subscription fee:", error.message);
+      res.status(500).json({ error: "Failed to update subscription fee" });
     }
   });
 

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   ShieldAlert, Plus, Trash2, Copy, Check, RefreshCw, Key, LogOut, 
   CheckCircle, Database, Users, Download, Lock, Unlock, Search, 
-  Calendar, Phone, Mail, Building 
+  Calendar, Phone, Mail, Building, Coins 
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -30,6 +30,7 @@ interface UserRecord {
   isSuspended: boolean | number;
   createdAt: string | number;
   tenantId?: string;
+  sub_amount?: number | null;
 }
 
 export default function CreatorPortal() {
@@ -42,6 +43,9 @@ export default function CreatorPortal() {
   const [activeTab, setActiveTab] = useState<'keys' | 'users'>('users');
   const [keys, setKeys] = useState<ActivationKey[]>([]);
   const [users, setUsers] = useState<UserRecord[]>([]);
+  
+  const [editingFeeUserId, setEditingFeeUserId] = useState<string | null>(null);
+  const [newFeeValue, setNewFeeValue] = useState<string>('');
   
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -155,6 +159,33 @@ export default function CreatorPortal() {
       }
     } catch (err) {
       console.error("Failed to toggle suspension:", err);
+    }
+  };
+
+  // Update subscription fee for a specific admin or user
+  const handleUpdateFee = async (uid: string, amountStr: string) => {
+    const numericAmount = parseFloat(amountStr);
+    if (isNaN(numericAmount) || numericAmount < 0) {
+      alert("দয়া করে একটি সঠিক ইতিবাচক সংখ্যা ইনপুট দিন।");
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/creator/users/update-fee', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid, amount: numericAmount }),
+      });
+      if (res.ok) {
+        fetchUsers();
+        setEditingFeeUserId(null);
+        setFeedback("সাবস্ক্রিপশন ফি সফলভাবে আপডেট করা হয়েছে!");
+        setTimeout(() => setFeedback(null), 4000);
+      } else {
+        alert("সাবস্ক্রিপশন ফি আপডেট করতে ব্যর্থ হয়েছে।");
+      }
+    } catch (err) {
+      console.error("Failed to update subscription fee:", err);
     }
   };
 
@@ -547,6 +578,54 @@ export default function CreatorPortal() {
                               📍 Address: {u.streetAddress}, {u.city || ''}, {u.state || ''} {u.zipCode || ''}
                             </p>
                           )}
+
+                          {/* Monthly Fee Indicator & Editor */}
+                          <div className="mt-3 pt-3 border-t border-neutral-800/40 flex flex-wrap items-center gap-4">
+                            <span className="text-[10px] text-neutral-400 font-extrabold uppercase tracking-wider flex items-center gap-1.5">
+                              <Coins size={12} className="text-amber-500" />
+                              Monthly Fee / মাসিক ফি:
+                            </span>
+                            
+                            {editingFeeUserId === u.uid ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-bold text-neutral-400">$</span>
+                                <input
+                                  type="text"
+                                  value={newFeeValue}
+                                  onChange={(e) => setNewFeeValue(e.target.value)}
+                                  className="w-20 bg-neutral-950 border border-neutral-800 text-white rounded-lg px-2.5 py-1 text-xs font-mono font-bold focus:outline-none focus:border-indigo-500"
+                                  placeholder="100.00"
+                                />
+                                <button
+                                  onClick={() => handleUpdateFee(u.uid, newFeeValue)}
+                                  className="px-3 py-1.5 bg-indigo-500 hover:bg-indigo-600 text-white text-[10px] font-black uppercase rounded-lg transition-all"
+                                >
+                                  Save / পেমেন্ট সেভ
+                                </button>
+                                <button
+                                  onClick={() => setEditingFeeUserId(null)}
+                                  className="px-3 py-1.5 bg-neutral-800 hover:bg-neutral-750 text-neutral-400 hover:text-white text-[10px] font-black uppercase rounded-lg transition-all"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-xs text-white font-extrabold bg-amber-500/10 border border-amber-500/20 px-2.5 py-1 rounded-lg">
+                                  ${u.sub_amount !== null && u.sub_amount !== undefined ? Number(u.sub_amount).toFixed(2) : '100.00'}
+                                </span>
+                                <button
+                                  onClick={() => {
+                                    setEditingFeeUserId(u.uid);
+                                    setNewFeeValue(String(u.sub_amount !== null && u.sub_amount !== undefined ? u.sub_amount : '100'));
+                                  }}
+                                  className="text-[9px] font-black text-indigo-400 hover:text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/25 px-2.5 py-1 rounded uppercase tracking-wider transition-all"
+                                >
+                                  Change / পরিবর্তন করুন
+                                </button>
+                              </div>
+                            )}
+                          </div>
                         </div>
 
                         {/* Suspension Toggle Action Button */}
