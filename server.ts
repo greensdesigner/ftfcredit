@@ -1048,13 +1048,35 @@ async function startServer() {
     }
     if (!pool) return res.status(500).json({ error: "Database not configured" });
 
+    const { adminId } = req.body;
+    let amountInCents = 10000; // default to $100.00
+    let customerEmail = 'admin@platform.com';
+
     try {
+      if (adminId) {
+        // Fetch custom subscription amount and email for this specific admin
+        const [subRows]: any = await pool.query(
+          "SELECT s.amount, u.email FROM subscriptions s JOIN users u ON s.userId = u.uid WHERE s.userId = ?",
+          [adminId]
+        );
+        if (subRows.length > 0) {
+          amountInCents = Math.round(Number(subRows[0].amount) * 100);
+          customerEmail = subRows[0].email || customerEmail;
+        } else {
+          // If subscription details aren't in DB yet, check user email
+          const [userRows]: any = await pool.query("SELECT email FROM users WHERE uid = ?", [adminId]);
+          if (userRows.length > 0) {
+            customerEmail = userRows[0].email || customerEmail;
+          }
+        }
+      }
+
       const [rows]: any = await pool.query("SELECT stripeCustomerId FROM system_settings WHERE id = 1");
       let customerId = rows[0]?.stripeCustomerId;
 
       if (!customerId) {
         const customer = await stripeInst.customers.create({
-          email: 'admin@platform.com',
+          email: customerEmail,
           description: 'System Administrative Account',
         });
         customerId = customer.id;
@@ -1077,7 +1099,7 @@ async function startServer() {
                 name: 'Platform Monthly Subscription',
                 description: 'Automatic monthly maintenance & administrative access',
               },
-              unit_amount: 10000, // $100.00
+              unit_amount: amountInCents,
               recurring: {
                 interval: 'month',
               },

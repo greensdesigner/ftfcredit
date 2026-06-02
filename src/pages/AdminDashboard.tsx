@@ -39,6 +39,9 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'clients' | 'settings' | 'billing' | 'inbox' | 'marketing'>('overview');
   const { user, refreshProfile } = useAuth();
   const tenantId = user?.tenantId;
+  const displayFee = user?.sub_amount !== undefined && user?.sub_amount !== null
+    ? Number(user.sub_amount).toFixed(2)
+    : '100.00';
 
   // States for Daily Operations Panel
   const [opTab, setOpTab] = useState<'individual' | 'batch' | 'checklist'>('individual');
@@ -52,7 +55,8 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchSystemSettings();
-  }, []);
+    refreshProfile();
+  }, [refreshProfile]);
 
   const fetchSystemSettings = async () => {
     try {
@@ -67,7 +71,11 @@ export default function AdminDashboard() {
   const handleSystemPay = async () => {
     setIsPaying(true);
     try {
-      const response = await fetch('/api/admin/create-system-checkout', { method: 'POST' });
+      const response = await fetch('/api/admin/create-system-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminId: user?.uid }),
+      });
       const { url, error } = await response.json();
       
       if (error) {
@@ -236,7 +244,7 @@ export default function AdminDashboard() {
               </div>
               <h2 className="text-3xl font-bold font-display text-neutral-900 mb-4">System Locked</h2>
               <p className="text-neutral-500 mb-8 leading-relaxed">
-                 Your platform subscription has expired. Please pay the monthly maintenance fee of $100 to reactivate all administrative features.
+                 Your platform subscription has expired. Please pay the monthly maintenance fee of ${displayFee} to reactivate all administrative features.
               </p>
               <button 
                 onClick={handleSystemPay}
@@ -244,7 +252,7 @@ export default function AdminDashboard() {
                 className="w-full rounded-2xl bg-neutral-900 py-4 font-bold text-white shadow-xl shadow-neutral-900/20 hover:bg-neutral-800 transition-all flex items-center justify-center gap-2"
               >
                 {isPaying ? <Loader2 className="animate-spin" size={20} /> : <CreditCard size={20} />}
-                Pay $100 & Reactivate
+                Pay ${displayFee} & Reactivate
               </button>
               <p className="mt-6 text-[10px] text-neutral-400 uppercase font-bold tracking-widest flex items-center justify-center gap-1">
                  <MapPin size={10} /> Secure Enterprise Payment
@@ -1069,7 +1077,7 @@ export default function AdminDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                      <div className="p-6 rounded-2xl bg-neutral-50 border border-neutral-100">
                         <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-2">Subscription Fee</p>
-                        <p className="text-3xl font-bold text-neutral-900 font-display">$100<span className="text-sm text-neutral-400">/month</span></p>
+                        <p className="text-3xl font-bold text-neutral-900 font-display">${displayFee}<span className="text-sm text-neutral-400">/month</span></p>
                      </div>
                      <div className="p-6 rounded-2xl bg-neutral-50 border border-neutral-100">
                         <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-2">Next Payment</p>
