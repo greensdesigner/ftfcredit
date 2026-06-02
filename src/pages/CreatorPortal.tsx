@@ -33,6 +33,12 @@ interface UserRecord {
 }
 
 export default function CreatorPortal() {
+  const [isUnlocked, setIsUnlocked] = useState(() => {
+    return sessionStorage.getItem('creator_portal_unlocked') === 'true';
+  });
+  const [passcode, setPasscode] = useState('');
+  const [passcodeError, setPasscodeError] = useState(false);
+
   const [activeTab, setActiveTab] = useState<'keys' | 'users'>('users');
   const [keys, setKeys] = useState<ActivationKey[]>([]);
   const [users, setUsers] = useState<UserRecord[]>([]);
@@ -224,6 +230,77 @@ export default function CreatorPortal() {
 
   const adminsCount = users.filter(u => u.role === 'admin').length;
   const clientsCount = users.filter(u => u.role === 'client').length;
+
+  if (!isUnlocked) {
+    const handleVerifyPasscode = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (passcode === '2562686') {
+        sessionStorage.setItem('creator_portal_unlocked', 'true');
+        setIsUnlocked(true);
+        setPasscodeError(false);
+      } else {
+        setPasscodeError(true);
+      }
+    };
+
+    return (
+      <div className="min-h-screen bg-neutral-950 text-white font-sans flex items-center justify-center p-4">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full max-w-md bg-neutral-900 border border-neutral-800 rounded-[32px] p-8 md:p-10 shadow-2xl relative overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-indigo-500 to-purple-500"></div>
+          
+          <div className="text-center space-y-3 mb-8">
+            <div className="mx-auto size-16 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center mb-4">
+              <Lock size={28} />
+            </div>
+            <h1 className="text-xl font-black text-white tracking-widest uppercase">Developer Portal Gate</h1>
+            <p className="text-[10px] text-neutral-400 font-extrabold uppercase tracking-wider">Authentication Required to Access Database</p>
+          </div>
+
+          <form onSubmit={handleVerifyPasscode} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-[9px] font-black tracking-widest text-neutral-400 uppercase">Enter Security Clearance Code</label>
+              <input
+                type="password"
+                placeholder="••••••"
+                value={passcode}
+                onChange={(e) => {
+                  setPasscode(e.target.value);
+                  if (passcodeError) setPasscodeError(false);
+                }}
+                className={`w-full bg-neutral-950 border text-center font-mono text-xl tracking-[0.25em] text-white rounded-2xl py-4 px-4 focus:outline-none transition-all ${
+                  passcodeError 
+                    ? 'border-red-500/60 focus:border-red-500' 
+                    : 'border-neutral-800 focus:border-indigo-500'
+                }`}
+              />
+              {passcodeError && (
+                <p className="text-[10px] text-red-500 font-bold text-center mt-2">
+                  Incorrect gate code! Please try again.
+                </p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="w-full py-4 rounded-2xl bg-indigo-500 hover:bg-indigo-600 text-white font-bold text-xs tracking-widest uppercase transition-all shadow-xl shadow-indigo-500/10"
+            >
+              Verify & Unlock
+            </button>
+          </form>
+
+          <div className="mt-8 pt-6 border-t border-neutral-850 text-center">
+            <Link to="/admin-portal" className="text-[10px] text-neutral-500 hover:text-white font-bold transition-all uppercase tracking-widest">
+              ⚡ Exit to Portal Gate
+            </Link>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-neutral-950 text-white font-sans p-4 md:p-8 flex items-center justify-center">
