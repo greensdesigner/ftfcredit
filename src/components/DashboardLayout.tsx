@@ -137,18 +137,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           
           <h2 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white mb-2">
-            ড্যাশবোর্ড সাময়িকভাবে বন্ধ!
+            Dashboard Blocked
           </h2>
           <h3 className="text-neutral-400 text-xs tracking-widest uppercase font-extrabold mb-6">
-            Dashboard Temporarily Suspended
+            Subscription Expired or Unpaid
           </h3>
           
           <div className="space-y-4 text-center max-w-md mx-auto mb-8">
             <p className="text-neutral-300 text-sm leading-relaxed font-semibold">
-              আপনার মাসিক সাবস্ক্রিপশন ফি পরিশোধ না করায় ড্যাশবোর্ডটি সাময়িকভাবে বন্ধ করা হয়েছে। সফটওয়্যারটি পুনরায় সচল এবং আনলক করতে দয়া করে আপনার বকেয়া মাসিক ফি পরিশোধ করুন।
+              Your access has been suspended because the monthly subscription fee has not been paid. Please make the outstanding payment to reactivate and unlock your dashboard instantly.
             </p>
-            <p className="text-neutral-400 text-xs leading-relaxed lowercase normal-case tracking-normal border-t border-neutral-800/80 pt-4">
-              Your access has been suspended because the monthly subscription payment is pending. Please make the outstanding payment to reactivate and unlock your software instantly.
+            <p className="text-neutral-400 text-xs leading-relaxed tracking-normal border-t border-neutral-800/80 pt-4">
+              If you have already paid or need assistance, please contact the application administration support desk.
             </p>
           </div>
 
@@ -157,7 +157,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               onClick={handleLogout}
               className="px-6 py-3.5 rounded-2xl bg-neutral-800 hover:bg-neutral-750 text-neutral-300 hover:text-white font-bold text-xs tracking-wider uppercase border border-neutral-700/50 transition-all flex items-center justify-center gap-2"
             >
-              <LogOut size={14} /> Logout / লগআউট করুন
+              <LogOut size={14} /> Logout Session
             </button>
           </div>
 
