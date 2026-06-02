@@ -75,7 +75,12 @@ export default function CreatorPortal() {
   };
 
   useEffect(() => {
+    const originalTitle = document.title;
+    document.title = "greensoft";
     loadAllData();
+    return () => {
+      document.title = originalTitle;
+    };
   }, []);
 
   const handleGenerateKey = async () => {
