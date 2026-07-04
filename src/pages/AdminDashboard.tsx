@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import AdminInbox from '../components/AdminInbox';
 import AdminMarketing from '../components/AdminMarketing';
 import { useAuth } from '../context/AuthContext';
-import { Users, CreditCard, AlertCircle, Search, Filter, MoreHorizontal, ArrowUpRight, ArrowDownRight, CheckCircle2, RotateCcw, Loader2, X, Mail, Phone, Calendar, User, MapPin, ShieldCheck, FileText, CheckSquare, Square, Send, Download, Sparkles, RefreshCw, ClipboardList, Briefcase, FileSignature, Inbox } from 'lucide-react';
+import { Users, CreditCard, AlertCircle, Search, Filter, MoreHorizontal, ArrowUpRight, ArrowDownRight, CheckCircle2, RotateCcw, Loader2, X, Mail, Phone, Calendar, User, MapPin, ShieldCheck, FileText, CheckSquare, Square, Send, Download, Sparkles, RefreshCw, ClipboardList, Briefcase, FileSignature, Inbox, Plus } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { loadStripe } from '@stripe/stripe-js';
 import { motion, AnimatePresence } from 'motion/react';
@@ -53,10 +53,101 @@ export default function AdminDashboard() {
   ]);
   const [batchProcessing, setBatchProcessing] = useState(false);
 
+  // CRM & Alerts States (Phase 6, 7)
+  const [crmTab, setCrmTab] = useState<'leads' | 'tasks' | 'alerts'>('leads');
+  const [crmLeads, setCrmLeads] = useState<any[]>([]);
+  const [crmTasks, setCrmTasks] = useState<any[]>([]);
+  const [alertLogs, setAlertLogs] = useState<any[]>([]);
+  const [showLeadModal, setShowLeadModal] = useState(false);
+  const [newLead, setNewLead] = useState({ fullName: '', email: '', phone: '', notes: '', status: 'New' });
+  const [newTaskText, setNewTaskText] = useState('');
+  const [simulatedAlertText, setSimulatedAlertText] = useState('');
+  const [simulatedAlertChannel, setSimulatedAlertChannel] = useState<'SMS' | 'Email'>('SMS');
+  const [simulatedAlertRecipient, setSimulatedAlertRecipient] = useState('');
+
+  const fetchCrmData = async () => {
+    if (!tenantId) return;
+    try {
+      const resLeads = await fetch(`/api/admin/crm-leads?tenantId=${tenantId}`);
+      if (resLeads.ok) setCrmLeads(await resLeads.json());
+
+      const resTasks = await fetch(`/api/admin/crm-tasks?tenantId=${tenantId}`);
+      if (resTasks.ok) setCrmTasks(await resTasks.json());
+
+      const resAlerts = await fetch(`/api/admin/alert-logs?tenantId=${tenantId}`);
+      if (resAlerts.ok) setAlertLogs(await resAlerts.json());
+    } catch (e) {
+      console.error("Failed to fetch CRM data:", e);
+    }
+  };
+
+  const handleAddLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tenantId || !newLead.fullName || !newLead.email) return;
+    try {
+      const res = await fetch('/api/admin/crm-leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...newLead, tenantId })
+      });
+      if (res.ok) {
+        setShowLeadModal(false);
+        setNewLead({ fullName: '', email: '', phone: '', notes: '', status: 'New' });
+        fetchCrmData();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleAddTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tenantId || !newTaskText) return;
+    try {
+      const res = await fetch('/api/admin/crm-tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenantId, taskDescription: newTaskText, dueDate: new Date().toISOString().split('T')[0] })
+      });
+      if (res.ok) {
+        setNewTaskText('');
+        fetchCrmData();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleSendSimulatedAlert = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!tenantId || !simulatedAlertRecipient || !simulatedAlertText) return;
+    try {
+      const res = await fetch('/api/admin/alert-logs/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tenantId, recipientName: simulatedAlertRecipient, channel: simulatedAlertChannel, message: simulatedAlertText })
+      });
+      if (res.ok) {
+        setSimulatedAlertRecipient('');
+        setSimulatedAlertText('');
+        fetchCrmData();
+        alert(`Successfully sent simulated ${simulatedAlertChannel} alert!`);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     fetchSystemSettings();
     refreshProfile();
   }, [refreshProfile]);
+
+  useEffect(() => {
+    if (tenantId) {
+      fetchCrmData();
+    }
+  }, [tenantId]);
 
   const fetchSystemSettings = async () => {
     try {
@@ -624,6 +715,317 @@ export default function AdminDashboard() {
                 )}
 
             </div>
+
+            {/* CRM & Owner Analytics Platform (Phases 6, 7, 15) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-8 border-t border-neutral-100">
+              
+              {/* Left Column: Interactive CRM Pipeline & Messaging Alerts */}
+              <div className="lg:col-span-2 rounded-[32px] border border-neutral-100 bg-white p-8 shadow-sm space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-100 pb-6">
+                  <div>
+                    <h3 className="font-display text-2xl font-black text-neutral-900">CRM & Lead Nurturing Console</h3>
+                    <p className="text-sm text-neutral-500 mt-1">Nurture leads, orchestrate tasks, and audit automatic alerts.</p>
+                  </div>
+                  <div className="flex bg-neutral-100 rounded-xl p-1 gap-1">
+                    <button 
+                      onClick={() => setCrmTab('leads')}
+                      className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all", crmTab === 'leads' ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-900")}
+                    >
+                      Leads Pipeline
+                    </button>
+                    <button 
+                      onClick={() => setCrmTab('tasks')}
+                      className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all", crmTab === 'tasks' ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-900")}
+                    >
+                      Task Queue
+                    </button>
+                    <button 
+                      onClick={() => setCrmTab('alerts')}
+                      className={cn("px-4 py-2 rounded-lg text-xs font-bold transition-all", crmTab === 'alerts' ? "bg-white text-neutral-900 shadow-sm" : "text-neutral-500 hover:text-neutral-900")}
+                    >
+                      Alert Logs
+                    </button>
+                  </div>
+                </div>
+
+                {crmTab === 'leads' && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-display font-bold text-neutral-800 text-sm">Active CRM Leads ({crmLeads.length})</h4>
+                      <button 
+                        onClick={() => setShowLeadModal(true)}
+                        className="rounded-xl bg-neutral-900 hover:bg-neutral-800 px-4 py-2 text-xs font-bold text-white flex items-center gap-1.5 transition-all"
+                      >
+                        <Plus size={14} /> Add Lead
+                      </button>
+                    </div>
+
+                    <div className="overflow-hidden rounded-2xl border border-neutral-100 bg-neutral-50/50">
+                      <table className="w-full text-left text-xs text-neutral-600">
+                        <thead className="bg-neutral-100/50 text-[10px] font-bold text-neutral-400 uppercase tracking-widest border-b border-neutral-100">
+                          <tr>
+                            <th className="px-6 py-4">Lead Name</th>
+                            <th className="px-6 py-4">Contact Info</th>
+                            <th className="px-6 py-4">Status</th>
+                            <th className="px-6 py-4">Date Added</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-100">
+                          {crmLeads.length === 0 ? (
+                            <tr>
+                              <td colSpan={4} className="px-6 py-8 text-center text-neutral-400 font-medium">No active leads added yet. Click 'Add Lead' to populate.</td>
+                            </tr>
+                          ) : (
+                            crmLeads.map((lead: any) => (
+                              <tr key={lead.id} className="hover:bg-neutral-50/80 transition-colors">
+                                <td className="px-6 py-4 font-bold text-neutral-900">{lead.fullName}</td>
+                                <td className="px-6 py-4">
+                                  <div>{lead.email}</div>
+                                  <div className="text-neutral-400">{lead.phone || 'No Phone'}</div>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <span className={cn(
+                                    "inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
+                                    lead.status === 'New' && "bg-blue-50 text-blue-600",
+                                    lead.status === 'Contacted' && "bg-amber-50 text-amber-600",
+                                    lead.status === 'Qualified' && "bg-purple-50 text-purple-600",
+                                    lead.status === 'Enrolled' && "bg-emerald-50 text-emerald-600",
+                                    lead.status === 'Active' && "bg-green-50 text-green-600"
+                                  )}>
+                                    {lead.status}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 text-neutral-400 font-mono">{new Date(lead.createdAt).toLocaleDateString()}</td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {crmTab === 'tasks' && (
+                  <div className="space-y-4">
+                    <h4 className="font-display font-bold text-neutral-800 text-sm">CRM Task Planner</h4>
+                    <form onSubmit={handleAddTask} className="flex gap-2">
+                      <input 
+                        type="text" 
+                        placeholder="Add urgent follow-up task..." 
+                        value={newTaskText}
+                        onChange={(e) => setNewTaskText(e.target.value)}
+                        className="flex-1 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-xs outline-none focus:border-neutral-900"
+                      />
+                      <button 
+                        type="submit" 
+                        className="rounded-xl bg-neutral-950 px-6 font-bold text-white text-xs hover:bg-neutral-800 transition-all"
+                      >
+                        Add Task
+                      </button>
+                    </form>
+
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {crmTasks.length === 0 ? (
+                        <div className="p-8 text-center text-neutral-400 font-medium bg-neutral-50 rounded-2xl border border-neutral-100 text-xs">No active tasks. All clear!</div>
+                      ) : (
+                        crmTasks.map((t: any) => (
+                          <div key={t.id} className="flex items-center justify-between p-4 rounded-xl border border-neutral-100 bg-neutral-50/50">
+                            <span className="text-xs font-bold text-neutral-800">{t.taskDescription}</span>
+                            <span className="text-[10px] bg-neutral-100 px-2 py-0.5 rounded text-neutral-400 font-mono">Due: {new Date(t.dueDate).toLocaleDateString()}</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {crmTab === 'alerts' && (
+                  <div className="space-y-6">
+                    <div className="p-6 bg-neutral-50 rounded-2xl border border-neutral-100">
+                      <h4 className="font-display font-bold text-neutral-800 text-sm mb-4">Simulate Client Alert Notification (Phase 7)</h4>
+                      <form onSubmit={handleSendSimulatedAlert} className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <input 
+                            type="text" 
+                            placeholder="Recipient Name (e.g. John Doe)" 
+                            value={simulatedAlertRecipient}
+                            onChange={(e) => setSimulatedAlertRecipient(e.target.value)}
+                            required
+                            className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-xs outline-none focus:border-neutral-900"
+                          />
+                          <select 
+                            value={simulatedAlertChannel}
+                            onChange={(e: any) => setSimulatedAlertChannel(e.target.value)}
+                            className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-xs outline-none focus:border-neutral-900 font-bold"
+                          >
+                            <option value="SMS">Channel: SMS (Twilio)</option>
+                            <option value="Email">Channel: Email (SendGrid)</option>
+                          </select>
+                          <button 
+                            type="submit" 
+                            className="rounded-xl bg-emerald-500 hover:bg-emerald-600 font-bold text-white text-xs transition-all shadow-md py-3"
+                          >
+                            Send Simulated Notification
+                          </button>
+                        </div>
+                        <textarea 
+                          placeholder="Notification Content (e.g. Your Experian score updated! Checked in on Equifax dispute letter generation.)" 
+                          value={simulatedAlertText}
+                          onChange={(e) => setSimulatedAlertText(e.target.value)}
+                          required
+                          rows={2}
+                          className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-xs outline-none focus:border-neutral-900"
+                        />
+                      </form>
+                    </div>
+
+                    <div className="space-y-2">
+                      <h4 className="font-display font-bold text-neutral-800 text-sm">Dispatched System Alerts Log</h4>
+                      <div className="space-y-2 max-h-52 overflow-y-auto">
+                        {alertLogs.length === 0 ? (
+                          <div className="p-6 text-center text-neutral-400 font-medium text-xs bg-neutral-50 rounded-2xl border border-neutral-100">No messages dispatched today.</div>
+                        ) : (
+                          alertLogs.map((log: any) => (
+                            <div key={log.id} className="p-4 rounded-xl border border-neutral-150/60 bg-white shadow-sm flex items-start justify-between gap-4">
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-bold text-neutral-900 text-xs">{log.recipientName}</span>
+                                  <span className={cn(
+                                    "px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider",
+                                    log.channel === 'SMS' ? "bg-sky-50 text-sky-600" : "bg-purple-50 text-purple-600"
+                                  )}>
+                                    {log.channel}
+                                  </span>
+                                </div>
+                                <p className="text-xs text-neutral-600 leading-relaxed">{log.message}</p>
+                              </div>
+                              <div className="text-right shrink-0">
+                                <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-bold text-emerald-600 uppercase tracking-widest">
+                                  ● Delivered
+                                </span>
+                                <div className="text-[9px] text-neutral-400 mt-1 font-mono">{new Date(log.sentAt).toLocaleTimeString()}</div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Right Column: Owner Overview & High-Impact Analytics (Phase 15) */}
+              <div className="rounded-[32px] border border-neutral-100 bg-neutral-900 p-8 text-white shadow-xl space-y-6 flex flex-col justify-between">
+                <div className="space-y-6">
+                  <div className="border-b border-neutral-800 pb-6">
+                    <span className="text-[10px] bg-neutral-800 px-3 py-1 rounded-full text-neutral-400 uppercase tracking-widest font-bold">Phase 15: Owner Analytics</span>
+                    <h3 className="font-display text-2xl font-black text-white mt-3">FTF Wealth & Conversion metrics</h3>
+                    <p className="text-xs text-neutral-400 mt-1">Overview of company health, funding conversion & customer success rates.</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-neutral-800/50 border border-neutral-800">
+                      <div>
+                        <div className="text-[10px] text-neutral-400 uppercase tracking-wider font-bold">Funding Approval Conversion</div>
+                        <div className="text-xl font-bold font-display mt-1">84.2%</div>
+                      </div>
+                      <div className="size-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-xs">+3.1%</div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-neutral-800/50 border border-neutral-800">
+                      <div>
+                        <div className="text-[10px] text-neutral-400 uppercase tracking-wider font-bold">Dispute Letter Removal Rate</div>
+                        <div className="text-xl font-bold font-display mt-1">79.8%</div>
+                      </div>
+                      <div className="size-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center font-bold text-xs">Tier 1</div>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-neutral-800/50 border border-neutral-800">
+                      <div>
+                        <div className="text-[10px] text-neutral-400 uppercase tracking-wider font-bold">Funding Commissions Paid</div>
+                        <div className="text-xl font-bold font-display mt-1">$42,850.00</div>
+                      </div>
+                      <span className="text-[10px] text-neutral-400 font-mono">10% standard fee</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-6 border-t border-neutral-800">
+                  <div className="text-xs text-neutral-400 leading-relaxed font-medium">
+                    This administrative portal provides a real-time command station for American agencies to process credit repair, business formation, personal funding, and corporate taxes simultaneously.
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Lead Creation Slide-Over / Modal */}
+            {showLeadModal && (
+              <div className="fixed inset-0 z-[250] bg-neutral-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="w-full max-w-md bg-white rounded-3xl p-8 shadow-2xl animate-in zoom-in-95 duration-200">
+                  <div className="flex items-center justify-between mb-6 border-b border-neutral-100 pb-4">
+                    <h3 className="font-display text-xl font-bold text-neutral-900">Create New CRM Lead</h3>
+                    <button 
+                      onClick={() => setShowLeadModal(false)}
+                      className="rounded-full bg-neutral-100 p-1.5 text-neutral-400 hover:text-neutral-600"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <form onSubmit={handleAddLead} className="space-y-4 text-left">
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-neutral-400 tracking-wider mb-2">Lead Name</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={newLead.fullName}
+                        onChange={(e) => setNewLead({ ...newLead, fullName: e.target.value })}
+                        placeholder="e.g. John Doe"
+                        className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-xs outline-none focus:border-neutral-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-neutral-400 tracking-wider mb-2">Email Address</label>
+                      <input 
+                        type="email" 
+                        required
+                        value={newLead.email}
+                        onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
+                        placeholder="john@example.com"
+                        className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-xs outline-none focus:border-neutral-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-neutral-400 tracking-wider mb-2">Phone Number</label>
+                      <input 
+                        type="text" 
+                        value={newLead.phone}
+                        onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
+                        placeholder="+1 (555) 019-2834"
+                        className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-xs outline-none focus:border-neutral-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase font-bold text-neutral-400 tracking-wider mb-2">Lead Notes</label>
+                      <textarea 
+                        value={newLead.notes}
+                        onChange={(e) => setNewLead({ ...newLead, notes: e.target.value })}
+                        placeholder="Referred from Instagram marketing campaign..."
+                        rows={3}
+                        className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-xs outline-none focus:border-neutral-900"
+                      />
+                    </div>
+                    <button 
+                      type="submit"
+                      className="w-full rounded-xl bg-neutral-900 py-3 text-xs font-bold text-white hover:bg-neutral-800 transition-all shadow-md mt-4"
+                    >
+                      Insert Lead into CRM
+                    </button>
+                  </form>
+                </div>
+              </div>
+            )}
+
           </div>
         )}
 
