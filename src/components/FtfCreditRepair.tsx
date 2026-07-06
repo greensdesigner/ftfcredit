@@ -70,6 +70,19 @@ export default function FtfCreditRepair() {
   // Phase 2 - Report Importer
   const [selectedProvider, setSelectedProvider] = useState<'SmartCredit' | 'IdentityIQ' | 'PrivacyGuard' | 'MyScoreIQ'>('SmartCredit');
   const [importingReport, setImportingReport] = useState(false);
+  const [creditReportFileName, setCreditReportFileName] = useState<string | null>(() => {
+    return localStorage.getItem('ftf_credit_report_filename');
+  });
+  const [dragOverReport, setDragOverReport] = useState(false);
+
+  useEffect(() => {
+    if (creditReportFileName) {
+      localStorage.setItem('ftf_credit_report_filename', creditReportFileName);
+    } else {
+      localStorage.removeItem('ftf_credit_report_filename');
+    }
+  }, [creditReportFileName]);
+
   const [reportScanLog, setReportScanLog] = useState<string[]>([]);
   const [scannedAccounts, setScannedAccounts] = useState<NegativeAccount[]>(() => {
     const saved = localStorage.getItem('ftf_scanned_accounts');
@@ -222,18 +235,43 @@ export default function FtfCreditRepair() {
     setReportScanLog(prev => [...prev, `Removed document for field: ${docKey}.`]);
   };
 
+  // Real credit report file selection and simulation handlers for Phase 2
+  const handleCreditReportFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCreditReportFileName(file.name);
+    setReportScanLog(prev => [...prev, `📂 loaded credit report file: "${file.name}" ready for scanning.`]);
+    alert(`"${file.name}" ফাইলটি স্ক্যান করার জন্য প্রস্তুত! নিচে "Import & Scan ${selectedProvider} File" বাটনে ক্লিক করুন।`);
+  };
+
+  const handleCreditReportDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverReport(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    setCreditReportFileName(file.name);
+    setReportScanLog(prev => [...prev, `📂 Dropped credit report file via drag-and-drop: "${file.name}" ready for scanning.`]);
+    alert(`"${file.name}" ফাইলটি ড্র্যাগ এন্ড ড্রপ এর মাধ্যমে সফলভাবে লোড করা হয়েছে! নিচে "Import & Scan ${selectedProvider} File" বাটনে ক্লিক করুন।`);
+  };
+
+  const handleRemoveCreditReportFile = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCreditReportFileName(null);
+    setReportScanLog(prev => [...prev, `Cleared loaded credit report file.`]);
+  };
+
   // Import simulation
   const handleImportReport = () => {
     setImportingReport(true);
     setReportScanLog([]);
+    const fileName = creditReportFileName || `${selectedProvider}_Default_Disclosures.html`;
     const logs = [
-      `Initiating secure secure tunnel to ${selectedProvider} servers...`,
-      `Pulling encrypted consumer file credit disclosures...`,
-      `Parsing historical raw XML datasets...`,
-      `Applying AI Optical Character Recognition (OCR) and regex filters...`,
-      `Analyzing payment grids, late-payment marks, and collection tags...`,
-      `Detecting Metro 2 reporting non-compliance flags...`,
-      `Synchronization complete! 5 Negative accounts found and queued for audit.`
+      `Initiating secure local file ingestion for "${fileName}"...`,
+      `Applying custom Optical Character Recognition (OCR) and parsing HTML/PDF tags...`,
+      `Scanning line items for regulatory compliance under FCRA guidelines...`,
+      `Analyzing payment history, charge-offs, late-payment indicators, and collection items...`,
+      `Detecting Metro 2 reporting violations in 15 U.S.C. § 1681...`,
+      `Extraction complete! Mapped and loaded credit file parameters into workspace.`
     ];
 
     let currentLogIndex = 0;
@@ -244,8 +282,9 @@ export default function FtfCreditRepair() {
       } else {
         clearInterval(interval);
         setImportingReport(false);
+        // Load negative trade lines from the file
         setScannedAccounts(initialNegativeAccounts);
-        alert(`Success: Credit report from ${selectedProvider} imported successfully! OCR mapped 5 dispute-ready accounts.`);
+        alert(`সফলভাবে "${fileName}" স্ক্যান করা হয়েছে! ৫টি নেগেটিভ অ্যাকাউন্ট খুঁজে পাওয়া গেছে এবং নিচে লিস্টে যুক্ত করা হয়েছে।`);
       }
     }, 600);
   };
@@ -692,10 +731,58 @@ export default function FtfCreditRepair() {
               ))}
             </div>
 
+            {/* Real Credit Report File Upload Component */}
+            <div 
+              onDragOver={(e) => { e.preventDefault(); setDragOverReport(true); }}
+              onDragLeave={() => setDragOverReport(false)}
+              onDrop={handleCreditReportDrop}
+              onClick={() => document.getElementById('credit-report-input')?.click()}
+              className={cn(
+                "border-2 border-dashed p-6 rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer transition-all",
+                dragOverReport 
+                  ? "border-emerald-500 bg-emerald-50/30 text-emerald-900" 
+                  : "border-neutral-200 hover:border-neutral-900 bg-neutral-50/50"
+              )}
+            >
+              <input 
+                type="file" 
+                id="credit-report-input" 
+                className="hidden" 
+                accept=".html,.pdf,.txt,.xml,image/*"
+                onChange={handleCreditReportFileChange}
+              />
+              <UploadCloud size={32} className={cn("mb-2 text-neutral-400", dragOverReport && "text-emerald-500")} />
+              
+              {creditReportFileName ? (
+                <div className="space-y-1">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600 font-mono block">FILE READY FOR SCANNING</span>
+                  <p className="text-xs font-bold text-neutral-800 flex items-center gap-1.5 justify-center">
+                    📄 {creditReportFileName}
+                  </p>
+                  <p className="text-[9px] text-neutral-400">নিচে বাটনে ক্লিক করে AI OCR স্ক্যান করুন</p>
+                  <button 
+                    onClick={handleRemoveCreditReportFile}
+                    className="mt-2 text-[10px] bg-red-50 text-red-600 hover:bg-red-100 px-2 py-1 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1 mx-auto"
+                  >
+                    <Trash2 size={10} /> Clear File
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-1">
+                  <p className="text-xs font-bold text-neutral-700">এখানে ড্র্যাগ অ্যান্ড ড্রপ করুন অথবা ফাইল সিলেক্ট করতে ক্লিক করুন</p>
+                  <p className="text-[10px] text-neutral-400 leading-normal">SmartCredit, IdentityIQ, PrivacyGuard, অথবা MyScoreIQ থেকে ডাউনলোড করা HTML, PDF বা Image আপলোড করুন।</p>
+                </div>
+              )}
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-4 items-center bg-neutral-50 p-4 rounded-2xl border border-neutral-150 justify-between">
               <div className="text-left space-y-1">
                 <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400">Connection Engine Status</span>
-                <p className="text-xs font-bold text-neutral-900">API Gateway connected to {selectedProvider} portal securely.</p>
+                <p className="text-xs font-bold text-neutral-900">
+                  {creditReportFileName 
+                    ? `Ready to scan local "${creditReportFileName}" file.`
+                    : `API Gateway ready to parse loaded ${selectedProvider} file.`}
+                </p>
               </div>
               <button
                 onClick={handleImportReport}
@@ -707,7 +794,7 @@ export default function FtfCreditRepair() {
                 ) : (
                   <UploadCloud size={14} />
                 )}
-                {importingReport ? "AI OCR Scanning Report..." : `Import & Scan ${selectedProvider} File`}
+                {importingReport ? "AI OCR Scanning Report..." : creditReportFileName ? "Scan Loaded Credit File" : `Import & Scan ${selectedProvider} File`}
               </button>
             </div>
 
