@@ -15,7 +15,6 @@ import FtfFundingModule from '../components/FtfFundingModule';
 import FtfFormationTaxImmigration from '../components/FtfFormationTaxImmigration';
 import FtfEducationSimulator from '../components/FtfEducationSimulator';
 import FtfAiAssistant from '../components/FtfAiAssistant';
-import FtfMobileAppSimulator from '../components/FtfMobileAppSimulator';
 import FtfCrmSimulator from '../components/FtfCrmSimulator';
 import FtfSecurityHub from '../components/FtfSecurityHub';
 
@@ -144,7 +143,6 @@ export default function ClientDashboard() {
     { id: 'formation_tax_imm', label: 'Administrative Services', desc: 'LLC Formation, Tax W2 vaults & USCIS check sheets', icon: Building },
     { id: 'education', label: 'Academy & Simulators', desc: 'FICO rating simulators & financial publications', icon: GraduationCap },
     { id: 'ai_assistant', label: 'FTF AI Virtual Assistant', desc: '24/7 Credit analysis and regulatory assistant', icon: Bot },
-    { id: 'mobile_simulator', label: 'Companion Mobile App', desc: 'iPhone White-label customer companion panel', icon: Smartphone },
     { id: 'crm_suite', label: 'CRM & Messaging Gateway', desc: 'Leads tracker, notes, and outbox texting', icon: Users },
     { id: 'security_hub', label: 'Security & Compliance Logs', desc: '2FA settings, AES-256 state, and live audit lists', icon: Lock },
     { id: 'billing_sub', label: 'Subscriptions & Invoicing', desc: 'Stripe recurring receipts & pricing models', icon: CreditCard },
@@ -299,13 +297,6 @@ export default function ClientDashboard() {
             {activeTab === 'ai_assistant' && (
               <div className="animate-in fade-in duration-300">
                 <FtfAiAssistant />
-              </div>
-            )}
-
-            {/* Tab: Smartphone Simulator */}
-            {activeTab === 'mobile_simulator' && (
-              <div className="animate-in fade-in duration-300">
-                <FtfMobileAppSimulator />
               </div>
             )}
 
