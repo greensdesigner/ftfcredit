@@ -10,12 +10,32 @@ import { initialNegativeAccounts, generateLetterTemplate, successRoadmap } from 
 
 export default function FtfCreditRepair() {
   // Score parameters
-  const [scores, setScores] = useState({ experian: 620, equifax: 598, transunion: 615 });
-  const [itemsRemoved, setItemsRemoved] = useState(7);
-  const [itemsRemaining, setItemsRemaining] = useState(11);
-  const [disputedAccounts, setDisputedAccounts] = useState(3);
-  const [positiveAccounts, setPositiveAccounts] = useState(4);
-  const [fundingReadiness, setFundingReadiness] = useState(72);
+  const [scores, setScores] = useState(() => {
+    const saved = localStorage.getItem('ftf_scores');
+    return saved ? JSON.parse(saved) : { experian: 619, equifax: 598, transunion: 615 };
+  });
+  const [itemsRemoved, setItemsRemoved] = useState(() => {
+    const saved = localStorage.getItem('ftf_items_removed');
+    return saved ? Number(saved) : 7;
+  });
+  const [itemsRemaining, setItemsRemaining] = useState(() => {
+    const saved = localStorage.getItem('ftf_items_remaining');
+    return saved ? Number(saved) : 11;
+  });
+  const [disputedAccounts, setDisputedAccounts] = useState(() => {
+    const saved = localStorage.getItem('ftf_disputed_accounts');
+    return saved ? Number(saved) : 3;
+  });
+  const [positiveAccounts, setPositiveAccounts] = useState(() => {
+    const saved = localStorage.getItem('ftf_positive_accounts');
+    return saved ? Number(saved) : 4;
+  });
+  const [fundingReadiness, setFundingReadiness] = useState(() => {
+    const saved = localStorage.getItem('ftf_funding_readiness');
+    return saved ? Number(saved) : 72;
+  });
+
+  const [selectedLetterAccounts, setSelectedLetterAccounts] = useState<string[]>([]);
 
   // Phase 1 - Documents
   const [uploadedDocs, setUploadedDocs] = useState({
@@ -33,12 +53,52 @@ export default function FtfCreditRepair() {
   const [reportScanLog, setReportScanLog] = useState<string[]>([]);
   const [scannedAccounts, setScannedAccounts] = useState<NegativeAccount[]>(() => {
     const saved = localStorage.getItem('ftf_scanned_accounts');
-    return saved ? JSON.parse(saved) : [];
+    return saved ? JSON.parse(saved) : initialNegativeAccounts;
   });
 
   useEffect(() => {
     localStorage.setItem('ftf_scanned_accounts', JSON.stringify(scannedAccounts));
   }, [scannedAccounts]);
+
+  useEffect(() => {
+    localStorage.setItem('ftf_scores', JSON.stringify(scores));
+  }, [scores]);
+
+  useEffect(() => {
+    localStorage.setItem('ftf_items_removed', String(itemsRemoved));
+  }, [itemsRemoved]);
+
+  useEffect(() => {
+    localStorage.setItem('ftf_items_remaining', String(itemsRemaining));
+  }, [itemsRemaining]);
+
+  useEffect(() => {
+    localStorage.setItem('ftf_disputed_accounts', String(disputedAccounts));
+  }, [disputedAccounts]);
+
+  useEffect(() => {
+    localStorage.setItem('ftf_positive_accounts', String(positiveAccounts));
+  }, [positiveAccounts]);
+
+  useEffect(() => {
+    localStorage.setItem('ftf_funding_readiness', String(fundingReadiness));
+  }, [fundingReadiness]);
+
+  // Synchronize dynamic parameters when scannedAccounts changes
+  useEffect(() => {
+    setItemsRemaining(scannedAccounts.length);
+    const dispCount = scannedAccounts.filter(acc => acc.status === 'In Dispute' || selectedLetterAccounts.includes(acc.id)).length;
+    setDisputedAccounts(dispCount);
+  }, [scannedAccounts, selectedLetterAccounts]);
+
+  // Dynamic Funding Odds Calculation
+  useEffect(() => {
+    const avgScore = (scores.experian + scores.equifax + scores.transunion) / 3;
+    let calculatedOdds = Math.round(((avgScore - 300) / 550) * 100);
+    calculatedOdds = calculatedOdds - (scannedAccounts.length * 3) + (itemsRemoved * 2);
+    calculatedOdds = Math.max(5, Math.min(99, calculatedOdds));
+    setFundingReadiness(calculatedOdds);
+  }, [scores, scannedAccounts.length, itemsRemoved]);
 
   // Manual Negative Account addition states
   const [newCreditor, setNewCreditor] = useState('');
@@ -84,7 +144,6 @@ export default function FtfCreditRepair() {
   };
 
   // Phase 3 & 4 - Letter Generator
-  const [selectedLetterAccounts, setSelectedLetterAccounts] = useState<string[]>([]);
   const [selectedLetterType, setSelectedLetterType] = useState<'bureau' | 'creditor' | 'validation' | 'cfpb' | 'ftc'>('bureau');
   const [disputeRecipient, setDisputeRecipient] = useState('Equifax Dispute Dept, PO Box 740256, Atlanta, GA 30374');
   const [generatedLetter, setGeneratedLetter] = useState<DisputeLetter | null>(null);
@@ -224,10 +283,25 @@ export default function FtfCreditRepair() {
         <div className="bg-white border border-neutral-150 p-6 rounded-3xl shadow-xs flex justify-between items-center">
           <div>
             <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block">Negative Trade Lines</span>
-            <div className="text-2xl font-black font-display text-neutral-900 mt-2">{itemsRemaining} Accounts</div>
-            <span className="text-[10px] text-emerald-600 font-bold mt-1 inline-block">✓ {itemsRemoved} Deleted Items</span>
+            {editingScores ? (
+              <div className="space-y-1 mt-2 text-xs">
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-[10px] text-neutral-500 font-bold">Accounts:</span>
+                  <input type="number" className="w-12 border border-neutral-200 rounded text-right p-0.5 text-neutral-800 font-bold" value={itemsRemaining} disabled />
+                </div>
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-[10px] text-neutral-500 font-bold">Deleted:</span>
+                  <input type="number" className="w-12 border border-neutral-200 rounded text-right p-0.5 text-neutral-800 font-bold" value={itemsRemoved} onChange={e => setItemsRemoved(Number(e.target.value))} />
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-black font-display text-neutral-900 mt-2">{itemsRemaining} Accounts</div>
+                <span className="text-[10px] text-emerald-600 font-bold mt-1 inline-block">✓ {itemsRemoved} Deleted Items</span>
+              </>
+            )}
           </div>
-          <div className="size-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center">
+          <div className="size-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center shrink-0">
             <AlertTriangle size={24} />
           </div>
         </div>
@@ -236,10 +310,25 @@ export default function FtfCreditRepair() {
         <div className="bg-white border border-neutral-150 p-6 rounded-3xl shadow-xs flex justify-between items-center">
           <div>
             <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block">Dispute Round Status</span>
-            <div className="text-2xl font-black font-display text-neutral-900 mt-2">{disputedAccounts} In Dispute</div>
-            <span className="text-[10px] text-neutral-400 font-bold mt-1 inline-block">{positiveAccounts} Verified Good Trade Lines</span>
+            {editingScores ? (
+              <div className="space-y-1 mt-2 text-xs">
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-[10px] text-neutral-500 font-bold">Disputed:</span>
+                  <input type="number" className="w-12 border border-neutral-200 rounded text-right p-0.5 text-neutral-800 font-bold" value={disputedAccounts} disabled />
+                </div>
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-[10px] text-neutral-500 font-bold">Verified:</span>
+                  <input type="number" className="w-12 border border-neutral-200 rounded text-right p-0.5 text-neutral-800 font-bold" value={positiveAccounts} onChange={e => setPositiveAccounts(Number(e.target.value))} />
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-black font-display text-neutral-900 mt-2">{disputedAccounts} In Dispute</div>
+                <span className="text-[10px] text-neutral-400 font-bold mt-1 inline-block">{positiveAccounts} Verified Good Trade Lines</span>
+              </>
+            )}
           </div>
-          <div className="size-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center">
+          <div className="size-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
             <Layers size={24} />
           </div>
         </div>
@@ -248,10 +337,21 @@ export default function FtfCreditRepair() {
         <div className="bg-white border border-neutral-150 p-6 rounded-3xl shadow-xs flex justify-between items-center">
           <div>
             <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block">Funding Odds</span>
-            <div className="text-2xl font-black font-display text-neutral-900 mt-2">{fundingReadiness}% Dial</div>
-            <span className="text-[10px] text-blue-600 font-extrabold mt-1 inline-block">TARGET: 80% For Tier 1 Cards</span>
+            {editingScores ? (
+              <div className="space-y-1 mt-2 text-xs">
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-[10px] text-neutral-500 font-bold">Odds %:</span>
+                  <input type="number" className="w-12 border border-neutral-200 rounded text-right p-0.5 text-neutral-800 font-bold" value={fundingReadiness} onChange={e => setFundingReadiness(Number(e.target.value))} />
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="text-2xl font-black font-display text-neutral-900 mt-2">{fundingReadiness}% Dial</div>
+                <span className="text-[10px] text-blue-600 font-extrabold mt-1 inline-block">TARGET: 80% For Tier 1 Cards</span>
+              </>
+            )}
           </div>
-          <div className="size-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+          <div className="size-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
             <ArrowUpRight size={24} />
           </div>
         </div>
