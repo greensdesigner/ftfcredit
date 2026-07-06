@@ -35,12 +35,8 @@ export default function SignupPage() {
     }
 
     try {
-      await signup(email, password, fullName, phone, role, agencyName, streetAddress);
-      if (role === UserRole.ADMIN) {
-        navigate('/admin-portal');
-      } else {
-        navigate('/onboarding');
-      }
+      await signup(email, password, fullName, phone, UserRole.CLIENT, agencyName, streetAddress);
+      navigate('/onboarding');
     } catch (err) {
       // Error is handled in AuthContext (alert)
     }
@@ -61,35 +57,7 @@ export default function SignupPage() {
 
         <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
           <div className="space-y-4">
-            {/* Role Selection */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
-              <button
-                type="button"
-                onClick={() => setRole(UserRole.CLIENT)}
-                className={cn(
-                  "flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all",
-                  role === UserRole.CLIENT 
-                    ? "border-neutral-900 bg-neutral-900 text-white shadow-lg" 
-                    : "border-neutral-100 bg-neutral-50 text-neutral-500 hover:border-neutral-200"
-                )}
-              >
-                <UserCircle size={24} />
-                <span className="text-xs font-bold uppercase tracking-widest">Client</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setRole(UserRole.ADMIN)}
-                className={cn(
-                  "flex flex-col items-center gap-2 p-4 rounded-2xl border transition-all",
-                  role === UserRole.ADMIN 
-                    ? "border-neutral-900 bg-neutral-900 text-white shadow-lg" 
-                    : "border-neutral-100 bg-neutral-50 text-neutral-500 hover:border-neutral-200"
-                )}
-              >
-                <Briefcase size={24} />
-                <span className="text-xs font-bold uppercase tracking-widest">Agency</span>
-              </button>
-            </div>
+
 
             <div className="relative">
               <label className="block text-sm font-medium text-neutral-700 mb-1.5">Full Name</label>

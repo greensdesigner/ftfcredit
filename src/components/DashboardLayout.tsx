@@ -20,18 +20,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const currentPath = location.pathname + location.search;
   const isAdminAuthorized = sessionStorage.getItem('admin_authorized') === 'true';
 
-  const menuItems = (user?.role === UserRole.ADMIN || isAdminAuthorized)
-    ? [
-        { icon: LayoutDashboard, label: 'Overview', path: '/admin-portal?tab=overview' },
-        { icon: Users, label: 'Client List', path: '/admin-portal?tab=clients' },
-        { icon: CreditCard, label: 'System Billing', path: '/admin-portal?tab=billing' },
-        { icon: Settings, label: 'Settings', path: '/admin-portal?tab=settings' },
-      ]
-    : [
-        { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-        { icon: CreditCard, label: 'Billing & Plans', path: '/dashboard/billing' },
-        { icon: Settings, label: 'Profile', path: '/dashboard/profile' },
-      ];
+  const menuItems = [
+    { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+    { icon: CreditCard, label: 'Billing & Plans', path: '/dashboard/billing' },
+    { icon: Settings, label: 'Profile', path: '/dashboard/profile' },
+  ];
 
   const [systemName, setSystemName] = useState('Premium SaaS Portal');
   const [systemLogo, setSystemLogo] = useState<string | null>(null);
@@ -128,7 +121,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <aside className="hidden w-64 border-r border-neutral-200 bg-white lg:block">
         <div className="flex h-full flex-col">
           <div className="border-b border-neutral-100 p-6">
-            <Link to={(user?.role === UserRole.ADMIN || isAdminAuthorized) ? '/admin-portal?tab=overview' : '/dashboard'} className="flex items-center gap-2 font-display text-xl font-bold tracking-tight text-neutral-900">
+            <Link to="/dashboard" className="flex items-center gap-2 font-display text-xl font-bold tracking-tight text-neutral-900">
               {systemLogo ? (
                 <img src={systemLogo} alt="Logo" className="h-8 max-w-[48px] object-contain rounded-md" referrerPolicy="no-referrer" />
               ) : (
@@ -141,7 +134,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           <nav className="flex-1 space-y-1 p-4">
             {menuItems.map((item) => {
-              const isActive = currentPath === item.path || (item.path === '/admin-portal?tab=overview' && currentPath === '/admin-portal');
+              const isActive = currentPath === item.path;
               return (
                 <Link
                   key={item.label}
@@ -193,7 +186,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </div>
               <nav className="flex-1 space-y-1 p-4">
                 {menuItems.map((item) => {
-                  const isActive = currentPath === item.path || (item.path === '/admin-portal?tab=overview' && currentPath === '/admin-portal');
+                  const isActive = currentPath === item.path;
                   return (
                     <Link
                       key={item.label}
@@ -233,31 +226,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
              <h2 className="text-sm font-medium text-neutral-500">Welcome back, {user?.fullName}</h2>
           </div>
 
-          {/* Centered Big Uppercase Subscription Message */}
-          {(user?.role === UserRole.ADMIN || isAdminAuthorized) && subscriptionStatus !== null && (
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-              <div className={cn(
-                "flex items-center gap-2.5 rounded-full px-5 py-2 text-xs md:text-sm font-black uppercase tracking-widest border transition-all shadow-sm",
-                subscriptionStatus === 'active' 
-                  ? "bg-emerald-50 border-emerald-300 text-emerald-900" 
-                  : "bg-red-50 border-red-300 text-red-900"
-              )}>
-                <span className={cn(
-                  "size-2 px-1 rounded-full shrink-0",
-                  subscriptionStatus === 'active' ? "bg-emerald-500 animate-pulse" : "bg-red-500"
-                )} />
-                <span>
-                  {subscriptionStatus === 'active' ? (
-                    <>
-                      LICENSE: <span className="font-extrabold text-emerald-600">{subscriptionDays} {subscriptionDays === 1 ? 'DAY' : 'DAYS'}</span> REMAINING
-                    </>
-                  ) : (
-                    <span className="font-extrabold text-red-600">LICENSE EXPIRED</span>
-                  )}
-                </span>
-              </div>
-            </div>
-          )}
+
 
           <div className="flex items-center gap-4">
             {/* Action items */}

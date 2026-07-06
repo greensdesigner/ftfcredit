@@ -18,12 +18,7 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await login(email, password);
-      const savedUser = JSON.parse(localStorage.getItem('ftf_user') || '{}');
-      if (savedUser.role === UserRole.ADMIN) {
-        navigate('/admin-portal');
-      } else {
-        navigate('/dashboard');
-      }
+      navigate('/dashboard');
     } catch (err) {
       // Error is handled in context (alerted)
     }

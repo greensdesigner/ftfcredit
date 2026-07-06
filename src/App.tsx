@@ -5,10 +5,8 @@ import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import OnboardingWizard from './pages/OnboardingWizard';
 import ClientDashboard from './pages/ClientDashboard';
-import AdminGate from './pages/AdminGate';
 import BillingPage from './pages/BillingPage';
 import ProfilePage from './pages/ProfilePage';
-import CreatorPortal from './pages/CreatorPortal';
 import { ProtectedRoute, PublicRoute } from './components/AuthGuards';
 import { UserRole } from './types';
 import DashboardLayout from './components/DashboardLayout';
@@ -67,7 +65,7 @@ function AppContent() {
   }, [user]);
 
   if (loading) return null;
-  if (isMaintenance && !window.location.pathname.startsWith('/admin-portal')) {
+  if (isMaintenance) {
     return <MaintenancePage />;
   }
 
@@ -89,16 +87,7 @@ function AppContent() {
           <Route path="/onboarding" element={<OnboardingWizard />} />
         </Route>
 
-        {/* Admin Entry Gate */}
-        <Route path="/admin-portal" element={<AdminGate />} />
-        <Route path="/creator-portal" element={<CreatorPortal />} />
-        
-        {/* Protected Admin Sub-routes */}
-        <Route element={<ProtectedRoute allowedRoles={[UserRole.ADMIN]} />}>
-          <Route path="/admin-portal/clients" element={<DashboardLayout><div>Clients List</div></DashboardLayout>} />
-          <Route path="/admin-portal/payments" element={<DashboardLayout><div>Payments History</div></DashboardLayout>} />
-          <Route path="/admin-portal/settings" element={<DashboardLayout><div>Settings</div></DashboardLayout>} />
-        </Route>
+
 
         {/* Fallback for everything else */}
         <Route path="*" element={<Navigate to="/" replace />} />
