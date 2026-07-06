@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import { CreditCard, Download, ExternalLink, Calendar, CheckCircle2, XCircle, AlertCircle, Loader2, Plus, Building2, ShieldCheck, Lock } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { CreditCard, Download, Calendar, CheckCircle2, AlertCircle, Loader2, Plus, Lock } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { loadStripe } from '@stripe/stripe-js';
@@ -19,29 +18,6 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
   const [achRouting, setAchRouting] = useState('');
   const [achAccount, setAchAccount] = useState('');
   const [achType, setAchType] = useState<'individual' | 'company'>('individual');
-
-  // Stripe mismatch/cache troubleshooter state
-  const [debugInfo, setDebugInfo] = useState<any>(null);
-  const [showTroubleshooter, setShowTroubleshooter] = useState(false);
-  const [checkingDebug, setCheckingDebug] = useState(false);
-
-  const runDiagnostics = async () => {
-    setCheckingDebug(true);
-    try {
-      const res = await fetch('/api/stripe/debug-keys');
-      if (res.ok) {
-        const data = await res.json();
-        setDebugInfo(data);
-        setShowTroubleshooter(true);
-      } else {
-        throw new Error("Failed to reach debug route");
-      }
-    } catch (e: any) {
-      alert("Error: " + e.message);
-    } finally {
-      setCheckingDebug(false);
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,9 +39,7 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
 
         const siContentType = siRes.headers.get('content-type');
         if (!siContentType || !siContentType.includes('application/json')) {
-          const text = await siRes.text();
-          console.error("Non-JSON setup response:", text);
-          throw new Error("An invalid response was received from the server (ServerError 500 HTML). Please check your domain/server configuration, your database password in the .env file, and ensure that your Stripe keys (STRIPE_SECRET_KEY) are correct.");
+          throw new Error("Invalid response received from the server. Verify server environment config.");
         }
 
         const siData = await siRes.json();
@@ -77,9 +51,7 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
         if (!cardElement) throw new Error("Card element not found");
 
         const { setupIntent, error: confirmError } = await stripe.confirmCardSetup(clientSecret, {
-          payment_method: {
-            card: cardElement as any,
-          },
+          payment_method: { card: cardElement as any },
         });
 
         if (confirmError) throw new Error(confirmError.message);
@@ -97,13 +69,6 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
           }),
         });
 
-        const subContentType = subRes.headers.get('content-type');
-        if (!subContentType || !subContentType.includes('application/json')) {
-          const text = await subRes.text();
-          console.error("Non-JSON subscription response:", text);
-          throw new Error("The server failed to process the payment. Please ensure your database is running and that the administrator's Stripe keys and hosting are correctly configured.");
-        }
-
         const subResult = await subRes.json();
         if (subResult.error) throw new Error(subResult.error);
 
@@ -114,8 +79,7 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
         if (!achRouting.trim() || achRouting.trim().length !== 9) throw new Error("Please enter a valid 9-digit routing number.");
         if (!achAccount.trim()) throw new Error("Please enter your bank account number.");
 
-        // 1. Create Token via stripe.js
-        console.log("[Stripe ACH] Creating bank token...");
+        // Create Token via stripe.js
         const result = await stripe.createToken('bank_account', {
           country: 'US',
           currency: 'usd',
@@ -125,14 +89,12 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
           account_holder_type: achType,
         });
 
-        if (result.error) {
-          throw new Error(result.error.message);
-        }
+        if (result.error) throw new Error(result.error.message);
 
         const token = result.token?.id;
         if (!token) throw new Error("Stripe bank token generation failed.");
 
-        // 2. Charge and connect bank on backend
+        // Charge and connect bank on backend
         const achRes = await fetch('/api/client/connect-bank-ach', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -145,13 +107,6 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
             planName
           }),
         });
-
-        const achContentType = achRes.headers.get('content-type');
-        if (!achContentType || !achContentType.includes('application/json')) {
-          const text = await achRes.text();
-          console.error("Non-JSON ACH response:", text);
-          throw new Error("Failed to process bank payment. Please verify your routing and account numbers, and try again.");
-        }
 
         const achResult = await achRes.json();
         if (achResult.error) throw new Error(achResult.error);
@@ -177,7 +132,7 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
           }}
           className={cn(
             "flex-1 pb-3 text-xs font-bold uppercase tracking-wider border-b-2 text-center transition-all cursor-pointer",
-            activeTab === 'card' ? "border-neutral-900 text-neutral-900 font-bold" : "border-transparent text-neutral-400 hover:text-neutral-600 font-semibold"
+            activeTab === 'card' ? "border-neutral-900 text-neutral-900 font-bold" : "border-transparent text-neutral-400 hover:text-neutral-600"
           )}
         >
           Credit / Debit Card
@@ -198,726 +153,346 @@ function AddCardForm({ onCancel, onSuccess, userId, email, tenantId, amount, pla
       </div>
 
       {activeTab === 'card' ? (
-        <div className="space-y-2 animate-in fade-in duration-200">
-          <label className="text-xs font-bold text-neutral-400 uppercase tracking-widest">Secure Credit or Debit Card</label>
-          <div className="p-4 rounded-2xl border border-neutral-200 bg-neutral-50 focus-within:border-neutral-900 transition-all">
-            <CardElement options={{
-              style: {
-                base: {
-                  fontSize: '16px',
-                  color: '#171717',
-                  '::placeholder': { color: '#a3a3a3' },
+        <div className="space-y-4">
+          <div className="p-4 rounded-xl border border-neutral-200 bg-white">
+            <CardElement 
+              options={{
+                style: {
+                  base: {
+                    fontSize: '14px',
+                    color: '#171717',
+                    '::placeholder': { color: '#a3a3a3' },
+                    fontFamily: 'Inter, sans-serif'
+                  },
                 },
-              }
-            }} />
+              }}
+            />
           </div>
+          <p className="text-[10px] text-neutral-400">Card credentials are tokenized securely directly with Stripe. PCI-DSS compliant.</p>
         </div>
       ) : (
-        <div className="space-y-4 text-left animate-in fade-in duration-200">
-          <div>
-            <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5 font-display font-semibold text-left">
-              Account Holder Name
-            </label>
-            <input
-              type="text"
+        <div className="space-y-4 text-left">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider ml-1">Account Holder Name</label>
+            <input 
+              type="text" 
               required
               placeholder="e.g. John Doe"
               value={achName}
               onChange={(e) => setAchName(e.target.value)}
-              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs outline-none focus:ring-1 focus:ring-neutral-900 transition-all text-neutral-800 font-medium"
+              className="w-full rounded-xl border border-neutral-200 px-4 py-2.5 text-xs font-bold focus:border-neutral-900 focus:ring-0"
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5 font-display font-semibold text-left">
-                Routing Number
-              </label>
-              <input
-                type="text"
-                required
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider ml-1">9-Digit Routing Number</label>
+              <input 
+                type="text" 
                 maxLength={9}
-                placeholder="9-digit routing"
+                required
+                placeholder="123456789"
                 value={achRouting}
-                onChange={(e) => setAchRouting(e.target.value.replace(/\D/g, ''))}
-                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs outline-none focus:ring-1 focus:ring-neutral-900 transition-all text-neutral-800 font-mono"
+                onChange={(e) => setAchRouting(e.target.value)}
+                className="w-full rounded-xl border border-neutral-200 px-4 py-2.5 text-xs font-bold focus:border-neutral-900 focus:ring-0"
               />
             </div>
-            <div>
-              <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5 font-display font-semibold text-left">
-                Account Number
-              </label>
-              <input
-                type="text"
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider ml-1">Bank Account Number</label>
+              <input 
+                type="text" 
                 required
-                placeholder="Bank account number"
+                placeholder="000123456"
                 value={achAccount}
-                onChange={(e) => setAchAccount(e.target.value.replace(/\D/g, ''))}
-                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs outline-none focus:ring-1 focus:ring-neutral-900 transition-all text-neutral-800 font-mono"
+                onChange={(e) => setAchAccount(e.target.value)}
+                className="w-full rounded-xl border border-neutral-200 px-4 py-2.5 text-xs font-bold focus:border-neutral-900 focus:ring-0"
               />
             </div>
           </div>
 
-          <div>
-            <label className="block text-[11px] font-bold text-neutral-400 uppercase tracking-wider mb-1.5 font-display font-semibold text-left">
-              Account Type
-            </label>
-            <select
-              value={achType}
-              onChange={(e: any) => setAchType(e.target.value)}
-              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs outline-none focus:ring-1 focus:ring-neutral-900 transition-all text-neutral-800 font-medium font-sans"
-            >
-              <option value="individual">Personal / Individual</option>
-              <option value="company">Business / Company</option>
-            </select>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider ml-1">Account Holder Type</label>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2 text-xs font-bold text-neutral-700 cursor-pointer">
+                <input 
+                  type="radio" 
+                  checked={achType === 'individual'} 
+                  onChange={() => setAchType('individual')}
+                  className="text-neutral-900 focus:ring-0" 
+                />
+                Individual Checking
+              </label>
+              <label className="flex items-center gap-2 text-xs font-bold text-neutral-700 cursor-pointer">
+                <input 
+                  type="radio" 
+                  checked={achType === 'company'} 
+                  onChange={() => setAchType('company')}
+                  className="text-neutral-900 focus:ring-0" 
+                />
+                Corporate Checking
+              </label>
+            </div>
           </div>
         </div>
       )}
 
       {error && (
-        <div className="space-y-4">
-          <div className="p-3.5 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-xs font-semibold flex flex-col gap-2">
-            <div className="flex items-center gap-2 font-bold">
-              <AlertCircle size={15} />
-              <span>An Error Occurred (Stripe Validation Error)</span>
-            </div>
-            <p className="text-neutral-600 leading-relaxed text-[11px]">
-              {error}
-            </p>
-            <div className="mt-1 pt-2 border-t border-red-100 flex flex-col gap-1 text-[11px] text-neutral-500 font-normal">
-              <p className="font-semibold text-red-600">Potential Solutions:</p>
-              <ul className="list-disc pl-4 space-y-1">
-                <li>Please hard refresh the browser (Ctrl + F5 or Shift + Reload) and try again. This will clear any cached or incorrect Stripe keys.</li>
-                <li>Verify that your hosting/server domain configuration and database connection are working correctly.</li>
-                <li>Ensure that your live Stripe key pair is properly configured in both the Admin Dashboard and the server's .env file using our troubleshooter below.</li>
-              </ul>
-            </div>
-          </div>
-          
-          <button
-            type="button"
-            onClick={runDiagnostics}
-            disabled={checkingDebug}
-            className="w-full flex items-center justify-center gap-2 p-3 text-xs font-bold text-neutral-700 bg-neutral-100 hover:bg-neutral-250 hover:bg-neutral-200 transition-all rounded-xl"
-          >
-            {checkingDebug ? <Loader2 className="animate-spin" size={13} /> : <AlertCircle size={13} />}
-            Verify Server Stripe Keys Setup
-          </button>
+        <div className="p-4 bg-red-50 border border-red-100 rounded-xl flex gap-2 text-red-700 text-xs">
+          <AlertCircle size={16} className="shrink-0 mt-0.5" />
+          <p className="font-semibold">{error}</p>
         </div>
       )}
 
-      {showTroubleshooter && debugInfo && (
-        <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-100 text-neutral-700 text-[11px] space-y-2.5 text-left animate-in fade-in duration-300">
-          <div className="flex justify-between items-center font-bold text-xs pb-1.5 border-b border-neutral-200 text-neutral-900">
-            <span>Stripe Connect Diagnostics</span>
-            <span className={(debugInfo.match && (!loadedPubKey || loadedPubKey.substring(0, 20) === debugInfo.publishable.raw.substring(0, 20))) ? "text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full" : "text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full"}>
-              {(debugInfo.match && (!loadedPubKey || loadedPubKey.substring(0, 20) === debugInfo.publishable.raw.substring(0, 20))) ? "✅ MATCHED" : "⚠️ MISMATCHED"}
-            </span>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <p className="font-bold text-neutral-400 uppercase text-[9px]">Server Pub Key Prefix</p>
-              <p className="font-mono text-neutral-800 text-[10px] break-all">{debugInfo.publishable.raw}</p>
-              <p className="mt-0.5 text-[9px] text-neutral-500">
-                Mode: {debugInfo.publishable.isLive ? <span className="font-bold text-red-600 text-[10px]">LIVE</span> : <span className="font-bold text-amber-600 text-[10px]">TEST</span>} (Len: {debugInfo.publishable.length})
-              </p>
-            </div>
-            <div>
-              <p className="font-bold text-neutral-400 uppercase text-[9px]">Server Secret Key Prefix</p>
-              <p className="font-mono text-neutral-800 text-[10px] break-all">{debugInfo.secret.raw}</p>
-              <p className="mt-0.5 text-[9px] text-neutral-500">
-                Mode: {debugInfo.secret.isLive ? <span className="font-bold text-red-600 text-[10px]">LIVE</span> : <span className="font-bold text-amber-600 text-[10px]">TEST</span>} (Len: {debugInfo.secret.length})
-              </p>
-            </div>
-            {loadedPubKey && (
-              <div className="col-span-2 pt-1 border-t border-dashed border-neutral-200">
-                <p className="font-bold text-neutral-400 uppercase text-[9px]">Browser's Loaded Pub Key</p>
-                <p className="font-mono text-neutral-800 text-[10px] break-all">
-                  {loadedPubKey.substring(0, 24)}... (Len: {loadedPubKey.length})
-                </p>
-                <p className="mt-0.5 text-[9px] text-neutral-500 font-medium">
-                  Source: <span className="text-neutral-900 font-bold">{keySource}</span> | matches Server Pub Key:{" "}
-                  {loadedPubKey.substring(0, 20) === debugInfo.publishable.raw.substring(0, 20) ? (
-                    <span className="font-bold text-emerald-600">Yes</span>
-                  ) : (
-                    <span className="font-bold text-red-600">No (Mismatch/Cache Issue)</span>
-                  )}
-                </p>
-              </div>
-            )}
-          </div>
-          <p className="italic text-[10px] text-neutral-500 leading-normal pt-1.5 border-t border-neutral-100">
-            {!(debugInfo.match && (!loadedPubKey || loadedPubKey.substring(0, 20) === debugInfo.publishable.raw.substring(0, 20))) 
-              ? "Matching Warning: The key pair used by the browser does not match the server's key pair. Please update STRIPE_SECRET_KEY and VITE_STRIPE_PUBLISHABLE_KEY in your .env file from the same Stripe account, hard refresh your browser, and clear the browser cache."
-              : "Valid Match: The Publishable Key and Secret Key belong to the same Stripe account pair. Please ensure that card payments and connect options are active on your Stripe Web Dashboard."}
-          </p>
-        </div>
-      )}
-
-      <button 
-        type="submit"
-        disabled={isProcessing || !stripe}
-        className="w-full rounded-2xl bg-neutral-900 py-4 font-bold text-white shadow-xl shadow-neutral-900/10 hover:bg-neutral-800 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-      >
-        {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <ShieldCheck size={20} />}
-        {isProcessing ? "Processing Securely..." : `Subscribe & Pay $${amount}`}
-      </button>
-
-      <button 
-        type="button"
-        onClick={onCancel}
-        disabled={isProcessing}
-        className="w-full py-2 text-xs font-bold text-neutral-400 hover:text-neutral-900 transition-all"
-      >
-        Cancel
-      </button>
-
-      <div className="flex items-center justify-center gap-2 text-neutral-400">
-        <Lock size={12} />
-        <p className="text-[10px] uppercase font-bold tracking-widest">Stripe Secure 256-bit Encryption</p>
+      <div className="flex gap-3 justify-end pt-4 border-t border-neutral-100">
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={isProcessing}
+          className="px-4 py-2.5 rounded-xl border border-neutral-200 text-neutral-600 font-bold text-xs hover:bg-neutral-50 cursor-pointer"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={isProcessing || !stripe}
+          className="px-6 py-2.5 rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer shadow-md"
+        >
+          {isProcessing ? <Loader2 size={14} className="animate-spin" /> : <Lock size={12} />}
+          {isProcessing ? 'Processing Payment...' : 'Authorize & Checkout'}
+        </button>
       </div>
     </form>
   );
 }
 
 export default function BillingPage() {
-  const { user, updateProfile, refreshProfile } = useAuth();
-  const [currentPlan, setCurrentPlan] = useState(user?.plan_name || 'Credit Repair Subscription');
-  const [amount, setAmount] = useState(user?.sub_amount || 149);
-  const [paymentMethod, setPaymentMethod] = useState('Loading...');
-  const [status, setStatus] = useState<'active' | 'cancelled' | 'pending'>(user?.sub_status as any || 'active');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [showPlanModal, setShowPlanModal] = useState(false);
-  const [showCardModal, setShowCardModal] = useState(false);
-  const [isPlaidConnecting, setIsPlaidConnecting] = useState(false);
-  const [systemSettings, setSystemSettings] = useState<any>(null);
+  const { user, refreshProfile } = useAuth();
   const [stripePromise, setStripePromise] = useState<any>(null);
+  const [pubKey, setPubKey] = useState('');
+  const [keySource, setKeySource] = useState('environment');
+  const [loading, setLoading] = useState(true);
 
-  const expiryDate = user?.sub_expiry ? new Date(user.sub_expiry) : null;
-  const today = new Date();
-  const isExpired = !user?.sub_status || user?.sub_status !== 'active' || (expiryDate ? today > expiryDate : true);
-  
-  let daysLeft = 0;
-  if (expiryDate && !isExpired) {
-    const diffTime = expiryDate.getTime() - today.getTime();
-    daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  }
+  // Selector plans
+  const [plans] = useState([
+    { name: 'Standard Plan', price: 99, description: 'Core Application Package' },
+    { name: 'Premium Plan', price: 149, description: 'SaaS Professional Automation' },
+    { name: 'Elite Plan', price: 299, description: 'Custom Corporate Workspace' }
+  ]);
 
-  const [invoices, setInvoices] = useState<any[]>([]);
-  const [loadingInvoices, setLoadingInvoices] = useState(true);
-  const [loadedPubKey, setLoadedPubKey] = useState<string>('');
-  const [keySource, setKeySource] = useState<string>('');
-
-  const loadDynamicStripe = async () => {
-    try {
-      const res = await fetch(`/api/stripe/publishable-key?tenantId=${user?.tenantId || ""}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.publishableKey) {
-          console.log("Loaded Stripe publishable key dynamically from server:", data.publishableKey);
-          setLoadedPubKey(data.publishableKey);
-          setKeySource("Server API Gateway");
-          setStripePromise(loadStripe(data.publishableKey));
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn("Failed to fetch publishable key dynamically:", err);
-    }
-    
-    // Fallback to client-side environment variable if API is not available or empty
-    const envKey = (import.meta as any).env?.VITE_STRIPE_PUBLISHABLE_KEY;
-    if (envKey) {
-      console.log("Using environment variable fallback for Stripe publishable key:", envKey);
-      setLoadedPubKey(envKey);
-      setKeySource("Vite Bundle Fallback");
-      setStripePromise(loadStripe(envKey));
-    } else {
-      console.error("No Stripe publishable key found! Payments will fail.");
-      setKeySource("None Found");
-    }
-  };
-
-  const fetchSystemSettings = async () => {
-    try {
-      const res = await fetch('/api/admin/system-settings');
-      if (res.ok) {
-        const data = await res.json();
-        setSystemSettings(data);
-      }
-    } catch (e) {
-      console.error("Failed to fetch system settings in BillingPage:", e);
-    }
-  };
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [payments, setPayments] = useState<any[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      if (user.plan_name) setCurrentPlan(user.plan_name);
-      if (user.sub_amount) setAmount(user.sub_amount);
-      if (user.sub_status) setStatus(user.sub_status as any);
-      fetchSystemSettings();
-      fetchInvoices();
-      fetchPaymentMethods();
-      loadDynamicStripe();
+    fetchStripeKey();
+    if (user?.uid) {
+      fetchPayments();
     }
   }, [user]);
 
-  const fetchPaymentMethods = async () => {
-    if (!user) return;
+  const fetchStripeKey = async () => {
+    setLoading(true);
     try {
-      const response = await fetch(`/api/client/payment-methods/${user.uid}`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data && data.length > 0) {
-          const pm = data[0];
-          if (pm.type === 'bank') {
-            setPaymentMethod(`${pm.brand || 'Bank Account'} •••• ${pm.last4} (ACH)`);
-          } else {
-            setPaymentMethod(`${(pm.brand || 'Card').toUpperCase()} •••• ${pm.last4}`);
-          }
-        } else {
-          setPaymentMethod('No payment method connected');
+      const tenantParam = user?.tenantId ? `?tenantId=${user.tenantId}` : '';
+      const res = await fetch(`/api/stripe/publishable-key${tenantParam}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.publishableKey) {
+          setPubKey(data.publishableKey);
+          setKeySource(data.isCustom ? 'agency_settings' : 'system_defaults');
+          setStripePromise(loadStripe(data.publishableKey));
         }
-      } else {
-        setPaymentMethod('No payment method connected');
       }
     } catch (e) {
-      console.error("Failed to fetch payment methods:", e);
-      setPaymentMethod('No payment method connected');
-    }
-  };
-
-  const fetchInvoices = async () => {
-    if (!user) return;
-    try {
-      const response = await fetch(`/api/users/${user.uid}/payments`);
-      if (response.ok) {
-        const data = await response.json();
-        setInvoices(data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch invoices:", error);
+      console.error("Failed to load publishable keys:", e);
     } finally {
-      setLoadingInvoices(false);
+      setLoading(false);
     }
   };
 
-  const updateSubscriptionInDB = async (newPlan: string, newAmount: number, newStatus: string) => {
-    if (!user) return;
+  const fetchPayments = async () => {
+    if (!user?.uid) return;
+    setLoadingPayments(true);
     try {
-      const response = await fetch('/api/subscriptions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user.uid,
-          planName: newPlan,
-          amount: newAmount,
-          status: newStatus
-        })
-      });
-
-      if (!response.ok) throw new Error("Failed to update subscription");
-      
-      // Update local state and context
-      await updateProfile({
-        plan_name: newPlan,
-        sub_amount: newAmount,
-        sub_status: newStatus as any
-      });
-      
-      return true;
-    } catch (error) {
-      console.error(error);
-      alert("Billing update failed. Please try again.");
-      return false;
-    }
-  };
-
-  const handleCancelSubscription = async () => {
-    if (window.confirm("Are you sure you want to cancel? Your credit repair progress will be paused.")) {
-      setIsProcessing(true);
-      const success = await updateSubscriptionInDB(currentPlan, amount, 'canceled');
-      if (success) {
-        setStatus('canceled' as any);
-        alert("Subscription cancelled successfully.");
+      const res = await fetch(`/api/users/${user.uid}/payments`);
+      if (res.ok) {
+        setPayments(await res.json());
       }
-      setIsProcessing(false);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingPayments(false);
     }
   };
 
-  const handlePlanChange = (newPlan: string, newAmount: number) => {
-    setCurrentPlan(newPlan);
-    setAmount(newAmount);
-    setShowPlanModal(false);
-    setShowCardModal(true);
-  };
-
-  const handleReactivate = () => {
-    setShowCardModal(true);
-  };
-
-  const handleConnectBank = () => {
-    setIsPlaidConnecting(true);
-    // Simulating Plaid Link
-    setTimeout(async () => {
-      await updateProfile({ plaidConnected: true, achAuthorized: true });
-      setIsPlaidConnecting(false);
-      setPaymentMethod('Connected Bank (ACH)');
-      alert("Bank account connected successfully via Plaid!");
-    }, 2000);
-  };
-
-  const handleAddCard = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsProcessing(true);
-    // Simulating Card Verification
-    setTimeout(async () => {
-      await updateProfile({ achAuthorized: true });
-      setPaymentMethod('Visa ending in 4242');
-      setShowCardModal(false);
-      setIsProcessing(false);
-      alert("Payment card added successfully!");
-    }, 2000);
-  };
-
-  const downloadReceipt = (invoiceId: string) => {
-    alert(`Downloading receipt for ${invoiceId}...`);
-    // Logic for PDF download would go here
+  const handleCheckoutSuccess = async () => {
+    setSelectedPlan(null);
+    await refreshProfile();
+    await fetchPayments();
+    alert("Billing checkout verified! Your plan has been successfully activated in the database.");
   };
 
   return (
     <DashboardLayout>
-      <div className="space-y-10 max-w-5xl mx-auto">
-        {isExpired && (
-          <div className="p-6 rounded-[24px] bg-red-50 border border-red-200 text-left flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-300">
-            <div className="space-y-1">
-              <span className="font-extrabold text-[10px] bg-red-650 bg-red-500 text-white rounded-full px-2.5 py-0.5 uppercase tracking-widest leading-none">
-                LOCKED / EXPIRED
-              </span>
-              <h3 className="text-lg font-bold text-red-950 font-display mt-2">Your subscription has expired!</h3>
-              <p className="text-xs text-red-700 font-medium leading-relaxed">Please complete payment using a credit card or bank account to unlock your dashboard. Choose a plan to regain full access for 30 days instantly.</p>
+      <div className="max-w-4xl mx-auto space-y-8 text-left">
+        
+        {/* Top heading */}
+        <div>
+          <h1 className="font-display text-3xl font-extrabold text-neutral-900 tracking-tight">Billing & Subscriptions</h1>
+          <p className="text-neutral-500 text-sm mt-1">Configure automated debit plans, view invoices, and connect card properties.</p>
+        </div>
+
+        {/* Active plan status banner */}
+        <div className="bg-white rounded-[32px] border border-neutral-150 p-6 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4 text-left">
+            <div className="size-12 rounded-2xl bg-neutral-950 text-white flex items-center justify-center font-display shrink-0">
+              {user?.plan_name ? user.plan_name.charAt(0) : '$'}
             </div>
-            <button
-              onClick={() => setShowPlanModal(true)}
-              className="px-5 py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl shadow-md transition-all uppercase shrink-0"
-            >
-              Subscription Plans
-            </button>
+            <div>
+              <div className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">My Connected Membership</div>
+              <h3 className="font-display font-extrabold text-neutral-900 text-base mt-0.5">
+                {user?.sub_status === 'active' ? (user?.plan_name || 'Standard Plan') : 'Unsubscribed Hub'}
+              </h3>
+            </div>
           </div>
-        )}
 
-        <div className="flex flex-col gap-1">
-          <h1 className="font-display text-4xl font-bold tracking-tight text-neutral-900">Billing & Payments</h1>
-          <p className="text-neutral-500">Manage your subscription and view payment history.</p>
+          <div className="text-right">
+            <span className={cn(
+              "inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-black uppercase tracking-widest border",
+              user?.sub_status === 'active' 
+                ? "bg-emerald-50 border-emerald-200 text-emerald-800 animate-pulse" 
+                : "bg-red-50 border-red-200 text-red-800"
+            )}>
+              {user?.sub_status === 'active' ? 'Active Standard Sub' : 'Subscription Overdue'}
+            </span>
+          </div>
         </div>
 
-        {/* Plan Summary Card */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
-           <div className="md:col-span-2 space-y-6">
-              <div className="rounded-3xl border border-neutral-100 bg-white p-8 shadow-sm relative overflow-hidden">
-                {isProcessing && (
-                  <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center z-10">
-                    <Loader2 className="animate-spin text-neutral-900" size={32} />
-                  </div>
-                )}
-                
-                <div className="flex items-start justify-between">
-                  <div>
-                    <span className={cn(
-                      "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-tight",
-                      !isExpired ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
-                    )}>
-                      {!isExpired ? `${daysLeft} days active` : 'Expired / Locked'}
-                    </span>
-                    <h2 className="mt-4 font-display text-2xl font-bold text-neutral-900">{currentPlan}</h2>
-                    <p className="text-neutral-500">
-                      {!isExpired 
-                        ? `Your next billing date is ${expiryDate ? expiryDate.toLocaleDateString() : 'N/A'}.` 
-                        : 'Complete your payment to reactivate your dashboard for 30 days.'}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-display text-3xl font-bold text-neutral-900">${amount}</p>
-                    <p className="text-xs font-medium text-neutral-400">per month</p>
+        {/* Pricing Selection Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {plans.map((p) => {
+            const isCurrent = user?.plan_name === p.name && user?.sub_status === 'active';
+            return (
+              <div key={p.name} className="bg-white rounded-[32px] border border-neutral-150 p-6 shadow-sm flex flex-col justify-between text-left">
+                <div>
+                  <h4 className="font-display font-extrabold text-neutral-900 text-sm">{p.name}</h4>
+                  <p className="text-[11px] text-neutral-400 leading-normal mt-1">{p.description}</p>
+                  <div className="mt-4 flex items-baseline gap-1">
+                    <span className="text-2xl font-black font-display text-neutral-900">${p.price}</span>
+                    <span className="text-[10px] text-neutral-400 font-bold">/mo</span>
                   </div>
                 </div>
-                
-                <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                   <div className="flex items-center gap-3 p-4 rounded-2xl bg-neutral-50 border border-neutral-100">
-                      <div className="size-10 rounded-xl bg-white flex items-center justify-center text-neutral-900 shadow-sm">
-                        <CreditCard size={20} />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-neutral-400 uppercase">Payment Method</p>
-                        <p className="text-sm font-bold text-neutral-900">{paymentMethod}</p>
-                      </div>
-                   </div>
-                   <div className="flex items-center gap-3 p-4 rounded-2xl bg-neutral-50 border border-neutral-100">
-                      <div className="size-10 rounded-xl bg-white flex items-center justify-center text-neutral-900 shadow-sm">
-                        <Calendar size={20} />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-neutral-400 uppercase">Billing Cycle</p>
-                        <p className="text-sm font-bold text-neutral-900">Monthly auto-pay</p>
-                      </div>
-                   </div>
-                </div>
 
-                <div className="mt-8 flex flex-wrap gap-4 pt-8 border-t border-neutral-100">
-                   <button 
-                    onClick={() => setShowPlanModal(true)}
-                    className="rounded-xl bg-neutral-900 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-neutral-800"
-                   >
-                    Change Plan / Subscribe
-                   </button>
-                   {status === 'active' && !isExpired ? (
-                     <button 
-                      onClick={handleCancelSubscription}
-                      className="rounded-xl border border-neutral-200 px-6 py-2.5 text-sm font-bold text-neutral-600 transition-all hover:bg-neutral-50 hover:text-neutral-900"
-                     >
-                      Cancel Subscription
-                     </button>
-                   ) : (
-                     <button 
-                      onClick={handleReactivate}
-                      className="rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-2.5 text-sm font-bold text-emerald-600 transition-all hover:bg-emerald-100"
-                     >
-                      Pay & Activate Account
-                     </button>
-                   )}
-                </div>
-              </div>
-           </div>
-
-           <div className="space-y-6">
-              <div className="rounded-3xl border border-neutral-100 bg-white p-6 shadow-sm">
-                <div className="flex items-center gap-2 mb-4 text-neutral-900">
-                   <AlertCircle size={20} className="text-amber-500" />
-                   <h3 className="font-display text-lg font-bold">Payment Support</h3>
-                </div>
-                <p className="text-xs text-neutral-500 leading-relaxed italic">
-                  Service will be automatically paused if an ACH payment fails. Please ensure sufficient funds are available on your billing date.
-                </p>
-                <div className="mt-6 flex items-center gap-2 text-xs font-bold text-neutral-900 uppercase tracking-wider cursor-pointer hover:underline">
-                   <ExternalLink size={14} />
-                   <span>View Billing Policy</span>
-                </div>
-              </div>
-
-              <div className="rounded-3xl border border-emerald-100 bg-emerald-50/50 p-6 shadow-sm">
-                <h3 className="font-display text-sm font-bold text-emerald-900 mb-2">Need a higher limit?</h3>
-                <p className="text-xs text-emerald-800/80 mb-4">Contact your account manager for custom volume credit repair batches.</p>
-                <button className="w-full rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700">Contact Sales</button>
-              </div>
-           </div>
-        </div>
-
-        {/* Payment Methods Section */}
-        <div className="grid grid-cols-1 gap-8 mb-12">
-          {/* Billing Protection */}
-          <div className="bg-neutral-900 rounded-[32px] p-8 text-white shadow-xl relative overflow-hidden flex flex-col justify-between">
-             <div className="relative z-10">
-                <h3 className="text-xl font-bold mb-4 font-display">Financial Security</h3>
-                <p className="text-neutral-400 text-sm mb-6 leading-relaxed">
-                  Your payments are protected by 256-bit encryption. We never store your full card details on our servers.
-                </p>
-                <div className="space-y-4">
-                   <div className="flex items-center gap-3">
-                      <div className="size-8 rounded-lg bg-white/10 flex items-center justify-center text-emerald-400">
-                         <ShieldCheck size={18} />
-                      </div>
-                      <span className="text-sm font-medium">PCI-DSS Compliant Infrastructure</span>
-                   </div>
-                   <div className="flex items-center gap-3">
-                      <div className="size-8 rounded-lg bg-white/10 flex items-center justify-center text-emerald-400">
-                         <Lock size={18} />
-                      </div>
-                      <span className="text-sm font-medium">Auto-Billing Frequency: Monthly</span>
-                   </div>
-                </div>
-             </div>
-             <div className="mt-8 pt-6 border-t border-white/10 relative z-10">
-                <div className="flex items-center justify-between">
-                   <span className="text-xs text-neutral-500 italic uppercase tracking-wider font-bold">Encrypted via Stripe</span>
-                   <div className="flex gap-2">
-                      <div className="size-6 bg-white/10 rounded"></div>
-                      <div className="size-6 bg-white/10 rounded"></div>
-                      <div className="size-6 bg-white/10 rounded"></div>
-                   </div>
-                </div>
-             </div>
-             <div className="absolute -right-20 -bottom-20 size-64 bg-emerald-500/10 rounded-full blur-3xl"></div>
-          </div>
-        </div>
-
-        {/* Transaction History */}
-        <div className="rounded-3xl border border-neutral-100 bg-white shadow-sm overflow-hidden">
-          <div className="p-8 pb-4">
-             <h3 className="font-display text-xl font-bold text-neutral-900">Invoice History</h3>
-          </div>
-          <div className="overflow-x-auto">
-             <table className="w-full text-left">
-                <thead>
-                  <tr className="bg-neutral-50/50 text-xs font-bold uppercase tracking-wider text-neutral-400">
-                    <th className="px-8 py-4">Invoice ID</th>
-                    <th className="px-8 py-4">Date</th>
-                    <th className="px-8 py-4">Amount</th>
-                    <th className="px-8 py-4">Status</th>
-                    <th className="px-8 py-4 text-right">Receipt</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100 text-sm">
-                  {loadingInvoices ? (
-                    <tr>
-                      <td colSpan={5} className="px-8 py-10 text-center">
-                        <Loader2 className="animate-spin text-neutral-400 mx-auto" size={24} />
-                      </td>
-                    </tr>
-                  ) : invoices.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} className="px-8 py-10 text-center text-neutral-400 italic">
-                        No payment history found.
-                      </td>
-                    </tr>
-                  ) : invoices.map(inv => (
-                    <tr key={inv.id} className="group hover:bg-neutral-50/50 transition-colors">
-                      <td className="px-8 py-4 font-bold text-neutral-900">#{inv.id.substring(0, 8).toUpperCase()}</td>
-                      <td className="px-8 py-4 text-neutral-500">{new Date(inv.paymentDate).toLocaleDateString()}</td>
-                      <td className="px-8 py-4 font-medium text-neutral-900">${inv.amount}</td>
-                      <td className="px-8 py-4 text-left">
-                         <div className={cn(
-                           "flex items-center gap-1.5 font-bold",
-                           inv.status === 'success' ? "text-emerald-600" : 
-                           inv.status === 'failed' ? "text-red-600" : "text-amber-600"
-                         )}>
-                            {inv.status === 'success' ? <CheckCircle2 size={14} /> : 
-                             inv.status === 'failed' ? <XCircle size={14} /> : <AlertCircle size={14} />}
-                            <span className="uppercase text-[10px] tracking-tight">{inv.status}</span>
-                         </div>
-                      </td>
-                      <td className="px-8 py-4 text-right">
-                         <button 
-                          onClick={() => downloadReceipt(inv.id)}
-                          className="text-neutral-400 hover:text-neutral-900 transition-colors"
-                         >
-                            <Download size={18} />
-                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-             </table>
-          </div>
-          <div className="p-4 border-t border-neutral-100 text-center">
-             <p className="text-xs text-neutral-400 font-medium tracking-tight italic">All transactions are secured and encrypted.</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Basic Plan Modal Overlay */}
-      <AnimatePresence>
-        {showPlanModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowPlanModal(false)}
-              className="absolute inset-0 bg-neutral-900/40 backdrop-blur-sm"
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-lg bg-white rounded-[32px] p-8 shadow-2xl"
-            >
-              <h2 className="font-display text-2xl font-bold text-neutral-900 mb-2">Upgrade Your Plan</h2>
-              <p className="text-neutral-500 text-sm mb-6">Choose a plan that fits your credit repair needs.</p>
-              
-              <div className="space-y-3">
-                {[
-                  { name: 'Standard Credit Repair', price: systemSettings?.planPriceStandard !== undefined ? parseFloat(systemSettings.planPriceStandard) : 99, desc: 'Basic dispute handling' },
-                  { name: 'Premium Credit Repair', price: systemSettings?.planPricePremium !== undefined ? parseFloat(systemSettings.planPricePremium) : 149, desc: 'Advanced batch processing' },
-                  { name: 'Elite Credit Sweep', price: systemSettings?.planPriceElite !== undefined ? parseFloat(systemSettings.planPriceElite) : 299, desc: 'Full legal credit protection' }
-                ].map((p) => (
-                  <button
-                    key={p.name}
-                    onClick={() => handlePlanChange(p.name, p.price)}
-                    className={cn(
-                      "w-full text-left p-4 rounded-2xl border transition-all hover:bg-neutral-50",
-                      currentPlan === p.name ? "border-neutral-900 bg-neutral-50 ring-1 ring-neutral-900" : "border-neutral-100"
-                    )}
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-bold text-neutral-900">{p.name}</p>
-                        <p className="text-xs text-neutral-500">{p.desc}</p>
-                      </div>
-                      <p className="font-display text-xl font-bold text-neutral-900">${p.price}<span className="text-xs font-normal text-neutral-400">/mo</span></p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-              
-              <button 
-                onClick={() => setShowPlanModal(false)}
-                className="mt-6 w-full py-3 text-sm font-bold text-neutral-500 hover:text-neutral-900"
-              >
-                Close
-              </button>
-            </motion.div>
-          </div>
-        )}
-
-        {/* Add Card Modal */}
-        {showCardModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="w-full max-w-md bg-white rounded-[32px] overflow-hidden shadow-2xl p-8"
-            >
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="text-2xl font-bold font-display text-neutral-900">Configure Billing</h3>
-                <button onClick={() => setShowCardModal(false)} className="text-neutral-400 hover:text-neutral-900">
-                  <XCircle size={24} />
+                <button
+                  disabled={isCurrent}
+                  onClick={() => setSelectedPlan(p)}
+                  className={cn(
+                    "w-full rounded-xl py-3 text-xs font-bold mt-6 transition-all cursor-pointer flex items-center justify-center",
+                    isCurrent 
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-100 cursor-default" 
+                      : "bg-neutral-950 hover:bg-neutral-800 text-white shadow-sm"
+                  )}
+                >
+                  {isCurrent ? 'Active Plan' : `Checkout $${p.price}`}
                 </button>
               </div>
+            );
+          })}
+        </div>
 
-              {stripePromise ? (
+        {/* Stripe Elements Modal Overlay */}
+        {selectedPlan && (
+          <div className="fixed inset-0 z-50 bg-neutral-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="w-full max-w-lg bg-white border border-neutral-150 rounded-[32px] p-8 shadow-2xl space-y-6 animate-in zoom-in-95 duration-300">
+              <div className="border-b border-neutral-100 pb-3 text-left">
+                <h3 className="font-display font-extrabold text-neutral-900 text-base">Select Billing Method</h3>
+                <p className="text-xs text-neutral-500 mt-1">Activating {selectedPlan.name} • ${selectedPlan.price}/month</p>
+              </div>
+
+              {loading ? (
+                <div className="py-8 text-center text-xs text-neutral-400 flex flex-col items-center gap-1">
+                  <Loader2 className="animate-spin" />
+                  Resolving secure environment channels...
+                </div>
+              ) : stripePromise ? (
                 <Elements stripe={stripePromise}>
                   <AddCardForm 
                     userId={user?.uid}
                     email={user?.email}
                     tenantId={user?.tenantId}
-                    amount={amount}
-                    planName={currentPlan}
-                    loadedPubKey={loadedPubKey}
+                    amount={selectedPlan.price}
+                    planName={selectedPlan.name}
+                    loadedPubKey={pubKey}
                     keySource={keySource}
-                    onCancel={() => setShowCardModal(false)} 
-                    onSuccess={(typeOrPmId: string, details?: any) => {
-                      setShowCardModal(false);
-                      fetchPaymentMethods();
-                      fetchInvoices();
-                      refreshProfile();
-                      if (typeOrPmId === 'bank') {
-                        alert(`ACH Payment successful! Your bank account (${details?.bankName || 'Bank'} ending in ${details?.last4 || ''}) has been connected and charged successfully.`);
-                      } else {
-                        alert("Subscription activated and card saved successfully!");
-                      }
-                    }} 
+                    onCancel={() => setSelectedPlan(null)}
+                    onSuccess={handleCheckoutSuccess}
                   />
                 </Elements>
               ) : (
-                <div className="flex flex-col items-center justify-center py-12 space-y-3">
-                  <Loader2 className="animate-spin text-neutral-400" size={32} />
-                  <p className="text-xs text-neutral-400 font-medium animate-pulse">Loading secure payment portal...</p>
+                <div className="py-4 space-y-4">
+                  <div className="p-4 bg-amber-50 border border-amber-100 rounded-xl text-xs text-amber-800 leading-relaxed text-left">
+                    <p className="font-bold">Notice: Direct Integration Offline</p>
+                    <p className="mt-1">
+                      No publishable key is detected on this environment. Transactions can be run via simulated rapid checkout bypass by subscribing directly in the workspace dashboard!
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedPlan(null)}
+                    className="w-full py-2.5 rounded-xl border border-neutral-200 text-xs font-bold hover:bg-neutral-50 cursor-pointer"
+                  >
+                    Close Modal Window
+                  </button>
                 </div>
               )}
-            </motion.div>
+            </div>
           </div>
         )}
-      </AnimatePresence>
+
+        {/* Transaction History receipts */}
+        <div className="bg-white rounded-[32px] border border-neutral-150 p-8 shadow-sm space-y-6">
+          <div className="border-b border-neutral-100 pb-4">
+            <h3 className="font-display font-extrabold text-neutral-900 text-base">Invoice Transactions Receipts</h3>
+            <p className="text-xs text-neutral-500 mt-1">Receipts representing direct subscription invoices charged via Stripe.</p>
+          </div>
+
+          {loadingPayments ? (
+            <div className="py-8 text-center text-xs text-neutral-400 flex flex-col items-center gap-1">
+              <Loader2 className="animate-spin text-neutral-950" />
+              Syncing invoices history...
+            </div>
+          ) : payments.length === 0 ? (
+            <p className="py-8 text-center text-xs text-neutral-400 italic">No transactions have been processed on this account yet.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="border-b border-neutral-100 text-[10px] font-black uppercase tracking-wider text-neutral-400 pb-2">
+                    <th className="pb-2">Invoice Hash ID</th>
+                    <th className="pb-2">Billing Date</th>
+                    <th className="pb-2 text-center">Amount Paid</th>
+                    <th className="pb-2 text-right">Receipt Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-50 text-xs font-semibold text-neutral-700">
+                  {payments.map(p => (
+                    <tr key={p.id}>
+                      <td className="py-3.5 font-mono text-[10px] text-neutral-400">{p.id}</td>
+                      <td className="py-3.5">{new Date(p.paymentDate || p.createdAt).toLocaleString()}</td>
+                      <td className="py-3.5 text-center font-display font-extrabold text-neutral-950">${Number(p.amount).toFixed(2)}</td>
+                      <td className="py-3.5 text-right">
+                        <span className="bg-emerald-50 text-emerald-800 text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full">
+                          Paid Successful
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+      </div>
     </DashboardLayout>
   );
 }

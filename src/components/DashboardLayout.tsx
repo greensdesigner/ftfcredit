@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, Bell, MessageSquare, Megaphone } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, ShieldCheck } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { UserRole } from '../types';
 
@@ -18,30 +18,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   };
 
   const currentPath = location.pathname + location.search;
-
   const isAdminAuthorized = sessionStorage.getItem('admin_authorized') === 'true';
 
   const menuItems = (user?.role === UserRole.ADMIN || isAdminAuthorized)
     ? [
         { icon: LayoutDashboard, label: 'Overview', path: '/admin-portal?tab=overview' },
         { icon: Users, label: 'Client List', path: '/admin-portal?tab=clients' },
-        { icon: MessageSquare, label: 'Inbox', path: '/admin-portal?tab=inbox' },
-        { icon: Megaphone, label: 'Marketing', path: '/admin-portal?tab=marketing' },
         { icon: CreditCard, label: 'System Billing', path: '/admin-portal?tab=billing' },
         { icon: Settings, label: 'Settings', path: '/admin-portal?tab=settings' },
       ]
     : [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-        { icon: MessageSquare, label: 'Inbox', path: '/dashboard?tab=inbox' },
-        { icon: CreditCard, label: 'Billing', path: '/dashboard/billing' },
+        { icon: CreditCard, label: 'Billing & Plans', path: '/dashboard/billing' },
         { icon: Settings, label: 'Profile', path: '/dashboard/profile' },
       ];
 
-  const [systemName, setSystemName] = useState('FTF Consulting');
+  const [systemName, setSystemName] = useState('Premium SaaS Portal');
   const [systemLogo, setSystemLogo] = useState<string | null>(null);
   const [subscriptionDays, setSubscriptionDays] = useState<number | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
-  const [unreadCount, setUnreadCount] = useState<number>(0);
 
   const isClient = user?.role === UserRole.CLIENT;
   const isSubscriptionExpired = React.useMemo(() => {
@@ -55,69 +50,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, [user, isClient]);
 
   React.useEffect(() => {
-    if (!user?.tenantId || !user?.uid || !user?.role) return;
-
-    const fetchUnreadCount = async () => {
-      try {
-        const res = await fetch(`/api/messages/unread-count?tenantId=${user.tenantId}&uid=${user.uid}&role=${user.role}`);
-        if (res.ok) {
-          const data = await res.json();
-          setUnreadCount(data.count || 0);
-        }
-      } catch (e) {
-        console.error("Failed to fetch unread count:", e);
-      }
-    };
-
-    fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 4000); // Poll every 4 seconds
-    return () => clearInterval(interval);
-  }, [user]);
-
-  React.useEffect(() => {
     const loadBranding = async () => {
-      let isGlobalBrandingApplied = false;
-      // 1. Always check system settings for the platform branding and subscription
       try {
         const res = await fetch('/api/admin/system-settings');
-        const data = await res.json();
-        if (data.systemLogo) {
-          setSystemLogo(data.systemLogo);
-        }
-        if (data.expiryDate) {
-          const expiry = new Date(data.expiryDate);
-          const now = new Date();
-          const diffTime = expiry.getTime() - now.getTime();
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          setSubscriptionDays(diffDays > 0 ? diffDays : 0);
-        }
-        if (data.subscriptionStatus) {
-          setSubscriptionStatus(data.subscriptionStatus);
-        }
-        // If an explicit system name is set, use it. 
-        if (data.systemName && data.systemName !== 'FTF Consulting') {
-          setSystemName(data.systemName);
-          isGlobalBrandingApplied = true;
+        if (res.ok) {
+          const data = await res.json();
+          if (data.systemLogo) {
+            setSystemLogo(data.systemLogo);
+          }
+          if (data.expiryDate) {
+            const expiry = new Date(data.expiryDate);
+            const now = new Date();
+            const diffTime = expiry.getTime() - now.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            setSubscriptionDays(diffDays > 0 ? diffDays : 0);
+          }
+          if (data.subscriptionStatus) {
+            setSubscriptionStatus(data.subscriptionStatus);
+          }
+          if (data.systemName && data.systemName !== 'FTF Consulting') {
+            setSystemName(data.systemName);
+          }
         }
       } catch (e) {
         console.error("Failed to fetch system settings branding:", e);
-      }
-
-      if (isGlobalBrandingApplied) {
-        return;
-      }
-
-      // 2. Fallback to Agency Name for white-labeling if no global platform name is set
-      if (user?.role === 'admin' && user?.agencyName) {
-        setSystemName(user.agencyName);
-      } else if (user?.tenantId && user.role === 'client') {
-        // Fetch the admin's agency name for this client
-        fetch(`/api/users/${user.tenantId}`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.agencyName) setSystemName(data.agencyName);
-          })
-          .catch(console.error);
       }
     };
 
@@ -145,24 +101,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           
           <div className="space-y-4 text-center max-w-md mx-auto mb-8">
             <p className="text-neutral-300 text-sm leading-relaxed font-semibold">
-              Your access has been suspended because the monthly subscription fee has not been paid. Please make the outstanding payment to reactivate and unlock your dashboard instantly.
-            </p>
-            <p className="text-neutral-400 text-xs leading-relaxed tracking-normal border-t border-neutral-800/80 pt-4">
-              If you have already paid or need assistance, please contact the application administration support desk.
+              Your access has been suspended because your billing subscription has expired or an invoice remains unpaid. Please clear any outstanding balances to unlock your workspace instantly.
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
             <button
               onClick={handleLogout}
-              className="px-6 py-3.5 rounded-2xl bg-neutral-800 hover:bg-neutral-750 text-neutral-300 hover:text-white font-bold text-xs tracking-wider uppercase border border-neutral-700/50 transition-all flex items-center justify-center gap-2"
+              className="px-6 py-3.5 rounded-2xl bg-neutral-800 hover:bg-neutral-750 text-neutral-300 hover:text-white font-bold text-xs tracking-wider uppercase border border-neutral-700/50 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <LogOut size={14} /> Logout Session
             </button>
           </div>
 
           <div className="mt-8 pt-5 border-t border-neutral-850 w-full italic text-[9px] text-neutral-500 font-extrabold uppercase tracking-[0.25em] text-center">
-            FTF Platform Security Protocol
+            SaaS Security Protocol
           </div>
         </div>
       </div>
@@ -202,11 +155,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 >
                   <item.icon size={20} />
                   <span className="flex-1">{item.label}</span>
-                  {item.label === 'Inbox' && unreadCount > 0 && (
-                    <span className="bg-red-500 text-white font-extrabold rounded-full text-[10px] px-2 py-0.5 animate-pulse shrink-0">
-                      {unreadCount}
-                    </span>
-                  )}
                 </Link>
               );
             })}
@@ -214,7 +162,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div className="border-t border-neutral-100 p-4">
             <button
               onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50"
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 cursor-pointer"
             >
               <LogOut size={20} />
               Logout
@@ -239,7 +187,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   )}
                   <span className="font-display text-xl font-bold text-neutral-900 truncate">{systemName}</span>
                 </div>
-                <button onClick={() => setSidebarOpen(false)} className="text-neutral-500 shrink-0">
+                <button onClick={() => setSidebarOpen(false)} className="text-neutral-500 shrink-0 cursor-pointer">
                   <X />
                 </button>
               </div>
@@ -260,17 +208,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                     >
                       <item.icon size={20} />
                       <span className="flex-1">{item.label}</span>
-                      {item.label === 'Inbox' && unreadCount > 0 && (
-                        <span className="bg-red-500 text-white font-extrabold rounded-full text-[10px] px-2 py-0.5 animate-pulse shrink-0">
-                          {unreadCount}
-                        </span>
-                      )}
                     </Link>
                   );
                 })}
               </nav>
               <div className="border-t border-neutral-100 p-4">
-                <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50">
+                <button onClick={handleLogout} className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 cursor-pointer">
                   <LogOut size={20} />
                   Logout
                 </button>
@@ -283,7 +226,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content */}
       <div className="flex flex-1 flex-col overflow-hidden">
         <header className="relative flex h-16 items-center justify-between border-b border-neutral-100 bg-white px-6 lg:px-10">
-          <button className="text-neutral-500 lg:hidden" onClick={() => setSidebarOpen(true)}>
+          <button className="text-neutral-500 lg:hidden cursor-pointer" onClick={() => setSidebarOpen(true)}>
             <Menu />
           </button>
           <div className="hidden lg:block">
@@ -306,10 +249,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <span>
                   {subscriptionStatus === 'active' ? (
                     <>
-                      SUBSCRIPTION: <span className="font-extrabold text-emerald-600">{subscriptionDays} {subscriptionDays === 1 ? 'DAY' : 'DAYS'}</span> LEFT
+                      LICENSE: <span className="font-extrabold text-emerald-600">{subscriptionDays} {subscriptionDays === 1 ? 'DAY' : 'DAYS'}</span> REMAINING
                     </>
                   ) : (
-                    <span className="font-extrabold text-red-600">SUBSCRIPTION EXPIRED</span>
+                    <span className="font-extrabold text-red-600">LICENSE EXPIRED</span>
                   )}
                 </span>
               </div>
@@ -317,37 +260,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           )}
 
           <div className="flex items-center gap-4">
-            {/* Icons removed per user request */}
+            {/* Action items */}
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-6 lg:p-10">
           {isSubscriptionExpired && location.pathname !== '/dashboard/billing' ? (
             <div className="flex h-full min-h-[60vh] items-center justify-center p-4">
               <div className="w-full max-w-xl bg-white rounded-[32px] border border-neutral-150 p-8 text-center shadow-xl relative overflow-hidden flex flex-col items-center animate-in fade-in zoom-in-95 duration-300">
-                <div className="absolute top-0 left-0 w-full h-1.5 bg-red-650 bg-red-500"></div>
+                <div className="absolute top-0 left-0 w-full h-1.5 bg-red-500"></div>
                 
                 <div className="size-16 rounded-3xl bg-red-50 text-red-500 flex items-center justify-center mb-6 shrink-0 animate-pulse">
                   <CreditCard size={28} />
                 </div>
                 
                  <h2 className="text-xl md:text-2xl font-bold font-display text-neutral-900 mb-3 text-center">
-                  Your Dashboard is Currently Locked!
+                  Your Workspace is Locked!
                 </h2>
                 
                 <p className="text-neutral-500 leading-relaxed mb-6 text-xs md:text-sm text-center max-w-md">
-                  Your 30-day subscription has expired or the payment was not successfully completed. To reactivate and unlock your dashboard, please click the button below to complete your payment securely.
+                  Your billing subscription has expired or has not been fully initialized yet. To reactivate and unlock your workspace immediately, please proceed to our billing and payment setups.
                 </p>
                 
                 <button
                   onClick={() => navigate('/dashboard/billing')}
-                  className="w-full sm:w-auto px-6 py-3.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-2xl font-bold text-xs shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-6 py-3.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-2xl font-bold text-xs shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <CreditCard size={16} />
-                  Make Payment & Activate Dashboard
+                  Configure Billing & Unlock Workspace
                 </button>
                 
                 <div className="mt-6 pt-5 border-t border-neutral-100 w-full italic text-[9px] text-neutral-400 font-extrabold uppercase tracking-widest text-center">
-                  Secure Connection & Payments via Stripe
+                  Secure Credit and Debit Billing Processing
                 </div>
               </div>
             </div>

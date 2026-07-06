@@ -1,6 +1,6 @@
 {
   "name": "FTF Consulting",
-  "description": "A premium multi-user Credit Repair SaaS featuring automated ACH enrollment, subscription management, and professional financial dashboards.",
+  "description": "A premium universal SaaS billing and app builder boilerplate with fully integrated Stripe payments, ACH bank transfers, and client/admin dashboards.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
