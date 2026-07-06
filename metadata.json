@@ -1,6 +1,6 @@
 {
-  "name": "FTF Consulting",
-  "description": "A premium universal SaaS billing and app builder boilerplate with fully integrated Stripe payments, ACH bank transfers, and client/admin dashboards.",
+  "name": "FTF Credit Repair System",
+  "description": "An all-in-one business management, credit repair, funding, tax, immigration, and automated messaging system for local businesses.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
