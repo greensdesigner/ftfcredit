@@ -32,15 +32,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
 
   const isClient = user?.role === UserRole.CLIENT;
-  const isSubscriptionExpired = React.useMemo(() => {
-    if (!isClient) return false;
-    if (!user?.sub_status || user?.sub_status !== 'active') return true;
-    if (!user?.sub_expiry) return true;
-    
-    const expiry = new Date(user.sub_expiry);
-    const now = new Date();
-    return now > expiry;
-  }, [user, isClient]);
+  const isSubscriptionExpired = false;
 
   React.useEffect(() => {
     const loadBranding = async () => {
@@ -73,7 +65,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     loadBranding();
   }, [user]);
 
-  const isSuspended = user?.isSuspended === 1 || user?.isSuspended === true;
+  const isSuspended = false;
 
   if (isSuspended) {
     return (
