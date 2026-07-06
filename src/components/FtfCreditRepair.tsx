@@ -38,11 +38,31 @@ export default function FtfCreditRepair() {
   const [selectedLetterAccounts, setSelectedLetterAccounts] = useState<string[]>([]);
 
   // Phase 1 - Documents
-  const [uploadedDocs, setUploadedDocs] = useState({
-    idCard: false,
-    ssnCard: false,
-    utilityBill: false
+  const [uploadedDocs, setUploadedDocs] = useState<{
+    idCard: string | null;
+    ssnCard: string | null;
+    utilityBill: string | null;
+  }>(() => {
+    const saved = localStorage.getItem('ftf_uploaded_docs');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return {
+          idCard: typeof parsed.idCard === 'string' ? parsed.idCard : (parsed.idCard ? 'Government_ID.pdf' : null),
+          ssnCard: typeof parsed.ssnCard === 'string' ? parsed.ssnCard : (parsed.ssnCard ? 'SSN_Card.pdf' : null),
+          utilityBill: typeof parsed.utilityBill === 'string' ? parsed.utilityBill : (parsed.utilityBill ? 'Utility_Bill.pdf' : null),
+        };
+      } catch (e) {
+        // ignore
+      }
+    }
+    return { idCard: null, ssnCard: null, utilityBill: null };
   });
+
+  useEffect(() => {
+    localStorage.setItem('ftf_uploaded_docs', JSON.stringify(uploadedDocs));
+  }, [uploadedDocs]);
+
   const [isUploading, setIsUploading] = useState<string | null>(null);
   const [eSigned, setESigned] = useState(false);
   const [signatureName, setSignatureName] = useState('');
@@ -152,15 +172,54 @@ export default function FtfCreditRepair() {
   // Simulation state for manual credit updates
   const [editingScores, setEditingScores] = useState(false);
 
-  // Upload simulation
-  const handleUploadSim = (docKey: 'idCard' | 'ssnCard' | 'utilityBill') => {
+  // Real file selection and simulation handlers
+  const [dragOverKey, setDragOverKey] = useState<string | null>(null);
+
+  const handleDragOver = (e: React.DragEvent, docKey: string) => {
+    e.preventDefault();
+    setDragOverKey(docKey);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverKey(null);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, docKey: 'idCard' | 'ssnCard' | 'utilityBill') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
     setIsUploading(docKey);
-    setReportScanLog(prev => [...prev, `Uploading physical document for field: ${docKey}...`]);
+    setReportScanLog(prev => [...prev, `Uploading physical document: "${file.name}" (${(file.size / 1024).toFixed(1)} KB)...`]);
+    
     setTimeout(() => {
-      setUploadedDocs(prev => ({ ...prev, [docKey]: true }));
+      setUploadedDocs(prev => ({ ...prev, [docKey]: file.name }));
       setIsUploading(null);
-      setReportScanLog(prev => [...prev, `✅ Document ${docKey} processed and securely saved in AES-256 cloud repository.`]);
-    }, 1500);
+      setReportScanLog(prev => [...prev, `✅ Document "${file.name}" processed and securely saved in AES-256 cloud repository.`]);
+      alert(`"${file.name}" সফলভাবে আপলোড করা হয়েছে!`);
+    }, 1200);
+  };
+
+  const handleDrop = (e: React.DragEvent, docKey: 'idCard' | 'ssnCard' | 'utilityBill') => {
+    e.preventDefault();
+    setDragOverKey(null);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+
+    setIsUploading(docKey);
+    setReportScanLog(prev => [...prev, `Uploading physical document via Drag & Drop: "${file.name}" (${(file.size / 1024).toFixed(1)} KB)...`]);
+    
+    setTimeout(() => {
+      setUploadedDocs(prev => ({ ...prev, [docKey]: file.name }));
+      setIsUploading(null);
+      setReportScanLog(prev => [...prev, `✅ Document "${file.name}" processed and securely saved in AES-256 cloud repository.`]);
+      alert(`"${file.name}" সফলভাবে ড্র্যাগ এন্ড ড্রপ এর মাধ্যমে আপলোড করা হয়েছে!`);
+    }, 1200);
+  };
+
+  const handleRemoveFile = (docKey: 'idCard' | 'ssnCard' | 'utilityBill', e: React.MouseEvent) => {
+    e.stopPropagation();
+    setUploadedDocs(prev => ({ ...prev, [docKey]: null }));
+    setReportScanLog(prev => [...prev, `Removed document for field: ${docKey}.`]);
   };
 
   // Import simulation
@@ -373,81 +432,174 @@ export default function FtfCreditRepair() {
             <div className="space-y-3.5">
               
               {/* ID Card */}
-              <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
-                <div className="space-y-0.5 text-left">
+              <div 
+                onDragOver={(e) => handleDragOver(e, 'idCard')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, 'idCard')}
+                className={cn(
+                  "flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border transition-all",
+                  dragOverKey === 'idCard' ? "border-emerald-500 bg-emerald-50/20" : "border-neutral-100"
+                )}
+              >
+                <div className="space-y-0.5 text-left flex-1 mr-3">
                   <h4 className="font-bold text-xs text-neutral-800">Primary Government Photo ID</h4>
                   <p className="text-[10px] text-neutral-400">Drivers License or Passport showing current address.</p>
+                  {uploadedDocs.idCard && (
+                    <span className="text-[10px] font-mono text-emerald-600 font-bold block mt-1 truncate max-w-[200px]" title={uploadedDocs.idCard}>
+                      📄 {uploadedDocs.idCard}
+                    </span>
+                  )}
                 </div>
-                <button
-                  onClick={() => handleUploadSim('idCard')}
-                  disabled={isUploading === 'idCard'}
-                  className={cn(
-                    "px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-extrabold cursor-pointer border flex items-center gap-1.5 transition-all",
-                    uploadedDocs.idCard 
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
-                      : "bg-white text-neutral-700 border-neutral-200 hover:border-neutral-900"
+                <div className="flex items-center gap-2 shrink-0">
+                  <input 
+                    type="file" 
+                    id="file-idCard" 
+                    className="hidden" 
+                    accept="image/*,application/pdf"
+                    onChange={(e) => handleFileChange(e, 'idCard')} 
+                  />
+                  <button
+                    onClick={() => document.getElementById('file-idCard')?.click()}
+                    disabled={isUploading === 'idCard'}
+                    className={cn(
+                      "px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-extrabold cursor-pointer border flex items-center gap-1.5 transition-all",
+                      uploadedDocs.idCard 
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 animate-fade-in" 
+                        : "bg-white text-neutral-700 border-neutral-200 hover:border-neutral-900"
+                    )}
+                  >
+                    {isUploading === 'idCard' ? (
+                      <RefreshCw size={10} className="animate-spin" />
+                    ) : uploadedDocs.idCard ? (
+                      <>✓ Uploaded</>
+                    ) : (
+                      <>Upload File</>
+                    )}
+                  </button>
+                  {uploadedDocs.idCard && (
+                    <button
+                      onClick={(e) => handleRemoveFile('idCard', e)}
+                      className="p-1 text-neutral-400 hover:text-red-500 transition-colors cursor-pointer"
+                      title="Remove File"
+                    >
+                      <Trash2 size={12} />
+                    </button>
                   )}
-                >
-                  {isUploading === 'idCard' ? (
-                    <RefreshCw size={10} className="animate-spin" />
-                  ) : uploadedDocs.idCard ? (
-                    <>✓ Uploaded</>
-                  ) : (
-                    <>Upload File</>
-                  )}
-                </button>
+                </div>
               </div>
 
               {/* SSN Card */}
-              <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
-                <div className="space-y-0.5 text-left">
+              <div 
+                onDragOver={(e) => handleDragOver(e, 'ssnCard')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, 'ssnCard')}
+                className={cn(
+                  "flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border transition-all",
+                  dragOverKey === 'ssnCard' ? "border-emerald-500 bg-emerald-50/20" : "border-neutral-100"
+                )}
+              >
+                <div className="space-y-0.5 text-left flex-1 mr-3">
                   <h4 className="font-bold text-xs text-neutral-800">Social Security Number Card</h4>
                   <p className="text-[10px] text-neutral-400">Clear photograph of physical SSN or ITIN confirmation letter.</p>
+                  {uploadedDocs.ssnCard && (
+                    <span className="text-[10px] font-mono text-emerald-600 font-bold block mt-1 truncate max-w-[200px]" title={uploadedDocs.ssnCard}>
+                      📄 {uploadedDocs.ssnCard}
+                    </span>
+                  )}
                 </div>
-                <button
-                  onClick={() => handleUploadSim('ssnCard')}
-                  disabled={isUploading === 'ssnCard'}
-                  className={cn(
-                    "px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-extrabold cursor-pointer border flex items-center gap-1.5 transition-all",
-                    uploadedDocs.ssnCard 
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
-                      : "bg-white text-neutral-700 border-neutral-200 hover:border-neutral-900"
+                <div className="flex items-center gap-2 shrink-0">
+                  <input 
+                    type="file" 
+                    id="file-ssnCard" 
+                    className="hidden" 
+                    accept="image/*,application/pdf"
+                    onChange={(e) => handleFileChange(e, 'ssnCard')} 
+                  />
+                  <button
+                    onClick={() => document.getElementById('file-ssnCard')?.click()}
+                    disabled={isUploading === 'ssnCard'}
+                    className={cn(
+                      "px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-extrabold cursor-pointer border flex items-center gap-1.5 transition-all",
+                      uploadedDocs.ssnCard 
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 animate-fade-in" 
+                        : "bg-white text-neutral-700 border-neutral-200 hover:border-neutral-900"
+                    )}
+                  >
+                    {isUploading === 'ssnCard' ? (
+                      <RefreshCw size={10} className="animate-spin" />
+                    ) : uploadedDocs.ssnCard ? (
+                      <>✓ Uploaded</>
+                    ) : (
+                      <>Upload File</>
+                    )}
+                  </button>
+                  {uploadedDocs.ssnCard && (
+                    <button
+                      onClick={(e) => handleRemoveFile('ssnCard', e)}
+                      className="p-1 text-neutral-400 hover:text-red-500 transition-colors cursor-pointer"
+                      title="Remove File"
+                    >
+                      <Trash2 size={12} />
+                    </button>
                   )}
-                >
-                  {isUploading === 'ssnCard' ? (
-                    <RefreshCw size={10} className="animate-spin" />
-                  ) : uploadedDocs.ssnCard ? (
-                    <>✓ Uploaded</>
-                  ) : (
-                    <>Upload File</>
-                  )}
-                </button>
+                </div>
               </div>
 
               {/* Utility Bill */}
-              <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100">
-                <div className="space-y-0.5 text-left">
+              <div 
+                onDragOver={(e) => handleDragOver(e, 'utilityBill')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, 'utilityBill')}
+                className={cn(
+                  "flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border transition-all",
+                  dragOverKey === 'utilityBill' ? "border-emerald-500 bg-emerald-50/20" : "border-neutral-100"
+                )}
+              >
+                <div className="space-y-0.5 text-left flex-1 mr-3">
                   <h4 className="font-bold text-xs text-neutral-800">Proof of Billing Address</h4>
                   <p className="text-[10px] text-neutral-400">Utility bill, bank log, or insurance slip less than 60 days old.</p>
+                  {uploadedDocs.utilityBill && (
+                    <span className="text-[10px] font-mono text-emerald-600 font-bold block mt-1 truncate max-w-[200px]" title={uploadedDocs.utilityBill}>
+                      📄 {uploadedDocs.utilityBill}
+                    </span>
+                  )}
                 </div>
-                <button
-                  onClick={() => handleUploadSim('utilityBill')}
-                  disabled={isUploading === 'utilityBill'}
-                  className={cn(
-                    "px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-extrabold cursor-pointer border flex items-center gap-1.5 transition-all",
-                    uploadedDocs.utilityBill 
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
-                      : "bg-white text-neutral-700 border-neutral-200 hover:border-neutral-900"
+                <div className="flex items-center gap-2 shrink-0">
+                  <input 
+                    type="file" 
+                    id="file-utilityBill" 
+                    className="hidden" 
+                    accept="image/*,application/pdf"
+                    onChange={(e) => handleFileChange(e, 'utilityBill')} 
+                  />
+                  <button
+                    onClick={() => document.getElementById('file-utilityBill')?.click()}
+                    disabled={isUploading === 'utilityBill'}
+                    className={cn(
+                      "px-3 py-1.5 rounded-xl text-[10px] uppercase tracking-wider font-extrabold cursor-pointer border flex items-center gap-1.5 transition-all",
+                      uploadedDocs.utilityBill 
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200 animate-fade-in" 
+                        : "bg-white text-neutral-700 border-neutral-200 hover:border-neutral-900"
+                    )}
+                  >
+                    {isUploading === 'utilityBill' ? (
+                      <RefreshCw size={10} className="animate-spin" />
+                    ) : uploadedDocs.utilityBill ? (
+                      <>✓ Uploaded</>
+                    ) : (
+                      <>Upload File</>
+                    )}
+                  </button>
+                  {uploadedDocs.utilityBill && (
+                    <button
+                      onClick={(e) => handleRemoveFile('utilityBill', e)}
+                      className="p-1 text-neutral-400 hover:text-red-500 transition-colors cursor-pointer"
+                      title="Remove File"
+                    >
+                      <Trash2 size={12} />
+                    </button>
                   )}
-                >
-                  {isUploading === 'utilityBill' ? (
-                    <RefreshCw size={10} className="animate-spin" />
-                  ) : uploadedDocs.utilityBill ? (
-                    <>✓ Uploaded</>
-                  ) : (
-                    <>Upload File</>
-                  )}
-                </button>
+                </div>
               </div>
 
             </div>
