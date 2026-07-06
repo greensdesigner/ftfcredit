@@ -211,9 +211,9 @@ async function startServer() {
           // Seed default settings row if missing
           const [settings]: any = await pool.query("SELECT * FROM system_settings WHERE id = 1");
           if (settings.length === 0) {
-            const nextMonth = new Date();
-            nextMonth.setDate(nextMonth.getDate() + 30);
-            await pool.query("INSERT INTO system_settings (id, subscriptionStatus, expiryDate) VALUES (1, 'active', ?)", [nextMonth]);
+            const trialPeriod = new Date();
+            trialPeriod.setDate(trialPeriod.getDate() + 15); // 15-day free trial initially
+            await pool.query("INSERT INTO system_settings (id, subscriptionStatus, expiryDate) VALUES (1, 'active', ?)", [trialPeriod]);
           }
 
           // Subscriptions Table
@@ -375,11 +375,25 @@ async function startServer() {
         }
       }
 
+      // Check if this is the very first registration to set the 15-day free trial start
+      const [userCountRows]: any = await pool.query("SELECT COUNT(*) as count FROM users");
+      const userCount = userCountRows[0]?.count || 0;
+
       await pool.query(
         `INSERT INTO users (uid, email, fullName, password, role, phone, tenantId, agencyName, streetAddress, city, state, zipCode) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [uid, email, fullName, hashedPassword, assignedRole, phone, finalTenantId, assignedRole === 'admin' ? agencyName : null, streetAddress, city, state, zipCode]
+         [uid, email, fullName, hashedPassword, assignedRole, phone, finalTenantId, assignedRole === 'admin' ? agencyName : null, streetAddress, city, state, zipCode]
       );
+
+      if (userCount === 0) {
+        const trialExpiry = new Date();
+        trialExpiry.setDate(trialExpiry.getDate() + 15); // Exactly 15 days trial
+        await pool.query(
+          "UPDATE system_settings SET subscriptionStatus = 'active', expiryDate = ? WHERE id = 1",
+          [trialExpiry]
+        );
+        console.log("ℹ️ First registration detected. System license initialized to 15-day Free Trial.");
+      }
 
       console.log(`✅ User registered successfully: ${email} [Tenant: ${finalTenantId}]`);
       res.json({ status: "success", message: "User registered in database", tenantId: finalTenantId });

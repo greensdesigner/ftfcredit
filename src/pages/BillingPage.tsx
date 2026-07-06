@@ -396,7 +396,7 @@ export default function BillingPage() {
             </span>
             <h2 className="font-display font-black text-xl tracking-tight">Software Creator License Fee</h2>
             <p className="text-neutral-300 text-xs leading-relaxed font-semibold">
-              The software creator company charges a monthly subscription fee of <strong className="text-emerald-400">$100.00</strong> to keep this platform active. If the subscription fee is not paid, the software will automatically lock for all users.
+              New registrations receive a <strong className="text-emerald-400">15-day free trial</strong> to use this platform. After the trial period, a monthly subscription fee of <strong className="text-emerald-400">$100.00</strong> paid to <strong className="text-white">Greenlab Technology</strong> is required to keep the software active and prevent auto-locking.
             </p>
             {systemLicense && (
               <div className="flex flex-wrap gap-4 pt-1 text-[11px] font-semibold text-neutral-400">

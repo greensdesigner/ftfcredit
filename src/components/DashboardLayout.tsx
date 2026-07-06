@@ -116,15 +116,15 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             Software License Locked
           </h2>
           <h3 className="text-neutral-400 text-xs tracking-widest uppercase font-extrabold mb-6">
-            $100.00 Monthly Subscription Fee Required
+            15-Day Free Trial Expired or Monthly Fee Unpaid
           </h3>
           
           <div className="space-y-4 text-center max-w-md mx-auto mb-8">
             <p className="text-neutral-300 text-sm leading-relaxed font-semibold">
-              This software has been automatically locked because the monthly $100.00 license subscription fee to the software provider (Greenlab Technology) has not been paid or is expired.
+              This software provides a <span className="text-emerald-400">15-day free trial</span> upon registration. Your trial has expired, and the software is now automatically locked.
             </p>
             <p className="text-neutral-400 text-xs leading-relaxed">
-              Please pay the subscription fee below to instantly unlock and restore full access to the platform workspace.
+              To activate and restore full access, please pay the monthly <strong className="text-white">$100.00</strong> subscription fee to the software provider (<strong className="text-white">Greenlab Technology</strong>).
             </p>
           </div>
 
