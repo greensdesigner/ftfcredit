@@ -44,7 +44,7 @@ export default function FtfCrmSimulator() {
   }, [logs]);
 
   const handleClearAllData = () => {
-    if (window.confirm("আপনি কি নিশ্চিত যে আপনি সব কাস্টমার ও সিআরএম ডাটা মুছে ফেলতে চান?")) {
+    if (window.confirm("Are you sure you want to permanently clear all customer and CRM data?")) {
       setLeads([]);
       setTasks([]);
       setNotes([]);
@@ -206,7 +206,7 @@ export default function FtfCrmSimulator() {
             <div className="overflow-x-auto">
               {leads.length === 0 ? (
                 <div className="text-center py-10 bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
-                  <p className="text-neutral-400 text-xs font-semibold">কোনো কাস্টমার লিড পাওয়া যায়নি। নিচে নতুন লিড যোগ করুন।</p>
+                  <p className="text-neutral-400 text-xs font-semibold">No customer leads found. Create a new lead below.</p>
                 </div>
               ) : (
                 <table className="w-full text-left border-collapse">
@@ -379,7 +379,7 @@ export default function FtfCrmSimulator() {
                 <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
                   {logs.length === 0 ? (
                     <div className="text-center py-6 text-xs text-neutral-400 font-semibold bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
-                      কোনো বার্তা বা আউটবক্স হিস্টোরি নেই।
+                      No messages or outbox history found.
                     </div>
                   ) : (
                     logs.map((log) => (
@@ -426,7 +426,7 @@ export default function FtfCrmSimulator() {
             <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
               {tasks.length === 0 ? (
                 <div className="text-center py-6 text-xs text-neutral-400 font-semibold bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
-                  কোনো টাস্ক নেই।
+                  No active tasks.
                 </div>
               ) : (
                 tasks.map((task) => (
@@ -498,7 +498,7 @@ export default function FtfCrmSimulator() {
             <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1 text-left">
               {notes.length === 0 ? (
                 <div className="text-center py-6 text-xs text-neutral-400 font-semibold bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
-                  কোনো নোট পাওয়া যায়নি।
+                  No private notes found.
                 </div>
               ) : (
                 notes.map((note) => (

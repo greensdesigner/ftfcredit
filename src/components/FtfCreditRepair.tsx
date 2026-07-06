@@ -142,7 +142,7 @@ export default function FtfCreditRepair() {
   const [newPriority, setNewPriority] = useState<'High' | 'Medium' | 'Low'>('High');
 
   const handleClearAllScans = () => {
-    if (window.confirm("আপনি কি নিশ্চিত যে আপনি সব স্ক্যান করা অ্যাকাউন্ট ডাটা মুছে ফেলতে চান?")) {
+    if (window.confirm("Are you sure you want to permanently clear all scanned account data?")) {
       setScannedAccounts([]);
       setSelectedLetterAccounts([]);
     }
@@ -173,7 +173,7 @@ export default function FtfCreditRepair() {
     setScannedAccounts([...scannedAccounts, newAcc]);
     setNewCreditor('');
     setNewBalance('');
-    alert("সফলভাবে নতুন নেগেটিভ অ্যাকাউন্ট যোগ করা হয়েছে!");
+    alert("New negative account successfully added manually!");
   };
 
   // Phase 3 & 4 - Letter Generator
@@ -208,7 +208,7 @@ export default function FtfCreditRepair() {
       setUploadedDocs(prev => ({ ...prev, [docKey]: file.name }));
       setIsUploading(null);
       setReportScanLog(prev => [...prev, `✅ Document "${file.name}" processed and securely saved in AES-256 cloud repository.`]);
-      alert(`"${file.name}" সফলভাবে আপলোড করা হয়েছে!`);
+      alert(`"${file.name}" uploaded successfully!`);
     }, 1200);
   };
 
@@ -225,7 +225,7 @@ export default function FtfCreditRepair() {
       setUploadedDocs(prev => ({ ...prev, [docKey]: file.name }));
       setIsUploading(null);
       setReportScanLog(prev => [...prev, `✅ Document "${file.name}" processed and securely saved in AES-256 cloud repository.`]);
-      alert(`"${file.name}" সফলভাবে ড্র্যাগ এন্ড ড্রপ এর মাধ্যমে আপলোড করা হয়েছে!`);
+      alert(`"${file.name}" uploaded successfully via Drag & Drop!`);
     }, 1200);
   };
 
@@ -241,7 +241,7 @@ export default function FtfCreditRepair() {
     if (!file) return;
     setCreditReportFileName(file.name);
     setReportScanLog(prev => [...prev, `📂 loaded credit report file: "${file.name}" ready for scanning.`]);
-    alert(`"${file.name}" ফাইলটি স্ক্যান করার জন্য প্রস্তুত! নিচে "Import & Scan ${selectedProvider} File" বাটনে ক্লিক করুন।`);
+    alert(`"${file.name}" loaded and ready to scan! Please click the "Import & Scan" button below.`);
   };
 
   const handleCreditReportDrop = (e: React.DragEvent) => {
@@ -251,7 +251,7 @@ export default function FtfCreditRepair() {
     if (!file) return;
     setCreditReportFileName(file.name);
     setReportScanLog(prev => [...prev, `📂 Dropped credit report file via drag-and-drop: "${file.name}" ready for scanning.`]);
-    alert(`"${file.name}" ফাইলটি ড্র্যাগ এন্ড ড্রপ এর মাধ্যমে সফলভাবে লোড করা হয়েছে! নিচে "Import & Scan ${selectedProvider} File" বাটনে ক্লিক করুন।`);
+    alert(`"${file.name}" loaded successfully via Drag & Drop! Click the "Import & Scan" button below to analyze.`);
   };
 
   const handleRemoveCreditReportFile = (e: React.MouseEvent) => {
@@ -284,7 +284,7 @@ export default function FtfCreditRepair() {
         setImportingReport(false);
         // Load negative trade lines from the file
         setScannedAccounts(initialNegativeAccounts);
-        alert(`সফলভাবে "${fileName}" স্ক্যান করা হয়েছে! ৫টি নেগেটিভ অ্যাকাউন্ট খুঁজে পাওয়া গেছে এবং নিচে লিস্টে যুক্ত করা হয়েছে।`);
+        alert(`Successfully scanned "${fileName}"! 5 negative trade lines found and imported into your workspace.`);
       }
     }, 600);
   };
@@ -759,7 +759,7 @@ export default function FtfCreditRepair() {
                   <p className="text-xs font-bold text-neutral-800 flex items-center gap-1.5 justify-center">
                     📄 {creditReportFileName}
                   </p>
-                  <p className="text-[9px] text-neutral-400">নিচে বাটনে ক্লিক করে AI OCR স্ক্যান করুন</p>
+                  <p className="text-[9px] text-neutral-400">Click the button below to perform AI OCR scan</p>
                   <button 
                     onClick={handleRemoveCreditReportFile}
                     className="mt-2 text-[10px] bg-red-50 text-red-600 hover:bg-red-100 px-2 py-1 rounded-lg font-bold transition-all cursor-pointer flex items-center gap-1 mx-auto"
@@ -769,8 +769,8 @@ export default function FtfCreditRepair() {
                 </div>
               ) : (
                 <div className="space-y-1">
-                  <p className="text-xs font-bold text-neutral-700">এখানে ড্র্যাগ অ্যান্ড ড্রপ করুন অথবা ফাইল সিলেক্ট করতে ক্লিক করুন</p>
-                  <p className="text-[10px] text-neutral-400 leading-normal">SmartCredit, IdentityIQ, PrivacyGuard, অথবা MyScoreIQ থেকে ডাউনলোড করা HTML, PDF বা Image আপলোড করুন।</p>
+                  <p className="text-xs font-bold text-neutral-700">Drag & Drop file here or click to choose file</p>
+                  <p className="text-[10px] text-neutral-400 leading-normal">Upload downloaded HTML, PDF, or Image from SmartCredit, IdentityIQ, PrivacyGuard, or MyScoreIQ.</p>
                 </div>
               )}
             </div>
@@ -850,7 +850,7 @@ export default function FtfCreditRepair() {
                   type="submit"
                   className="rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-extrabold text-[10px] uppercase tracking-wider py-2 cursor-pointer flex items-center justify-center gap-1.5 transition-all"
                 >
-                  <Plus size={12} /> Account যোগ করুন
+                  <Plus size={12} /> Add Account
                 </button>
               </div>
             </form>
@@ -869,7 +869,7 @@ export default function FtfCreditRepair() {
             <div className="space-y-3.5">
               {scannedAccounts.length === 0 ? (
                 <div className="text-center py-10 bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
-                  <p className="text-neutral-400 text-xs font-semibold">কোনো নেগেটিভ অ্যাকাউন্ট পাওয়া যায়নি। উপরে ফাইল স্ক্যান করুন অথবা ম্যানুয়ালি যোগ করুন।</p>
+                  <p className="text-neutral-400 text-xs font-semibold">No negative trade lines found. Scan a credit file above or add a trade line manually.</p>
                 </div>
               ) : (
                 scannedAccounts.map((acc) => {
