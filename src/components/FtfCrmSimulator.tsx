@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, CheckSquare, Plus, Mail, MessageSquare, Phone, 
   Clock, Trash2, ArrowRight, Play, Eye, Calendar, Sparkles, Check, Send 
@@ -10,10 +10,70 @@ import {
 } from '../data/ftfMockData';
 
 export default function FtfCrmSimulator() {
-  const [leads, setLeads] = useState<Lead[]>(initialLeads);
-  const [tasks, setTasks] = useState<CrmTask[]>(initialCrmTasks);
-  const [notes, setNotes] = useState<CrmNote[]>(initialCrmNotes);
-  const [logs, setLogs] = useState<CommunicationLog[]>(initialCommunicationLogs);
+  const [leads, setLeads] = useState<Lead[]>(() => {
+    const saved = localStorage.getItem('ftf_leads');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [tasks, setTasks] = useState<CrmTask[]>(() => {
+    const saved = localStorage.getItem('ftf_tasks');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [notes, setNotes] = useState<CrmNote[]>(() => {
+    const saved = localStorage.getItem('ftf_notes');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [logs, setLogs] = useState<CommunicationLog[]>(() => {
+    const saved = localStorage.getItem('ftf_logs');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('ftf_leads', JSON.stringify(leads));
+  }, [leads]);
+
+  useEffect(() => {
+    localStorage.setItem('ftf_tasks', JSON.stringify(tasks));
+  }, [tasks]);
+
+  useEffect(() => {
+    localStorage.setItem('ftf_notes', JSON.stringify(notes));
+  }, [notes]);
+
+  useEffect(() => {
+    localStorage.setItem('ftf_logs', JSON.stringify(logs));
+  }, [logs]);
+
+  const handleClearAllData = () => {
+    if (window.confirm("আপনি কি নিশ্চিত যে আপনি সব কাস্টমার ও সিআরএম ডাটা মুছে ফেলতে চান?")) {
+      setLeads([]);
+      setTasks([]);
+      setNotes([]);
+      setLogs([]);
+    }
+  };
+
+  const handleLoadDemoData = () => {
+    setLeads(initialLeads);
+    setTasks(initialCrmTasks);
+    setNotes(initialCrmNotes);
+    setLogs(initialCommunicationLogs);
+  };
+
+  const handleDeleteLead = (id: string) => {
+    setLeads(leads.filter(l => l.id !== id));
+  };
+
+  const handleDeleteTask = (id: string) => {
+    setTasks(tasks.filter(t => t.id !== id));
+  };
+
+  const handleDeleteNote = (id: string) => {
+    setNotes(notes.filter(n => n.id !== id));
+  };
+
+  const handleDeleteLog = (id: string) => {
+    setLogs(logs.filter(l => l.id !== id));
+  };
 
   // Forms
   const [newLeadName, setNewLeadName] = useState('');
@@ -108,6 +168,31 @@ export default function FtfCrmSimulator() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300 text-left">
+      {/* Workspace Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-neutral-900 text-white p-5 rounded-[24px] shadow-sm">
+        <div className="space-y-1">
+          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 font-mono">WORKSPACE DATA CONTROLLER</span>
+          <h3 className="font-display font-black text-sm tracking-tight">Real-Life Functional Workspace</h3>
+          <p className="text-[10px] text-neutral-400">রিয়েল-লাইফ মোড: নিচের বাটনগুলো দিয়ে ডেমো ডেটা মুছুন বা পুনরায় লোড করুন।</p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleClearAllData}
+            className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <Trash2 size={12} />
+            সব ডেটা মুছুন (Clear All Data)
+          </button>
+          <button
+            onClick={handleLoadDemoData}
+            className="px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <Sparkles size={12} />
+            ডেমো ডেটা লোড (Load Demo Data)
+          </button>
+        </div>
+      </div>
+
       {/* Overview stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white border border-neutral-150 p-5 rounded-3xl shadow-xs">
@@ -144,63 +229,78 @@ export default function FtfCrmSimulator() {
 
             {/* Leads Table */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="border-b border-neutral-100 text-[10px] font-black uppercase tracking-wider text-neutral-400">
-                    <th className="pb-3 font-extrabold">Lead Contact</th>
-                    <th className="pb-3 font-extrabold">FICO Rating</th>
-                    <th className="pb-3 font-extrabold text-right">Goal Limit</th>
-                    <th className="pb-3 font-extrabold text-center">Pipeline status</th>
-                    <th className="pb-3 font-extrabold text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-50 text-xs font-bold text-neutral-800">
-                  {leads.map((l) => (
-                    <tr key={l.id} className="hover:bg-neutral-50/50">
-                      <td className="py-4">
-                        <div>
-                          <p className="text-neutral-900 font-bold">{l.name}</p>
-                          <p className="text-[10px] text-neutral-400 font-semibold">{l.email} • {l.phone}</p>
-                        </div>
-                      </td>
-                      <td className="py-4 font-mono">
-                        <span className={cn(
-                          "px-2 py-0.5 rounded text-[10px]",
-                          l.creditScore >= 660 ? "bg-emerald-50 text-emerald-700" :
-                          l.creditScore >= 600 ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"
-                        )}>
-                          {l.creditScore} FICO
-                        </span>
-                      </td>
-                      <td className="py-4 text-right font-display text-neutral-900">${l.fundingGoal.toLocaleString()}</td>
-                      <td className="py-4 text-center">
-                        <button
-                          onClick={() => cycleLeadStatus(l.id)}
-                          className={cn(
-                            "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border cursor-pointer hover:scale-105 transition-all",
-                            l.status === 'New' ? "bg-neutral-50 text-neutral-600 border-neutral-200" :
-                            l.status === 'Contacted' ? "bg-blue-50 text-blue-700 border-blue-200" :
-                            l.status === 'Qualified' ? "bg-purple-50 text-purple-700 border-purple-200" :
-                            l.status === 'Enrolled' ? "bg-indigo-50 text-indigo-700 border-indigo-200" :
-                            l.status === 'Active' ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-                            "bg-red-50 text-red-700 border-red-200"
-                          )}
-                        >
-                          {l.status} &rarr;
-                        </button>
-                      </td>
-                      <td className="py-4 text-right">
-                        <button
-                          onClick={() => setCommRecipient(l.name)}
-                          className="px-2 py-1 bg-neutral-900 text-white rounded-lg text-[10px] uppercase font-bold hover:bg-neutral-800 transition-colors cursor-pointer"
-                        >
-                          Stage Message
-                        </button>
-                      </td>
+              {leads.length === 0 ? (
+                <div className="text-center py-10 bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
+                  <p className="text-neutral-400 text-xs font-semibold">কোনো কাস্টমার লিড পাওয়া যায়নি। নিচে নতুন লিড যোগ করুন।</p>
+                </div>
+              ) : (
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-neutral-100 text-[10px] font-black uppercase tracking-wider text-neutral-400">
+                      <th className="pb-3 font-extrabold">Lead Contact</th>
+                      <th className="pb-3 font-extrabold">FICO Rating</th>
+                      <th className="pb-3 font-extrabold text-right">Goal Limit</th>
+                      <th className="pb-3 font-extrabold text-center">Pipeline status</th>
+                      <th className="pb-3 font-extrabold text-right">Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-50 text-xs font-bold text-neutral-800">
+                    {leads.map((l) => (
+                      <tr key={l.id} className="hover:bg-neutral-50/50">
+                        <td className="py-4">
+                          <div>
+                            <p className="text-neutral-900 font-bold">{l.name}</p>
+                            <p className="text-[10px] text-neutral-400 font-semibold">{l.email} • {l.phone}</p>
+                          </div>
+                        </td>
+                        <td className="py-4 font-mono">
+                          <span className={cn(
+                            "px-2 py-0.5 rounded text-[10px]",
+                            l.creditScore >= 660 ? "bg-emerald-50 text-emerald-700" :
+                            l.creditScore >= 600 ? "bg-amber-50 text-amber-700" : "bg-red-50 text-red-700"
+                          )}>
+                            {l.creditScore} FICO
+                          </span>
+                        </td>
+                        <td className="py-4 text-right font-display text-neutral-900">${l.fundingGoal.toLocaleString()}</td>
+                        <td className="py-4 text-center">
+                          <button
+                            onClick={() => cycleLeadStatus(l.id)}
+                            className={cn(
+                              "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border cursor-pointer hover:scale-105 transition-all",
+                              l.status === 'New' ? "bg-neutral-50 text-neutral-600 border-neutral-200" :
+                              l.status === 'Contacted' ? "bg-blue-50 text-blue-700 border-blue-200" :
+                              l.status === 'Qualified' ? "bg-purple-50 text-purple-700 border-purple-200" :
+                              l.status === 'Enrolled' ? "bg-indigo-50 text-indigo-700 border-indigo-200" :
+                              l.status === 'Active' ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                              "bg-red-50 text-red-700 border-red-200"
+                            )}
+                          >
+                            {l.status} &rarr;
+                          </button>
+                        </td>
+                        <td className="py-4 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setCommRecipient(l.name)}
+                              className="px-2 py-1 bg-neutral-900 text-white rounded-lg text-[10px] uppercase font-bold hover:bg-neutral-800 transition-colors cursor-pointer"
+                            >
+                              Stage Message
+                            </button>
+                            <button
+                              onClick={() => handleDeleteLead(l.id)}
+                              className="p-1 text-neutral-400 hover:text-red-600 transition-colors cursor-pointer"
+                              title="Delete Lead"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
 
             {/* Create Lead Form */}
@@ -302,24 +402,37 @@ export default function FtfCrmSimulator() {
                 <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block">Secure Transmitter Outbox logs</span>
                 
                 <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
-                  {logs.map((log) => (
-                    <div key={log.id} className="p-3 border border-neutral-150 rounded-2xl bg-neutral-50 flex items-start gap-2.5">
-                      <span className={cn(
-                        "px-1.5 py-0.5 rounded text-[8px] uppercase font-black tracking-widest text-white shrink-0",
-                        log.type === 'SMS' ? "bg-emerald-600" :
-                        log.type === 'Email' ? "bg-blue-600" : "bg-purple-600"
-                      )}>
-                        {log.type}
-                      </span>
-                      <div className="space-y-0.5 flex-1">
-                        <div className="flex justify-between items-center text-[10px]">
-                          <span className="font-extrabold text-neutral-900">To: {log.recipient}</span>
-                          <span className="text-neutral-400 font-bold font-mono text-[9px]">{log.timestamp}</span>
-                        </div>
-                        <p className="text-[11px] text-neutral-500 leading-snug">{log.message}</p>
-                      </div>
+                  {logs.length === 0 ? (
+                    <div className="text-center py-6 text-xs text-neutral-400 font-semibold bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
+                      কোনো বার্তা বা আউটবক্স হিস্টোরি নেই।
                     </div>
-                  ))}
+                  ) : (
+                    logs.map((log) => (
+                      <div key={log.id} className="p-3 border border-neutral-150 rounded-2xl bg-neutral-50 flex items-start gap-2.5 group relative">
+                        <span className={cn(
+                          "px-1.5 py-0.5 rounded text-[8px] uppercase font-black tracking-widest text-white shrink-0",
+                          log.type === 'SMS' ? "bg-emerald-600" :
+                          log.type === 'Email' ? "bg-blue-600" : "bg-purple-600"
+                        )}>
+                          {log.type}
+                        </span>
+                        <div className="space-y-0.5 flex-1 pr-6">
+                          <div className="flex justify-between items-center text-[10px]">
+                            <span className="font-extrabold text-neutral-900">To: {log.recipient}</span>
+                            <span className="text-neutral-400 font-bold font-mono text-[9px]">{log.timestamp}</span>
+                          </div>
+                          <p className="text-[11px] text-neutral-500 leading-snug">{log.message}</p>
+                        </div>
+                        <button
+                          onClick={() => handleDeleteLog(log.id)}
+                          className="absolute top-2 right-2 p-1 text-neutral-300 hover:text-red-600 transition-colors cursor-pointer hidden group-hover:block"
+                          title="Delete Log"
+                        >
+                          <Trash2 size={10} />
+                        </button>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
 
@@ -336,26 +449,41 @@ export default function FtfCrmSimulator() {
             </h3>
             
             <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1">
-              {tasks.map((task) => (
-                <div key={task.id} className="flex items-center justify-between gap-3 p-3 bg-neutral-50 rounded-2xl border border-neutral-100">
-                  <div className="flex items-center gap-2.5 text-left">
-                    <button
-                      onClick={() => setTasks(tasks.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t))}
-                      className={cn(
-                        "size-5 rounded-md border flex items-center justify-center transition-colors cursor-pointer",
-                        task.completed ? "bg-neutral-900 border-neutral-900 text-white" : "border-neutral-300 bg-white"
-                      )}
-                    >
-                      {task.completed && <Check size={12} />}
-                    </button>
-                    <div>
-                      <p className={cn("text-xs font-bold leading-snug", task.completed ? "line-through text-neutral-400" : "text-neutral-800")}>{task.title}</p>
-                      <span className="text-[9px] text-neutral-400 font-mono font-bold">Due: {task.dueDate}</span>
+              {tasks.length === 0 ? (
+                <div className="text-center py-6 text-xs text-neutral-400 font-semibold bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
+                  কোনো টাস্ক নেই।
+                </div>
+              ) : (
+                tasks.map((task) => (
+                  <div key={task.id} className="flex items-center justify-between gap-3 p-3 bg-neutral-50 rounded-2xl border border-neutral-100">
+                    <div className="flex items-center gap-2.5 text-left">
+                      <button
+                        onClick={() => setTasks(tasks.map(t => t.id === task.id ? { ...t, completed: !t.completed } : t))}
+                        className={cn(
+                          "size-5 rounded-md border flex items-center justify-center transition-colors cursor-pointer",
+                          task.completed ? "bg-neutral-900 border-neutral-900 text-white" : "border-neutral-300 bg-white"
+                        )}
+                      >
+                        {task.completed && <Check size={12} />}
+                      </button>
+                      <div>
+                        <p className={cn("text-xs font-bold leading-snug", task.completed ? "line-through text-neutral-400" : "text-neutral-800")}>{task.title}</p>
+                        <span className="text-[9px] text-neutral-400 font-mono font-bold">Due: {task.dueDate}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[8px] bg-neutral-200 text-neutral-700 px-1.5 py-0.5 rounded uppercase font-mono font-bold shrink-0">{task.type}</span>
+                      <button
+                        onClick={() => handleDeleteTask(task.id)}
+                        className="p-1 text-neutral-400 hover:text-red-600 transition-colors cursor-pointer"
+                        title="Delete Task"
+                      >
+                        <Trash2 size={12} />
+                      </button>
                     </div>
                   </div>
-                  <span className="text-[8px] bg-neutral-200 text-neutral-700 px-1.5 py-0.5 rounded uppercase font-mono font-bold shrink-0">{task.type}</span>
-                </div>
-              ))}
+                ))
+              )}
             </div>
 
             <form onSubmit={handleAddTask} className="pt-3 border-t border-neutral-100 space-y-2">
@@ -393,15 +521,28 @@ export default function FtfCrmSimulator() {
             <h3 className="font-display font-black text-base text-neutral-900">CRM Internal Notes</h3>
             
             <div className="space-y-3 max-h-[220px] overflow-y-auto pr-1 text-left">
-              {notes.map((note) => (
-                <div key={note.id} className="p-3 bg-neutral-50/50 border border-neutral-100 rounded-2xl relative">
-                  <p className="text-[11px] text-neutral-600 leading-relaxed">{note.content}</p>
-                  <div className="flex justify-between items-center text-[8px] text-neutral-400 font-mono font-bold mt-2">
-                    <span>By {note.author}</span>
-                    <span>{note.createdAt}</span>
-                  </div>
+              {notes.length === 0 ? (
+                <div className="text-center py-6 text-xs text-neutral-400 font-semibold bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
+                  কোনো নোট পাওয়া যায়নি।
                 </div>
-              ))}
+              ) : (
+                notes.map((note) => (
+                  <div key={note.id} className="p-3 bg-neutral-50/50 border border-neutral-100 rounded-2xl relative group">
+                    <button
+                      onClick={() => handleDeleteNote(note.id)}
+                      className="absolute top-2 right-2 p-1 text-neutral-300 hover:text-red-600 transition-colors cursor-pointer hidden group-hover:block"
+                      title="Delete Note"
+                    >
+                      <Trash2 size={10} />
+                    </button>
+                    <p className="text-[11px] text-neutral-600 leading-relaxed pr-4">{note.content}</p>
+                    <div className="flex justify-between items-center text-[8px] text-neutral-400 font-mono font-bold mt-2">
+                      <span>By {note.author}</span>
+                      <span>{note.createdAt}</span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
             <form onSubmit={handleAddNote} className="pt-3 border-t border-neutral-100 space-y-2">

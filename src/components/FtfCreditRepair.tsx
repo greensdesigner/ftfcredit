@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart, FileText, UploadCloud, ShieldCheck, CheckSquare, 
   Sparkles, RefreshCw, AlertCircle, FileSpreadsheet, Layers, 
-  Check, Copy, Download, ArrowUpRight, HelpCircle, AlertTriangle 
+  Check, Copy, Download, ArrowUpRight, HelpCircle, AlertTriangle, Trash2, Plus
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { NegativeAccount, DisputeLetter } from '../types/ftf';
@@ -31,7 +31,57 @@ export default function FtfCreditRepair() {
   const [selectedProvider, setSelectedProvider] = useState<'SmartCredit' | 'IdentityIQ' | 'PrivacyGuard' | 'MyScoreIQ'>('SmartCredit');
   const [importingReport, setImportingReport] = useState(false);
   const [reportScanLog, setReportScanLog] = useState<string[]>([]);
-  const [scannedAccounts, setScannedAccounts] = useState<NegativeAccount[]>(initialNegativeAccounts);
+  const [scannedAccounts, setScannedAccounts] = useState<NegativeAccount[]>(() => {
+    const saved = localStorage.getItem('ftf_scanned_accounts');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('ftf_scanned_accounts', JSON.stringify(scannedAccounts));
+  }, [scannedAccounts]);
+
+  // Manual Negative Account addition states
+  const [newCreditor, setNewCreditor] = useState('');
+  const [newAccountType, setNewAccountType] = useState('Credit Card');
+  const [newBalance, setNewBalance] = useState('');
+  const [newStrategy, setNewStrategy] = useState('Incomplete Credit Transaction validation');
+  const [newViolation, setNewViolation] = useState('FCRA Section 611 - Reporting without validation limits');
+  const [newPriority, setNewPriority] = useState<'High' | 'Medium' | 'Low'>('High');
+
+  const handleClearAllScans = () => {
+    if (window.confirm("আপনি কি নিশ্চিত যে আপনি সব স্ক্যান করা অ্যাকাউন্ট ডাটা মুছে ফেলতে চান?")) {
+      setScannedAccounts([]);
+      setSelectedLetterAccounts([]);
+    }
+  };
+
+  const handleLoadDemoAccounts = () => {
+    setScannedAccounts(initialNegativeAccounts);
+  };
+
+  const handleDeleteAccount = (id: string) => {
+    setScannedAccounts(scannedAccounts.filter(acc => acc.id !== id));
+    setSelectedLetterAccounts(selectedLetterAccounts.filter(x => x !== id));
+  };
+
+  const handleAddAccountManually = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCreditor.trim()) return;
+    const newAcc: NegativeAccount = {
+      id: `acc-${Date.now()}`,
+      creditor: newCreditor,
+      type: newAccountType,
+      balance: parseFloat(newBalance) || 0,
+      status: 'In Dispute',
+      strategy: newStrategy,
+      lawViolation: newViolation,
+      priority: newPriority
+    };
+    setScannedAccounts([...scannedAccounts, newAcc]);
+    setNewCreditor('');
+    setNewBalance('');
+    alert("সফলভাবে নতুন নেগেটিভ অ্যাকাউন্ট যোগ করা হয়েছে!");
+  };
 
   // Phase 3 & 4 - Letter Generator
   const [selectedLetterAccounts, setSelectedLetterAccounts] = useState<string[]>([]);
@@ -119,6 +169,30 @@ export default function FtfCreditRepair() {
 
   return (
     <div className="space-y-8 text-left">
+      {/* Workspace Controls */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-neutral-900 text-white p-5 rounded-[24px] shadow-sm">
+        <div className="space-y-1">
+          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 font-mono">WORKSPACE DATA CONTROLLER</span>
+          <h3 className="font-display font-black text-sm tracking-tight">Real-Life Functional Workspace</h3>
+          <p className="text-[10px] text-neutral-400">রিয়েল-লাইফ মোড: নিচের বাটনগুলো দিয়ে ডেমো ডেটা মুছুন বা পুনরায় লোড করুন।</p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={handleClearAllScans}
+            className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <Trash2 size={12} />
+            সব ডেটা মুছুন (Clear All Scans)
+          </button>
+          <button
+            onClick={handleLoadDemoAccounts}
+            className="px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <Sparkles size={12} />
+            ডেমো ডেটা লোড (Load Demo Data)
+          </button>
+        </div>
+      </div>
       
       {/* SCORES HEADER */}
       <div className="bg-neutral-900 text-white rounded-[32px] p-8 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
@@ -421,6 +495,50 @@ export default function FtfCreditRepair() {
                 ))}
               </div>
             )}
+
+            {/* Manual Entry Sub-Form */}
+            <form onSubmit={handleAddAccountManually} className="p-4 rounded-2xl bg-neutral-50/50 border border-neutral-150 space-y-3 pt-4 border-t border-neutral-100 text-left">
+              <span className="text-[10px] font-black uppercase tracking-wider text-neutral-400 block">Add Negative Trade Line Manually</span>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input 
+                  type="text" 
+                  placeholder="Creditor/Bank Name (e.g. Chase Bank)" 
+                  value={newCreditor}
+                  required
+                  onChange={(e) => setNewCreditor(e.target.value)}
+                  className="rounded-xl border border-neutral-200 px-3 py-2 text-xs font-bold bg-white focus:ring-0" 
+                />
+                <input 
+                  type="text" 
+                  placeholder="Account Type (e.g. Credit Card)" 
+                  value={newAccountType}
+                  onChange={(e) => setNewAccountType(e.target.value)}
+                  className="rounded-xl border border-neutral-200 px-3 py-2 text-xs font-bold bg-white focus:ring-0" 
+                />
+                <input 
+                  type="number" 
+                  placeholder="Balance (e.g. 1200)" 
+                  value={newBalance}
+                  onChange={(e) => setNewBalance(e.target.value)}
+                  className="rounded-xl border border-neutral-200 px-3 py-2 text-xs font-bold bg-white focus:ring-0" 
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input 
+                  type="text" 
+                  placeholder="Dispute Finding/Reason" 
+                  value={newStrategy}
+                  onChange={(e) => setNewStrategy(e.target.value)}
+                  className="rounded-xl border border-neutral-200 px-3 py-2 text-xs font-bold bg-white focus:ring-0 md:col-span-2" 
+                />
+                <button 
+                  type="submit"
+                  className="rounded-xl bg-neutral-950 hover:bg-neutral-800 text-white font-extrabold text-[10px] uppercase tracking-wider py-2 cursor-pointer flex items-center justify-center gap-1.5 transition-all"
+                >
+                  <Plus size={12} /> Account যোগ করুন
+                </button>
+              </div>
+            </form>
           </div>
 
           {/* PHASE 3 & 4: DISPUTE SUITE (AI Auditor & Letter Generator) */}
@@ -434,51 +552,66 @@ export default function FtfCreditRepair() {
 
             {/* Scanned items grid */}
             <div className="space-y-3.5">
-              {scannedAccounts.map((acc) => {
-                const isSelected = selectedLetterAccounts.includes(acc.id);
-                return (
-                  <div 
-                    key={acc.id} 
-                    className={cn(
-                      "p-4 rounded-2xl border transition-all text-left flex gap-3 items-start",
-                      isSelected ? "border-neutral-950 bg-neutral-50/50" : "border-neutral-150 bg-white"
-                    )}
-                  >
-                    <button
-                      onClick={() => toggleAccountSelection(acc.id)}
+              {scannedAccounts.length === 0 ? (
+                <div className="text-center py-10 bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
+                  <p className="text-neutral-400 text-xs font-semibold">কোনো নেগেটিভ অ্যাকাউন্ট পাওয়া যায়নি। উপরে ফাইল স্ক্যান করুন অথবা ম্যানুয়ালি যোগ করুন।</p>
+                </div>
+              ) : (
+                scannedAccounts.map((acc) => {
+                  const isSelected = selectedLetterAccounts.includes(acc.id);
+                  return (
+                    <div 
+                      key={acc.id} 
                       className={cn(
-                        "size-5 rounded-md border flex items-center justify-center mt-1 cursor-pointer shrink-0 transition-colors",
-                        isSelected ? "bg-neutral-900 border-neutral-900 text-white" : "border-neutral-300 bg-white"
+                        "p-4 rounded-2xl border transition-all text-left flex gap-3 items-start",
+                        isSelected ? "border-neutral-950 bg-neutral-50/50" : "border-neutral-150 bg-white"
                       )}
                     >
-                      {isSelected && <Check size={12} />}
-                    </button>
+                      <button
+                        onClick={() => toggleAccountSelection(acc.id)}
+                        className={cn(
+                          "size-5 rounded-md border flex items-center justify-center mt-1 cursor-pointer shrink-0 transition-colors",
+                          isSelected ? "bg-neutral-900 border-neutral-900 text-white" : "border-neutral-300 bg-white"
+                        )}
+                      >
+                        {isSelected && <Check size={12} />}
+                      </button>
 
-                    <div className="space-y-2 flex-1">
-                      <div className="flex justify-between items-start gap-2">
-                        <div>
-                          <h4 className="font-extrabold text-neutral-950 text-xs">{acc.creditor}</h4>
-                          <span className="text-[10px] text-neutral-400 font-bold uppercase">{acc.type} • Balance: ${acc.balance.toLocaleString()}</span>
+                      <div className="space-y-2 flex-1">
+                        <div className="flex justify-between items-start gap-2">
+                          <div>
+                            <h4 className="font-extrabold text-neutral-950 text-xs">{acc.creditor}</h4>
+                            <span className="text-[10px] text-neutral-400 font-bold uppercase">{acc.type} • Balance: ${acc.balance.toLocaleString()}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={cn(
+                              "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
+                              acc.priority === 'High' ? "bg-red-50 text-red-700" :
+                              acc.priority === 'Medium' ? "bg-amber-50 text-amber-700" : "bg-blue-50 text-blue-700"
+                            )}>
+                              {acc.priority} Priority
+                            </span>
+                            <button
+                              onClick={() => handleDeleteAccount(acc.id)}
+                              className="p-1 text-neutral-400 hover:text-red-600 transition-colors cursor-pointer"
+                              title="Delete Account"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
                         </div>
-                        <span className={cn(
-                          "px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest",
-                          acc.priority === 'High' ? "bg-red-50 text-red-700" :
-                          acc.priority === 'Medium' ? "bg-amber-50 text-amber-700" : "bg-blue-50 text-blue-700"
-                        )}>
-                          {acc.priority} Priority
-                        </span>
-                      </div>
 
-                      {/* AI Audit section */}
-                      <div className="bg-neutral-50 border border-neutral-100 p-3 rounded-xl text-[10px] space-y-1 leading-normal text-neutral-600">
-                        <div className="text-neutral-800 font-extrabold">🚨 Credit File Violation:</div>
-                        <div><strong className="font-bold text-neutral-700">Audit Finding:</strong> {acc.strategy}</div>
-                        <div><strong className="font-bold text-neutral-700">Legal Foundation:</strong> {acc.lawViolation}</div>
+                        {/* AI Audit section */}
+                        <div className="bg-neutral-50 border border-neutral-100 p-3 rounded-xl text-[10px] space-y-1 leading-normal text-neutral-600">
+                          <div className="text-neutral-800 font-extrabold">🚨 Credit File Violation:</div>
+                          <div><strong className="font-bold text-neutral-700">Audit Finding:</strong> {acc.strategy}</div>
+                          <div><strong className="font-bold text-neutral-700">Legal Foundation:</strong> {acc.lawViolation}</div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })
+              )}
             </div>
 
             {/* Letter settings selection */}
