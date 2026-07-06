@@ -168,31 +168,6 @@ export default function FtfCrmSimulator() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300 text-left">
-      {/* Workspace Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-neutral-900 text-white p-5 rounded-[24px] shadow-sm">
-        <div className="space-y-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 font-mono">WORKSPACE DATA CONTROLLER</span>
-          <h3 className="font-display font-black text-sm tracking-tight">Real-Life Functional Workspace</h3>
-          <p className="text-[10px] text-neutral-400">রিয়েল-লাইফ মোড: নিচের বাটনগুলো দিয়ে ডেমো ডেটা মুছুন বা পুনরায় লোড করুন।</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleClearAllData}
-            className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-          >
-            <Trash2 size={12} />
-            সব ডেটা মুছুন (Clear All Data)
-          </button>
-          <button
-            onClick={handleLoadDemoData}
-            className="px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-          >
-            <Sparkles size={12} />
-            ডেমো ডেটা লোড (Load Demo Data)
-          </button>
-        </div>
-      </div>
-
       {/* Overview stats cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white border border-neutral-150 p-5 rounded-3xl shadow-xs">

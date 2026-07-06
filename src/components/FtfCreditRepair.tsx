@@ -169,30 +169,6 @@ export default function FtfCreditRepair() {
 
   return (
     <div className="space-y-8 text-left">
-      {/* Workspace Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-4 bg-neutral-900 text-white p-5 rounded-[24px] shadow-sm">
-        <div className="space-y-1">
-          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400 font-mono">WORKSPACE DATA CONTROLLER</span>
-          <h3 className="font-display font-black text-sm tracking-tight">Real-Life Functional Workspace</h3>
-          <p className="text-[10px] text-neutral-400">রিয়েল-লাইফ মোড: নিচের বাটনগুলো দিয়ে ডেমো ডেটা মুছুন বা পুনরায় লোড করুন।</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={handleClearAllScans}
-            className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-          >
-            <Trash2 size={12} />
-            সব ডেটা মুছুন (Clear All Scans)
-          </button>
-          <button
-            onClick={handleLoadDemoAccounts}
-            className="px-4 py-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
-          >
-            <Sparkles size={12} />
-            ডেমো ডেটা লোড (Load Demo Data)
-          </button>
-        </div>
-      </div>
       
       {/* SCORES HEADER */}
       <div className="bg-neutral-900 text-white rounded-[32px] p-8 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
