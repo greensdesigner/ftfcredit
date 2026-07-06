@@ -547,6 +547,18 @@ async function startServer() {
     }
   });
 
+  app.post("/api/admin/system-expire", async (req, res) => {
+    if (!pool) return res.status(500).json({ error: "Database not configured" });
+    try {
+      await pool.query(
+        "UPDATE system_settings SET subscriptionStatus = 'expired', expiryDate = NOW() WHERE id = 1"
+      );
+      res.json({ status: "success", message: "Subscription status forced to expired for lock testing" });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   // Creator Keys
   app.get("/api/creator/keys", async (req, res) => {
     if (!pool) return res.status(500).json({ error: "Database not configured" });

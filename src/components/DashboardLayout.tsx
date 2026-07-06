@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, Settings, LogOut, Menu, X, ShieldCheck, Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { UserRole } from '../types';
 
@@ -30,6 +30,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [systemLogo, setSystemLogo] = useState<string | null>(null);
   const [subscriptionDays, setSubscriptionDays] = useState<number | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
+  const [isPayingLicense, setIsPayingLicense] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
 
   const isClient = user?.role === UserRole.CLIENT;
   const isSubscriptionExpired = false;
@@ -65,7 +67,40 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     loadBranding();
   }, [user]);
 
-  const isSuspended = false;
+  const handlePayLicense = async () => {
+    setIsPayingLicense(true);
+    setPayError(null);
+    try {
+      const res = await fetch('/api/admin/system-pay', {
+        method: 'POST',
+      });
+      if (res.ok) {
+        const dataRes = await fetch('/api/admin/system-settings');
+        if (dataRes.ok) {
+          const data = await dataRes.json();
+          if (data.expiryDate) {
+            const expiry = new Date(data.expiryDate);
+            const now = new Date();
+            const diffTime = expiry.getTime() - now.getTime();
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            setSubscriptionDays(diffDays > 0 ? diffDays : 0);
+          }
+          if (data.subscriptionStatus) {
+            setSubscriptionStatus(data.subscriptionStatus);
+          }
+        }
+        alert("Payment successful! $100.00 subscription fee paid to Greenlab Technology. Your software has been unlocked successfully.");
+      } else {
+        throw new Error("Payment server offline or network failure. Please try again.");
+      }
+    } catch (e: any) {
+      setPayError(e.message || "Failed to process payment");
+    } finally {
+      setIsPayingLicense(false);
+    }
+  };
+
+  const isSuspended = subscriptionStatus === 'expired' || (subscriptionDays !== null && subscriptionDays <= 0);
 
   if (isSuspended) {
     return (
@@ -78,19 +113,43 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
           
           <h2 className="text-xl md:text-2xl font-black tracking-widest uppercase text-white mb-2">
-            Dashboard Blocked
+            Software License Locked
           </h2>
           <h3 className="text-neutral-400 text-xs tracking-widest uppercase font-extrabold mb-6">
-            Subscription Expired or Unpaid
+            $100.00 Monthly Subscription Fee Required
           </h3>
           
           <div className="space-y-4 text-center max-w-md mx-auto mb-8">
             <p className="text-neutral-300 text-sm leading-relaxed font-semibold">
-              Your access has been suspended because your billing subscription has expired or an invoice remains unpaid. Please clear any outstanding balances to unlock your workspace instantly.
+              This software has been automatically locked because the monthly $100.00 license subscription fee to the software provider (Greenlab Technology) has not been paid or is expired.
+            </p>
+            <p className="text-neutral-400 text-xs leading-relaxed">
+              Please pay the subscription fee below to instantly unlock and restore full access to the platform workspace.
             </p>
           </div>
 
+          {payError && (
+            <div className="w-full mb-6 p-4 bg-red-950/40 border border-red-900/40 rounded-2xl text-red-400 text-xs font-semibold text-center">
+              {payError}
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row gap-4 w-full justify-center">
+            <button
+              onClick={handlePayLicense}
+              disabled={isPayingLicense}
+              className="px-6 py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 disabled:bg-neutral-800 text-white font-bold text-xs tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-emerald-950/20"
+            >
+              {isPayingLicense ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" /> Processing Payment...
+                </>
+              ) : (
+                <>
+                  <CreditCard size={14} /> Pay $100.00 License Fee
+                </>
+              )}
+            </button>
             <button
               onClick={handleLogout}
               className="px-6 py-3.5 rounded-2xl bg-neutral-800 hover:bg-neutral-750 text-neutral-300 hover:text-white font-bold text-xs tracking-wider uppercase border border-neutral-700/50 transition-all flex items-center justify-center gap-2 cursor-pointer"
@@ -100,7 +159,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           <div className="mt-8 pt-5 border-t border-neutral-850 w-full italic text-[9px] text-neutral-500 font-extrabold uppercase tracking-[0.25em] text-center">
-            SaaS Security Protocol
+            SaaS Security Protocol • Powered by Greenlab Technology
           </div>
         </div>
       </div>

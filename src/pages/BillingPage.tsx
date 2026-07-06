@@ -271,6 +271,8 @@ export default function BillingPage() {
   const [pubKey, setPubKey] = useState('');
   const [keySource, setKeySource] = useState('environment');
   const [loading, setLoading] = useState(true);
+  const [systemLicense, setSystemLicense] = useState<any>(null);
+  const [processingLicense, setProcessingLicense] = useState(false);
 
   // Selector plans
   const [plans] = useState([
@@ -285,10 +287,53 @@ export default function BillingPage() {
 
   useEffect(() => {
     fetchStripeKey();
+    fetchSystemLicense();
     if (user?.uid) {
       fetchPayments();
     }
   }, [user]);
+
+  const fetchSystemLicense = async () => {
+    try {
+      const res = await fetch('/api/admin/system-settings');
+      if (res.ok) {
+        setSystemLicense(await res.json());
+      }
+    } catch (e) {
+      console.error("Failed to fetch system license settings:", e);
+    }
+  };
+
+  const handleSimulateExpiry = async () => {
+    setProcessingLicense(true);
+    try {
+      const res = await fetch('/api/admin/system-expire', { method: 'POST' });
+      if (res.ok) {
+        await fetchSystemLicense();
+        alert("Success! System license has been set to EXPIRED. The entire software workspace is now automatically locked. Refreshing page...");
+        window.location.reload();
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setProcessingLicense(false);
+    }
+  };
+
+  const handleRenewLicense = async () => {
+    setProcessingLicense(true);
+    try {
+      const res = await fetch('/api/admin/system-pay', { method: 'POST' });
+      if (res.ok) {
+        await fetchSystemLicense();
+        alert("Success! Paid $100.00 subscription fee. System license is now ACTIVE and valid for the next 30 days.");
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setProcessingLicense(false);
+    }
+  };
 
   const fetchStripeKey = async () => {
     setLoading(true);
@@ -340,6 +385,48 @@ export default function BillingPage() {
         <div>
           <h1 className="font-display text-3xl font-extrabold text-neutral-900 tracking-tight">Billing & Subscriptions</h1>
           <p className="text-neutral-500 text-sm mt-1">Configure automated debit plans, view invoices, and connect card properties.</p>
+        </div>
+
+        {/* SaaS Provider License Subscription Card */}
+        <div className="bg-gradient-to-r from-neutral-900 to-neutral-800 text-white rounded-[32px] p-8 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-3xl"></div>
+          <div className="space-y-3 max-w-xl text-left">
+            <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-widest bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+              SaaS Provider Licensing (Greenlab Technology)
+            </span>
+            <h2 className="font-display font-black text-xl tracking-tight">Software Creator License Fee</h2>
+            <p className="text-neutral-300 text-xs leading-relaxed font-semibold">
+              The software creator company charges a monthly subscription fee of <strong className="text-emerald-400">$100.00</strong> to keep this platform active. If the subscription fee is not paid, the software will automatically lock for all users.
+            </p>
+            {systemLicense && (
+              <div className="flex flex-wrap gap-4 pt-1 text-[11px] font-semibold text-neutral-400">
+                <div>
+                  License Status: <span className={cn(systemLicense.subscriptionStatus === 'active' ? "text-emerald-400" : "text-red-400")}>{systemLicense.subscriptionStatus === 'active' ? 'Active' : 'Expired & Locked'}</span>
+                </div>
+                <div>•</div>
+                <div>
+                  Next Billing Date: <span className="text-neutral-200">{systemLicense.expiryDate ? new Date(systemLicense.expiryDate).toLocaleDateString() : 'N/A'}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex flex-col gap-3 shrink-0">
+            <button
+              onClick={handleRenewLicense}
+              disabled={processingLicense}
+              className="px-6 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:bg-neutral-800 text-white font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-md shadow-emerald-950/20"
+            >
+              Pay $100.00 Subscription
+            </button>
+            <button
+              onClick={handleSimulateExpiry}
+              disabled={processingLicense || systemLicense?.subscriptionStatus === 'expired'}
+              className="px-6 py-3 rounded-xl bg-red-950 hover:bg-red-900 border border-red-800/40 text-red-400 font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              Simulate Expiry & Lock
+            </button>
+          </div>
         </div>
 
         {/* Active plan status banner */}
